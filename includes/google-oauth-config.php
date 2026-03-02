@@ -9,8 +9,8 @@
  * 4. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET below (or define them before including this file)
  */
 if (!defined('GOOGLE_CLIENT_ID')) {
-    define('GOOGLE_CLIENT_ID', ''); // e.g. '123456789-xxx.apps.googleusercontent.com'
+    define('GOOGLE_CLIENT_ID', '146218015828-uqbdobsfhal777338bheoiabda8fgr7n.apps.googleusercontent.com');
 }
 if (!defined('GOOGLE_CLIENT_SECRET')) {
-    define('GOOGLE_CLIENT_SECRET', ''); // your client secret
+    define('GOOGLE_CLIENT_SECRET', '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');
 }
