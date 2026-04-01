@@ -10,13 +10,38 @@ require_once __DIR__ . '/../includes/functions.php';
 ensure_ratings_table_exists();
 
 $service_id = (int)($_GET['service_id'] ?? 0);
+$product_id = (int)($_GET['product_id'] ?? 0);
 $service_name_get = sanitize($_GET['service'] ?? ''); // Fallback for old links
 $order_id = (int)($_GET['order_id'] ?? 0);
 
 $display_service = '';
-if ($service_id > 0) {
-    $serv_res = db_query("SELECT name FROM services WHERE service_id = ?", 'i', [$service_id]);
-    if (!empty($serv_res)) $display_service = $serv_res[0]['name'];
+$gsold = 0; $gavg = 0; $gcount = 0;
+
+if ($product_id > 0) {
+    $prod_res = db_query("
+        SELECT name,
+        (SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE oi.product_id = p.product_id AND o.status IN ('Completed', 'Delivered')) as sold_count,
+        (SELECT COUNT(*) FROM reviews r WHERE r.reference_id = p.product_id AND r.review_type = 'product') as review_count,
+        (SELECT AVG(rating) FROM reviews r WHERE r.reference_id = p.product_id AND r.review_type = 'product') as avg_rating
+        FROM products p WHERE p.product_id = ?", 'i', [$product_id]);
+    if (!empty($prod_res)) {
+        $display_service = $prod_res[0]['name'];
+        $gavg = (float)$prod_res[0]['avg_rating'];
+        $gcount = (int)$prod_res[0]['review_count'];
+        $gsold = max((int)$prod_res[0]['sold_count'], $gcount);
+    }
+} elseif ($service_id > 0) {
+    require_once __DIR__ . '/../includes/service_order_helper.php';
+    $serv_res = db_query("SELECT name, customer_link FROM services WHERE service_id = ?", 'i', [$service_id]);
+    if (!empty($serv_res)) {
+        $display_service = $serv_res[0]['name'];
+        // Use helper for services to stay consistent
+        $link_key = basename($serv_res[0]['customer_link'] ?: '', '.php');
+        $sstats = service_order_get_page_stats($link_key ?: 'order_glass_stickers');
+        $gavg = (float)$sstats['avg_rating'];
+        $gcount = (int)$sstats['review_count'];
+        $gsold = (int)$sstats['sold_count'];
+    }
 } elseif (!empty($service_name_get)) {
     $display_service = $service_name_get;
 }
@@ -33,7 +58,11 @@ $sql = "
 $params = [];
 $types = '';
 
-if ($service_id > 0) {
+if ($product_id > 0) {
+    $sql .= " AND r.reference_id = ? AND r.review_type = 'product'";
+    $params[] = $product_id;
+    $types .= 'i';
+} elseif ($service_id > 0) {
     $sql .= " AND r.reference_id = ? AND r.review_type = 'custom'";
     $params[] = $service_id;
     $types .= 'i';
@@ -131,9 +160,10 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="rv-header">
         <h1 class="rv-title">Customer Reviews</h1>
         <div class="flex items-center gap-2 mb-4">
-            <div class="rv-stars"><?php echo str_repeat('★', round($ravg)) . str_repeat('☆', 5 - round($ravg)); ?></div>
-            <span style="font-size: 1.4rem; font-weight: 850; color: #fbbf24;"><?php echo number_format($ravg, 1); ?></span>
-            <span style="color: #6e98aa; font-weight: 700; margin-left:8px; font-size:1.1rem;">&bull; <?php echo $rcount; ?> review<?php echo $rcount != 1 ? 's' : ''; ?></span>
+            <div class="rv-stars"><?php echo str_repeat('★', round($gavg)) . str_repeat('☆', 5 - round($gavg)); ?></div>
+            <span style="font-size: 1.4rem; font-weight: 850; color: #fbbf24;"><?php echo number_format($gavg, 1); ?></span>
+            <span style="color: #6e98aa; font-weight: 700; margin-left:8px; font-size:1.1rem;">&bull; <?php echo $gcount; ?> review<?php echo $gcount != 1 ? 's' : ''; ?></span>
+            <span style="color: #6e98aa; font-weight: 700; margin-left:12px; font-size:1.1rem; padding-left:12px; border-left:1px solid rgba(110,152,170,0.3)"><?php echo $gsold; ?> sold</span>
         </div>
         <p class="rv-subtitle">Genuine feedback <?php echo !empty($display_service) ? 'for ' . htmlspecialchars($display_service) : ''; ?> from our verified customers.</p>
     </div>

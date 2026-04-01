@@ -102,11 +102,11 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="container mx-auto px-4" style="max-width: 1080px;">
         <!-- Header with back button -->
         <div style="display:flex; align-items:center; margin-bottom: 2rem; gap: 1rem;">
-            <a href="orders.php" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+            <a href="orders.php" class="btn-chat" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 4px;">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Back
             </a>
-            <h1 class="ct-page-title" style="margin:0; flex:1; text-align:center; font-size: 1.5rem;"><?php echo htmlspecialchars($display_title); ?></h1>
+            <h1 class="ct-page-title" style="margin:0; flex:1; text-align:center; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><?php echo htmlspecialchars($display_title); ?></h1>
 
             <div style="text-align:right;">
                 <?php echo status_badge($order['status'], 'order'); ?>
@@ -125,9 +125,9 @@ require_once __DIR__ . '/../includes/header.php';
         <div style="display:flex; flex-direction:column; gap:1.25rem;">
             
             <!-- 1. Order Status & Date Alert -->
-            <div style="padding:1rem; background:#000; color:#fff; border-radius:12px; font-weight:700; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center;">
+            <div style="padding:1rem; background:rgba(255,255,255,0.05); color:var(--lp-text); border: 1px solid var(--lp-border); border-radius:12px; font-weight:700; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center;">
                 <span>Placed on: <?php echo format_datetime($order['order_date']); ?></span>
-                <a href="<?php echo BASE_URL; ?>/customer/chat.php?order_id=<?php echo $order_id; ?>" style="background:#fff; color:#000; border:none; padding:5px 12px; border-radius:6px; font-weight:800; font-size:0.75rem; text-decoration:none; display:inline-block;">
+                <a href="<?php echo BASE_URL; ?>/customer/chat.php?order_id=<?php echo $order_id; ?>" class="btn-chat" style="padding:5px 12px; border-radius:6px; font-weight:800; font-size:0.75rem; text-decoration:none; display:inline-block;">
                     💬 Chat Support
                 </a>
             </div>
@@ -212,8 +212,8 @@ require_once __DIR__ . '/../includes/header.php';
                 background: #94a3b8; 
             }
         </style>
-        <div id="paymentModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; padding:20px;">
-            <div class="card" style="max-width:500px; width:100%; position:relative; border-radius: 20px; padding: 2rem; max-height: 90vh; overflow-y: auto;">
+        <div id="paymentModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; padding:20px; backdrop-filter: blur(8px);">
+            <div class="card" style="width:100%; position:relative; border-radius: 20px; padding: 2rem; max-height: 90vh; overflow-y: auto; background: var(--lp-surface); border: 1px solid var(--lp-border);">
                 <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:0.5rem; color:#111827; display: flex; align-items: center; gap: 10px;">
                     Submit Payment
                 </h2>
@@ -325,7 +325,7 @@ require_once __DIR__ . '/../includes/header.php';
 
         <!-- Cancellation Modal -->
         <div id="cancelModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; padding:20px;">
-            <div class="card" style="max-width:500px; width:100%; position:relative;">
+            <div class="card" style="width:100%; position:relative;">
                 <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:#111827;">Cancel Order #<?php echo $order_id; ?></h2>
                 <p style="color:#6b7280; font-size:0.875rem; margin-bottom:1.5rem;">Please tell us why you want to cancel this order. This cannot be undone.</p>
                 

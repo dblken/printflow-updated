@@ -279,12 +279,24 @@ function service_order_get_page_stats($keyword) {
     $s_name = $row[0]['name'];
     
     $stats = db_query("SELECT 
-        (SELECT COUNT(*) FROM job_orders jo WHERE (jo.service_type LIKE CONCAT('%', ?, '%') OR jo.service_type = ?) AND jo.status != 'CANCELLED') as sold_count,
+        (SELECT COUNT(*) FROM job_orders jo 
+         JOIN orders o ON jo.order_id = o.order_id 
+         WHERE (jo.service_type LIKE CONCAT('%', ?, '%') OR jo.service_type = ?) 
+         AND o.status IN ('Completed', 'Delivered')) as sold_count,
         (SELECT AVG(rating) FROM reviews r WHERE r.reference_id = ? AND r.review_type = 'custom') as avg_rating,
         (SELECT COUNT(*) FROM reviews r WHERE r.reference_id = ? AND r.review_type = 'custom') as review_count
     ", 'ssii', [$s_name, $s_name, $s_id, $s_id]);
     
     $res = $stats[0] ?? ['sold_count' => 0, 'avg_rating' => 0, 'review_count' => 0];
+    
+    // Ensure sold_count is independent but at least matches review_count if sold is 0
+    // This follows business logic that a review implies a completed purchase
+    $sc = (int)($res['sold_count'] ?? 0);
+    $rc = (int)($res['review_count'] ?? 0);
+    if ($sc < $rc) {
+        $res['sold_count'] = $rc;
+    }
+
     $res['service_id'] = $s_id;
     return $res;
 }

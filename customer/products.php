@@ -16,7 +16,7 @@ $search = $_GET['search'] ?? '';
 // Build query — only show Fixed Products as requested
 $sql = "SELECT p.*, 
         (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.status = 'Active') as variant_count,
-        (SELECT SUM(quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE oi.product_id = p.product_id AND o.order_type = 'product' AND o.status != 'Cancelled') as sold_count,
+        (SELECT SUM(quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE oi.product_id = p.product_id AND o.order_type = 'product' AND o.status IN ('Completed', 'Delivered')) as sold_count,
         (SELECT AVG(rating) FROM reviews r WHERE r.reference_id = p.product_id AND r.review_type = 'product') as avg_rating,
         (SELECT COUNT(*) FROM reviews r WHERE r.reference_id = p.product_id AND r.review_type = 'product') as review_count
         FROM products p 
@@ -112,7 +112,7 @@ require_once __DIR__ . '/../includes/header.php';
     }
 
     .shopee-card:hover {
-        transform: translateY(-2px);
+        transform: none;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         border-color: var(--shopee-orange);
     }
@@ -246,8 +246,10 @@ require_once __DIR__ . '/../includes/header.php';
                     if ($display_img[0] !== '/' && strpos($display_img, 'http') === false) $display_img = '/' . $display_img;
                     
                     $sold_count = (int)$product['sold_count'];
-                    $avg_rating = (float)$product['avg_rating'];
                     $review_count = (int)$product['review_count'];
+                    if ($sold_count < $review_count) $sold_count = $review_count; // Review count independent but sold count should show at least review count
+                    
+                    $avg_rating = (float)$product['avg_rating'];
                 ?>
                     <div class="shopee-card" onclick="window.location.href='order_create.php?product_id=<?php echo $product['product_id']; ?>'">
                         <img src="<?php echo htmlspecialchars($display_img); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="shopee-img">
@@ -261,7 +263,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                                     </svg>
                                 <?php endfor; ?>
-                                <span class="rating-text"><?php echo $review_count > 0 ? "($review_count)" : ''; ?></span>
+                                <a href="reviews.php?product_id=<?php echo $product['product_id']; ?>" onclick="event.stopPropagation();" class="rating-text hover:underline hover:text-shopee-orange"><?php echo $review_count > 0 ? "($review_count)" : ''; ?></a>
                                 <span style="margin-left: auto; font-size: 0.75rem; color: var(--shopee-muted);"><?php echo $sold_count; ?> sold</span>
                             </div>
 

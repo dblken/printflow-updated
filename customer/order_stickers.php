@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Decals / Stickers - Service Order Form
  */
@@ -13,7 +13,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $branch_id = (int)($_POST['branch_id'] ?? 1);
-    $shape = trim($_POST['shape'] ?? 'Custom'); // Shape hidden for now; default
+    $shape = trim($_POST['shape'] ?? 'Custom'); 
     $w_in = trim((string)($_POST['width_in'] ?? ''));
     $h_in = trim((string)($_POST['height_in'] ?? ''));
     $size = ($w_in !== '' && $h_in !== '') ? ($w_in . 'x' . $h_in) : '';
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'type' => 'Service',
                     'source_page' => 'services',
                     'name' => 'Decals / Stickers',
-                    'price' => 50.00, // Base price per cut/set
+                    'price' => 50.00, 
                     'quantity' => $quantity,
                     'category' => 'Decals & Stickers',
                     'branch_id' => $branch_id,
@@ -115,22 +115,19 @@ if ($stickers_lam_val !== '' && !in_array($stickers_lam_val, ['With Laminate', '
         </div>
 
         <?php if ($error): ?>
-            <div class="stickers-form-error mb-6"><?php echo htmlspecialchars($error); ?></div>
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
         <div class="shopee-card">
             <!-- Left Side: Image -->
             <div class="shopee-image-section">
-                <div class="sticky top-24">
-                    <div class="shopee-main-image-wrap">
+                <div class="shopee-main-image-wrap">
                         <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Stickers'); ?>" alt="Stickers" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Stickers'">
                     </div>
                 </div>
-            </div>
-
             <!-- Right Side: Form -->
             <div class="shopee-form-section">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Decals / Stickers</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Decals / Stickers Printing</h1>
                 
                 <?php
                 $stats = service_order_get_page_stats('order_stickers');
@@ -138,10 +135,6 @@ if ($stickers_lam_val !== '' && !in_array($stickers_lam_val, ['With Laminate', '
                 $review_count = (int)($stats['review_count'] ?? 0);
                 $sold_count = (int)($stats['sold_count'] ?? 0);
                 $sold_display = $sold_count >= 1000 ? number_format($sold_count / 1000, 1) . 'k' : $sold_count;
-                
-                $_s_name = 'PrintFlow Service';
-                $_s_row = db_query("SELECT name FROM services WHERE customer_link LIKE '%order_stickers%' LIMIT 1");
-                if(!empty($_s_row)) { $_s_name = $_s_row[0]['name']; }
                 ?>
                 <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
                     <div class="flex items-center gap-1">
@@ -160,69 +153,98 @@ if ($stickers_lam_val !== '' && !in_array($stickers_lam_val, ['With Laminate', '
                 <form action="" method="POST" enctype="multipart/form-data" id="stickersForm" novalidate>
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="shape" value="Custom">
-                <input type="hidden" name="shape" value="Custom">
-                
-                <div class="shopee-form-row" id="card-branch-stickers">
+
+                <div class="shopee-form-row shopee-form-row-flat" id="card-branch-stickers">
                     <label class="shopee-form-label">Branch *</label>
-                    <select name="branch_id" id="stickers_branch_id" class="input-field shopee-form-field" required>
-                        <option value="" selected disabled>Select Branch</option>
-                        <?php foreach($branches as $b): ?>
-                            <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['branch_name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="shopee-form-field">
+                        <div class="shopee-opt-group">
+                            <?php foreach($branches as $b): ?>
+                                <label class="shopee-opt-btn" >
+                                    <input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="updateOpt(this)">
+                                    <span><?php echo htmlspecialchars($b['branch_name']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-dim-stickers">
+                <div class="shopee-form-row shopee-form-row-flat" id="card-dim-stickers">
                     <label class="shopee-form-label">Dimensions (in) *</label>
                     <div class="shopee-form-field">
-                        <div class="stickers-dim-row">
-                            <div>
-                                <label class="stickers-dim-field-label">Width</label>
-                                <input type="text" name="width_in" id="stickers_width_in" class="input-field" inputmode="decimal" required placeholder="e.g. 10" value="<?php echo htmlspecialchars($_POST['width_in'] ?? ''); ?>">
-                            </div>
-                            <div class="stickers-dim-sep">×</div>
-                            <div>
-                                <label class="stickers-dim-field-label">Height</label>
-                                <input type="text" name="height_in" id="stickers_height_in" class="input-field" inputmode="decimal" required placeholder="e.g. 12" value="<?php echo htmlspecialchars($_POST['height_in'] ?? ''); ?>">
+                        <div class="shopee-opt-group mb-4">
+                            <button type="button" class="shopee-opt-btn" data-width="2" data-height="2" onclick="stickerSelectDimension(2, 2, event)">2×2 in</button>
+                            <button type="button" class="shopee-opt-btn" data-width="3" data-height="3" onclick="stickerSelectDimension(3, 3, event)">3×3 in</button>
+                            <button type="button" class="shopee-opt-btn" data-width="4" data-height="4" onclick="stickerSelectDimension(4, 4, event)">4×4 in</button>
+                            <button type="button" class="shopee-opt-btn" id="dim-others-btn" onclick="stickerSelectDimensionOthers(event)">Others</button>
+                        </div>
+                        <div id="dim-others-inputs" style="display:none;border-top:1px dashed rgba(255,255,255,0.1);margin-top:1.5rem;padding-top:1.5rem;width:100%">
+                            <div style="width:100%;max-width:440px">
+                                <div style="display:flex;gap:8px;margin-bottom:4px">
+                                    <div style="flex:1"><label class="dim-label">Width (in)</label></div>
+                                    <div style="width:32px"></div>
+                                    <div style="flex:1"><label class="dim-label">Height (in)</label></div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <div style="flex:1">
+                                        <input type="number" step="0.01" id="stickers_width_in" name="width_in" class="input-field" placeholder="e.g. 10" value="<?php echo htmlspecialchars($_POST['width_in'] ?? ''); ?>" min="1" max="100">
+                                        <div id="width-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 in.</div>
+                                    </div>
+                                    <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
+                                    <div style="flex:1">
+                                        <input type="number" step="0.01" id="stickers_height_in" name="height_in" class="input-field" placeholder="e.g. 12" value="<?php echo htmlspecialchars($_POST['height_in'] ?? ''); ?>" min="1" max="100">
+                                        <div id="height-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 in.</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:6px">
+                                            <div style="flex:1"><span style="font-size:0.75rem;color:var(--lp-muted)">Standard sticker size. Great for decals and labels.</span></div>
+                                            <div style="width:32px"></div>
+                                            <div style="flex:1"><span style="font-size:0.75rem;color:var(--lp-muted)">Height can be adjusted to fit your specific needs.</span></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-finish-stickers">
+                <div class="shopee-form-row shopee-form-row-flat" id="card-finish-stickers">
                     <label class="shopee-form-label">Finish *</label>
-                    <div class="shopee-opt-group shopee-form-field">
-                        <label class="shopee-opt-btn"><input type="radio" name="finish" value="Glossy" style="display:none;" required <?php echo $stickers_finish_val === 'Glossy' ? 'checked' : ''; ?>> <span>Glossy</span></label>
-                        <label class="shopee-opt-btn"><input type="radio" name="finish" value="Matte" style="display:none;" <?php echo $stickers_finish_val === 'Matte' ? 'checked' : ''; ?>> <span>Matte</span></label>
+                    <div class="shopee-form-field">
+                        <div class="shopee-opt-group">
+                            <label class="shopee-opt-btn" ><input type="radio" name="finish" value="Glossy" style="display:none;" required <?php echo $stickers_finish_val === 'Glossy' ? 'checked' : ''; ?> onchange="updateOpt(this)"> <span>Glossy</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="finish" value="Matte" style="display:none;" <?php echo $stickers_finish_val === 'Matte' ? 'checked' : ''; ?> onchange="updateOpt(this)"> <span>Matte</span></label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-laminate-stickers">
+                <div class="shopee-form-row shopee-form-row-flat" id="card-laminate-stickers">
                     <label class="shopee-form-label">Laminate *</label>
-                    <div class="shopee-opt-group shopee-form-field">
-                        <label class="shopee-opt-btn"><input type="radio" name="laminate_option" value="With Laminate" style="display:none;" required <?php echo $stickers_lam_val === 'With Laminate' ? 'checked' : ''; ?>> <span>With Laminate</span></label>
-                        <label class="shopee-opt-btn"><input type="radio" name="laminate_option" value="Without Laminate" style="display:none;" <?php echo $stickers_lam_val === 'Without Laminate' ? 'checked' : ''; ?>> <span>Without Laminate</span></label>
+                    <div class="shopee-form-field">
+                        <div class="shopee-opt-group">
+                            <label class="shopee-opt-btn" ><input type="radio" name="laminate_option" value="With Laminate" style="display:none;" required <?php echo $stickers_lam_val === 'With Laminate' ? 'checked' : ''; ?> onchange="updateOpt(this)"> <span>With Laminate</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="laminate_option" value="Without Laminate" style="display:none;" <?php echo $stickers_lam_val === 'Without Laminate' ? 'checked' : ''; ?> onchange="updateOpt(this)"> <span>Without Laminate</span></label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-layout-stickers">
+                <div class="shopee-form-row shopee-form-row-flat" id="card-layout-stickers">
                     <label class="shopee-form-label">Layout *</label>
-                    <div class="shopee-opt-group shopee-form-field">
-                        <label class="shopee-opt-btn"><input type="radio" name="layout" value="With Layout" style="display:none;" required> <span>With Layout</span></label>
-                        <label class="shopee-opt-btn"><input type="radio" name="layout" value="Without Layout" style="display:none;"> <span>Without Layout</span></label>
+                    <div class="shopee-form-field">
+                        <div class="shopee-opt-group">
+                            <label class="shopee-opt-btn" ><input type="radio" name="layout" value="With Layout" style="display:none;" required onchange="updateOpt(this)"> <span>With Layout</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="layout" value="Without Layout" style="display:none;" onchange="updateOpt(this)"> <span>Without Layout</span></label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-date-qty-stickers">
+                <div class="shopee-form-row shopee-form-row-flat" id="card-date-qty-stickers">
                     <label class="shopee-form-label">Scheduling *</label>
                     <div class="shopee-form-field">
-                        <div class="need-qty-row">
-                            <div class="need-qty-date">
-                                <label class="stickers-dim-field-label">Needed Date</label>
+                        <div class="need-qty-row" style="display: flex; gap: 16px;">
+                            <div class="flex-1">
+                                <label class="dim-label">Needed Date</label>
                                 <input type="date" name="needed_date" id="stickers_needed_date" class="input-field" required min="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['needed_date'] ?? ''); ?>">
                             </div>
-                            <div class="need-qty-qty">
-                                <label class="stickers-dim-field-label">Quantity</label>
+                            <div class="flex-1">
+                                <label class="dim-label">Quantity</label>
                                 <div class="shopee-qty-control">
                                     <button type="button" class="shopee-qty-btn" onclick="stickerQtyDown()">−</button>
                                     <input type="number" id="sticker-qty" name="quantity" class="shopee-qty-input" min="1" max="999" required value="<?php echo (int)($_POST['quantity'] ?? ($_GET['qty'] ?? 1)); ?>" oninput="stickerQtyClamp()">
@@ -233,22 +255,33 @@ if ($stickers_lam_val !== '' && !in_array($stickers_lam_val, ['With Laminate', '
                     </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-upload-stickers">
-                    <label class="shopee-form-label">Design *</label>
-                    <input type="file" name="design_file" id="stickers_design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field shopee-form-field" required>
+                <div class="shopee-form-row shopee-form-row-flat" id="card-upload-stickers">
+                    <label class="shopee-form-label">Upload Design *</label>
+                    <div class="shopee-form-field">
+                        <input type="file" name="design_file" id="stickers_design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" required style="max-width: 300px; padding: 0.5rem;">
+                    </div>
                 </div>
 
-                <div class="shopee-form-row" id="card-notes-stickers">
-                    <label class="shopee-form-label">Notes</label>
-                    <textarea name="notes" rows="3" class="input-field shopee-form-field" placeholder="Any special instructions..." maxlength="500"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
+                <div class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
+                    <label class="shopee-form-label" style="padding-top: 0.75rem;">Notes</label>
+                    <div class="shopee-form-field">
+                        <div style="display:flex; justify-content:flex-end; margin-bottom: 0.25rem; ">
+                            <span id="notes-counter" style="font-size: 0.7rem; color: var(--lp-muted); font-weight: 700;">0 / 500</span>
+                        </div>
+                        <textarea name="notes" id="notes-textarea" rows="3" class="input-field" placeholder="Any special instructions..." maxlength="500" oninput="updateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
+                        <div id="notes-warn" class="text-xs font-bold mt-1" style="display:none; color: #ef4444;">Maximum characters reached.</div>
+                    </div>
                 </div>
 
-                <div class="shopee-form-row pt-6">
-                    <div style="width: 130px;"></div> <!-- Spacer for label alignment -->
+                <div class="shopee-form-row pt-10">
+                    <div style="width: 160px;" class="hidden md:block"></div>
                     <div class="flex gap-4 flex-1">
-                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex: 1;">Back</a>
-                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;" title="Add to Cart"><svg style="width:1.25rem;height:1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                        <button type="submit" name="action" value="buy_now" id="stickersBuyNowBtn" class="shopee-btn-primary" style="flex: 1.5;">Buy Now</button>
+                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">Back</a>
+                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700;" title="Add to Cart">
+                            <svg style="width:1.5rem;height:1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            Add To Cart
+                        </button>
+                        <button type="submit" name="action" value="buy_now" id="stickersBuyNowBtn" class="shopee-btn-primary" style="flex: 1.5; height: 3.5rem; font-size: 1.1rem; font-weight: 800;">Buy Now</button>
                     </div>
                 </div>
             </form>
@@ -259,188 +292,152 @@ if ($stickers_lam_val !== '' && !in_array($stickers_lam_val, ['With Laminate', '
 
 <style>
 /* Service Specific Tweaks */
-.stickers-dim-row { display: flex; align-items: flex-end; gap: 8px; width: 100%; }
-.stickers-dim-row > div { flex: 1; }
-.stickers-dim-field-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
-.stickers-dim-sep { height: 40px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
+.dim-label { font-size: 0.70rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
+.dim-sep { height: 44px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
 
-.need-qty-row { display: flex; gap: 16px; width: 100%; }
-.need-qty-date { flex: 1.5; }
-.need-qty-qty { flex: 1; }
-
-.stickers-form-error {
-    background: #fff5f5;
-    border: 1px solid #feb2b2;
-    color: #c53030;
-    padding: 12px;
-    border-radius: 2px;
-    font-size: 0.875rem;
-}
-
-/* Validation styling override for row based layout */
-#stickersForm .shopee-form-row.is-invalid {
-    background: #fffafa;
-}
-.field-error {
-    font-size: 0.75rem;
-    color: #e53e3e;
-    margin-top: 4px;
-    display: block;
-}
+#sticker-qty::-webkit-outer-spin-button,
+#sticker-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#sticker-qty { -moz-appearance: textfield; appearance: textfield; }
 
 @media (max-width: 640px) {
     .need-qty-row { flex-direction: column; }
-    .stickers-dim-row { flex-direction: column; align-items: stretch; }
-    .stickers-dim-sep { display: none; }
+    .stickers-dim-row { flex-direction: column; align-items: stretch !important; }
+    .dim-sep { display: none !important; }
 }
 </style>
-<div id="finishInfoModal" class="stickers-finish-modal" style="display:none; position:fixed; inset:0; z-index:99999; align-items:center; justify-content:center; padding:1rem;">
-    <div onclick="closeFinishInfo()" style="position:absolute; inset:0; background:rgba(2,12,18,0.72);"></div>
-    <div class="stickers-finish-modal-inner" style="position:relative; background:#0a2530; border:1px solid rgba(83,197,224,0.28); border-radius:14px; width:min(920px, 96vw); max-height:90vh; overflow:auto; padding:1rem 1rem 1.25rem;">
-        <button type="button" onclick="closeFinishInfo()" class="stickers-modal-close" style="position:absolute; top:8px; right:8px; border:1px solid rgba(83,197,224,0.28); background:rgba(15,53,68,0.95); border-radius:999px; width:30px; height:30px; cursor:pointer; color:#d8edf5;">×</button>
-        <h3 style="font-size:1.1rem; font-weight:800; margin:0 0 0.8rem 0; color:#eaf6fb;">Finish Type Guide</h3>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:0.9rem;">
-            <div style="border:1px solid rgba(83,197,224,0.24); border-radius:12px; padding:0.8rem; background:rgba(13,43,56,0.6);">
-                <div style="font-weight:800; margin-bottom:0.5rem; color:#eaf6fb;">Matte Finish</div>
-                <img src="/printflow/public/images/products/product_21.jpg" alt="Matte sample" style="width:100%; height:160px; object-fit:cover; border-radius:10px; margin-bottom:0.6rem;">
-                <ul style="margin:0; padding-left:1.05rem; font-size:0.86rem; color:#c2deea; line-height:1.5;">
-                    <li>Non-shiny surface</li><li>Smooth and elegant appearance</li><li>Reduces glare and reflections</li><li>Ideal for minimalist, professional, or premium designs</li><li>Easier to read under strong lighting</li>
-                </ul>
-            </div>
-            <div style="border:1px solid rgba(83,197,224,0.24); border-radius:12px; padding:0.8rem; background:rgba(13,43,56,0.6);">
-                <div style="font-weight:800; margin-bottom:0.5rem; color:#eaf6fb;">Glossy Finish</div>
-                <img src="/printflow/public/images/products/product_26.jpg" alt="Glossy sample" style="width:100%; height:160px; object-fit:cover; border-radius:10px; margin-bottom:0.6rem;">
-                <ul style="margin:0; padding-left:1.05rem; font-size:0.86rem; color:#c2deea; line-height:1.5;">
-                    <li>Shiny and reflective surface</li><li>Colors appear more vibrant and bright</li><li>Eye-catching and smooth texture</li><li>Best for colorful designs, logos, and photos</li><li>Reflects light and gives a polished look</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
-function openFinishInfo() {
-    document.getElementById('finishInfoModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+let dimensionMode = 'others'; // Default to others since inputs are visible and required usually
+
+function stickerSelectDimension(w, h, e) {
+    e.preventDefault();
+    dimensionMode = 'preset';
+    document.querySelectorAll('.shopee-opt-btn').forEach(b => {
+        if(b.hasAttribute('data-width') || b.id === 'dim-others-btn') {
+            b.classList.remove('active');
+        }
+    });
+    const b = e.target.closest('.shopee-opt-btn');
+    if(b) b.classList.add('active');
+    document.getElementById('dim-others-inputs').style.display = 'none';
+    document.getElementById('stickers_width_in').value = w;
+    document.getElementById('stickers_height_in').value = h;
 }
-function closeFinishInfo() {
-    document.getElementById('finishInfoModal').style.display = 'none';
-    document.body.style.overflow = '';
+
+function stickerSelectDimensionOthers(e) {
+    e.preventDefault();
+    dimensionMode = 'others';
+    document.querySelectorAll('.shopee-opt-btn').forEach(b => {
+        if(b.hasAttribute('data-width') || b.id === 'dim-others-btn') {
+            b.classList.remove('active');
+        }
+    });
+    document.getElementById('dim-others-btn').classList.add('active');
+    document.getElementById('dim-others-inputs').style.display = 'flex';
+}
+
+function updateOpt(input) {
+    const name = input.name;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(function(r) {
+        const wrap = r.closest('.shopee-opt-btn');
+        if (wrap) wrap.classList.toggle('active', r.checked);
+    });
 }
 ['stickers_width_in', 'stickers_height_in'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) {
         el.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').slice(0, 8);
-            if (window.__stickersValidationTriggered) checkStickersFormValid();
         });
     }
 });
-
-function clearStickersFieldError(container) {
-    if (!container) return;
-    var err = container.querySelector('.field-error');
-    container.classList.remove('is-invalid');
-    if (err) { err.textContent = ''; err.style.display = 'none'; }
-}
-function setStickersFieldError(container, message) {
-    if (!container) return;
-    var err = container.querySelector('.field-error');
-    if (message) {
-        if (!err) { err = document.createElement('div'); err.className = 'field-error'; container.appendChild(err); }
-        container.classList.add('is-invalid');
-        err.textContent = message;
-        err.style.display = 'block';
+function updateNotesCounter(el) {
+    const counter = document.getElementById('notes-counter');
+    const warn = document.getElementById('notes-warn');
+    counter.textContent = el.value.length + ' / 500';
+    if(el.value.length >= 500) {
+        counter.style.color = '#ef4444';
+        warn.style.display = 'block';
     } else {
-        container.classList.remove('is-invalid');
-        if (err) { err.textContent = ''; err.style.display = 'none'; }
+        counter.style.color = 'var(--lp-muted)';
+        warn.style.display = 'none';
     }
 }
-function checkStickersFormValid() {
-    var show = window.__stickersValidationTriggered === true;
-    var branch = document.getElementById('stickers_branch_id');
-    var w = document.getElementById('stickers_width_in');
-    var h = document.getElementById('stickers_height_in');
-    var finish = document.querySelector('input[name="finish"]:checked');
-    var lam = document.querySelector('input[name="laminate_option"]:checked');
-    var nd = document.getElementById('stickers_needed_date');
-    var qty = parseInt(document.getElementById('sticker-qty').value, 10) || 0;
-    var file = document.getElementById('stickers_design_file');
-    var notesEl = document.querySelector('#stickersForm textarea[name="notes"]');
-    var notesLen = (notesEl && notesEl.value) ? notesEl.value.length : 0;
 
-    var cBranch = document.getElementById('card-branch-stickers');
-    var cDim = document.getElementById('card-dim-stickers');
-    var cFinish = document.getElementById('card-finish-stickers');
-    var cLam = document.getElementById('card-laminate-stickers');
-    var cDateQty = document.getElementById('card-date-qty-stickers');
-    var cUpload = document.getElementById('card-upload-stickers');
-    var cNotes = document.getElementById('card-notes-stickers');
+document.getElementById('stickersForm').addEventListener('submit', function(e) {
+    let hasError = false;
+    let firstErrorField = null;
 
-    var okBranch = branch && branch.value;
-    var okDim = w && h && w.value.trim() !== '' && h.value.trim() !== '';
-    var okFinish = !!finish;
-    var okLam = !!lam;
-    var okLayout = !!document.querySelector('input[name="layout"]:checked');
-    var okDateQty = nd && nd.value.trim() !== '' && qty >= 1;
-    var okFile = file && file.files && file.files.length > 0;
-    var okNotes = notesLen <= 500;
+    // Reset errors
+    document.getElementById('width-error').style.display = 'none';
+    document.getElementById('height-error').style.display = 'none';
+    document.getElementById('notes-warn').style.display = 'none';
 
-    var cLayout = document.getElementById('card-layout-stickers');
+    const w = parseFloat(document.getElementById('stickers_width_in').value) || 0;
+    const h = parseFloat(document.getElementById('stickers_height_in').value) || 0;
 
-    if (show) {
-        setStickersFieldError(cBranch, !okBranch ? 'This field is required' : '');
-        setStickersFieldError(cDim, !okDim ? 'This field is required' : '');
-        setStickersFieldError(cFinish, !okFinish ? 'This field is required' : '');
-        setStickersFieldError(cLam, !okLam ? 'This field is required' : '');
-        setStickersFieldError(cLayout, !okLayout ? 'This field is required' : '');
-        setStickersFieldError(cDateQty, !okDateQty ? 'This field is required' : '');
-        setStickersFieldError(cUpload, !okFile ? 'This field is required' : '');
-        setStickersFieldError(cNotes, !okNotes ? 'Notes must not exceed 500 characters' : '');
-    } else {
-        [cBranch, cDim, cFinish, cLam, cLayout, cDateQty, cUpload, cNotes].forEach(clearStickersFieldError);
+    if (w <= 0 || h <= 0) {
+        alert('Please enter dimensions.');
+        e.preventDefault();
+        return;
     }
-    return okBranch && okDim && okFinish && okLam && okLayout && okDateQty && okFile && okNotes;
-}
 
-var stickersFormEl = document.getElementById('stickersForm');
-if (stickersFormEl) {
-    stickersFormEl.addEventListener('submit', function(e) {
-        window.__stickersValidationTriggered = true;
-        if (!checkStickersFormValid()) {
-            e.preventDefault();
-            return false;
+    if (w > 100) {
+        document.getElementById('width-error').style.display = 'block';
+        hasError = true;
+        if (!firstErrorField) firstErrorField = document.getElementById('stickers_width_in');
+    }
+
+    if (h > 100) {
+        document.getElementById('height-error').style.display = 'block';
+        hasError = true;
+        if (!firstErrorField) firstErrorField = document.getElementById('stickers_height_in');
+    }
+
+    const notes = document.getElementById('notes-textarea').value;
+    if (notes.length > 500) {
+        document.getElementById('notes-warn').style.display = 'block';
+        hasError = true;
+        if (!firstErrorField) firstErrorField = document.getElementById('notes-textarea');
+    }
+
+    if (hasError) {
+        e.preventDefault();
+        if (firstErrorField) {
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstErrorField.focus();
         }
-    });
-    stickersFormEl.addEventListener('change', checkStickersFormValid);
-    stickersFormEl.addEventListener('input', checkStickersFormValid);
-    stickersFormEl.addEventListener('invalid', function(e) { e.preventDefault(); }, true);
-}
-var stickersFileEl = document.getElementById('stickers_design_file');
-if (stickersFileEl) stickersFileEl.addEventListener('change', checkStickersFormValid);
-var sq = document.getElementById('sticker-qty');
-if (sq) sq.addEventListener('input', function() { if (window.__stickersValidationTriggered) checkStickersFormValid(); });
+        return;
+    }
+});
+
 function stickerQtyClamp() {
     const input = document.getElementById('sticker-qty');
     let v = parseInt(input.value, 10);
     if (!v || v < 1) v = 1;
     if (v > 999) v = 999;
     input.value = v;
-    if (window.__stickersValidationTriggered) checkStickersFormValid();
 }
 function stickerQtyUp() {
     const input = document.getElementById('sticker-qty');
     let v = parseInt(input.value, 10) || 1;
     input.value = Math.min(v + 1, 999);
-    if (window.__stickersValidationTriggered) checkStickersFormValid();
 }
 function stickerQtyDown() {
     const input = document.getElementById('sticker-qty');
     let v = parseInt(input.value, 10) || 1;
     input.value = Math.max(v - 1, 1);
-    if (window.__stickersValidationTriggered) checkStickersFormValid();
 }
-checkStickersFormValid();
+
+document.addEventListener('DOMContentLoaded', function() {
+    // If no dimension is selected yet, click the first one
+    const firstDim = document.querySelector('.shopee-opt-btn[data-width]');
+    if (firstDim) firstDim.click();
+
+    document.querySelectorAll('.shopee-opt-btn input:checked').forEach(inp => {
+        inp.closest('.shopee-opt-btn').classList.add('active');
+    });
+});
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

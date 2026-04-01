@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/customer_service_catalog.php';
 // Fetch services from DB
 $visible_rows = db_query(
     "SELECT s.*, 
-    (SELECT COUNT(*) FROM job_orders jo WHERE (jo.service_type LIKE CONCAT('%', s.name, '%') OR jo.service_type = s.name) AND jo.status != 'CANCELLED') as sold_count,
+    (SELECT COUNT(*) FROM job_orders jo JOIN orders o ON jo.order_id = o.order_id WHERE (jo.service_type LIKE CONCAT('%', s.name, '%') OR jo.service_type = s.name) AND o.status IN ('Completed', 'Delivered')) as sold_count,
     (SELECT AVG(rating) FROM reviews r WHERE r.reference_id = s.service_id AND r.review_type = 'custom') as avg_rating,
     (SELECT COUNT(*) FROM reviews r WHERE r.reference_id = s.service_id AND r.review_type = 'custom') as review_count
     FROM services s WHERE s.status = 'Activated' ORDER BY name ASC",
@@ -63,12 +63,12 @@ function render_service_card($srv) {
     $ravg = $srv['avg_rating'];
     $rcount = $srv['review_count'];
     $sold = $srv['sold_count'];
-    // If sold is 0 but there are reviews, use review_count as minimum sold
-    $display_sold = ($sold <= 0 && $rcount > 0) ? $rcount : $sold;
+    // Ensure sold_count is at least review_count for consistency
+    $display_sold = ($sold < $rcount) ? $rcount : $sold;
     ?>
     <div class="ct-product-card cursor-pointer group" onclick="openServiceModal(<?php echo $srv['id']; ?>, <?php echo $json_name; ?>, <?php echo $json_category; ?>, <?php echo $json_img; ?>, <?php echo $json_link; ?>, true, '', '', <?php echo $json_modal_text; ?>, <?php echo $ravg; ?>, <?php echo $rcount; ?>)">
         <div class="ct-product-img overflow-hidden">
-            <div class="ct-product-img-inner transition-transform duration-500 group-hover:scale-110">
+            <div class="ct-product-img-inner">
                 <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($srv['name']); ?>" style="width:100%; height:100%; object-fit:cover; border-radius:0.5rem;">
             </div>
         </div>
@@ -102,77 +102,6 @@ function render_service_card($srv) {
 }
 ?>
 
-<style>
-    body.customer-theme {
-        background: #ffffff !important;
-        background-image: none !important;
-    }
-    .ct-page-title { color: #1e293b !important; text-shadow: none !important; }
-    .ct-product-card {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
-    }
-    .ct-product-card:hover {
-        border-color: #53C5E0 !important;
-        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
-    }
-    .ct-product-name { color: #1e293b !important; }
-    .ct-product-category { background: #f1f5f9 !important; color: #475569 !important; border-color: #e2e8f0 !important; }
-    
-    #service-modal-content {
-        background: #ffffff !important;
-        border-color: #e2e8f0 !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-    }
-    #modal-name { color: #1e293b !important; }
-    #modal-intro-text { color: #475569 !important; }
-    #modal-cart-section {
-        background: #f8fafc !important;
-        border-top-color: #e2e8f0 !important;
-    }
-    .ct-card-footer {
-        display: flex;
-        gap: 8px;
-        padding: 0;
-        margin-top: 0.5rem;
-    }
-    .ct-cart-icon-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 0.5rem;
-        border: 1px solid #0a2530;
-        background: rgba(10, 37, 48, 0.08);
-        color: #0a2530;
-        cursor: pointer;
-        transition: all 0.2s;
-        flex-shrink: 0;
-    }
-    .ct-cart-icon-btn:hover {
-        background: #53C5E0;
-        border-color: #53C5E0;
-        color: #ffffff;
-    }
-    .ct-view-product-btn { 
-        background: #0a2530 !important; 
-        color: #ffffff !important; 
-        border: none !important; 
-        box-shadow: 0 4px 10px rgba(10, 37, 48, 0.2) !important;
-        transition: all 0.3s ease !important;
-        border-radius: 0.5rem;
-        padding: 0.6rem 1rem;
-        font-weight: 600;
-        font-size: 0.8125rem;
-        flex: 1;
-    }
-    .ct-product-card:hover .ct-view-product-btn {
-        background: #53C5E0 !important;
-        box-shadow: 0 8px 18px rgba(83, 197, 224, 0.3) !important;
-    }
-</style>
 
 <div class="min-h-screen py-8">
     <div class="container mx-auto px-4" style="max-width:1100px;">

@@ -21,8 +21,6 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
 
 // Standard reflectorized sizes (inches)
 $dimension_presets = [
-    '6 x 12' => ['w' => 6, 'h' => 12],
-    '9 x 12' => ['w' => 9, 'h' => 12],
     '12 x 18' => ['w' => 12, 'h' => 18],
     '18 x 24' => ['w' => 18, 'h' => 24],
     '24 x 36' => ['w' => 24, 'h' => 36],
@@ -41,13 +39,10 @@ $dimension_presets = [
         <div class="shopee-card">
             <!-- Left Side: Image -->
             <div class="shopee-image-section">
-                <div class="sticky top-24">
-                    <div class="shopee-main-image-wrap">
+                <div class="shopee-main-image-wrap">
                         <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Reflectorized'); ?>" alt="Reflectorized Signage" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Reflectorized'">
                     </div>
                 </div>
-            </div>
-
             <!-- Right Side: Form -->
             <div class="shopee-form-section">
                 <h1 class="text-2xl font-bold text-gray-900 mb-2">Reflectorized Signage</h1>
@@ -81,66 +76,68 @@ $dimension_presets = [
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="service_type" value="Reflectorized Signage">
 
-                    <div class="shopee-form-row">
+                    <div class="shopee-form-row shopee-form-row-flat">
                         <label class="shopee-form-label">Branch *</label>
-                        <select name="branch_id" class="input-field shopee-form-field" required>
-                            <option value="" selected disabled>Select Branch</option>
-                            <?php foreach($branches as $b): ?>
-                                <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['branch_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="shopee-form-field">
+                            <div class="shopee-opt-group">
+                                <?php foreach($branches as $b): ?>
+                                    <label class="shopee-opt-btn"><input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="updateOpt(this)"> <span><?php echo htmlspecialchars($b['branch_name']); ?></span></label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Product Type -->
-                    <div class="shopee-form-row">
-                        <label class="shopee-form-label">Product Type *</label>
-                        <select name="product_type" id="refl_product_type" class="input-field shopee-form-field" required onchange="reflToggleProductFields()">
-                            <option value="" selected disabled>Select Product Category</option>
-                            <option value="Subdivision / Gate Pass (Vehicle Sticker)">Subdivision / Gate Pass (Vehicle Sticker)</option>
-                            <option value="Plate Number / Temporary Plate">Plate Number / Temporary Plate</option>
-                            <option value="Custom Reflectorized Sign">Custom Reflectorized Sign</option>
-                        </select>
+                    <div class="shopee-form-row shopee-form-row-flat">
+                        <label class="shopee-form-label">Product type *</label>
+                        <div class="shopee-form-field">
+                            <div class="shopee-opt-group">
+                                <label class="shopee-opt-btn" ><input type="radio" name="product_type" value="Subdivision / Gate Pass (Vehicle Sticker)" style="display:none;" onchange="document.getElementById('refl_product_type').value=this.value; reflToggleProductFields(); reflUpdateOptionVisuals(this)"> <span>Gate Pass / Sticker</span></label>
+                                <label class="shopee-opt-btn" ><input type="radio" name="product_type" value="Plate Number / Temporary Plate" style="display:none;" onchange="document.getElementById('refl_product_type').value=this.value; reflToggleProductFields(); reflUpdateOptionVisuals(this)"> <span>Temporary Plate</span></label>
+                                <label class="shopee-opt-btn" ><input type="radio" name="product_type" value="Custom Reflectorized Sign" style="display:none;" onchange="document.getElementById('refl_product_type').value=this.value; reflToggleProductFields(); reflUpdateOptionVisuals(this)"> <span>Custom Signage</span></label>
+                            </div>
+                            <input type="hidden" id="refl_product_type" name="product_type_hidden">
+                        </div>
                     </div>
 
                     <!-- Temporary Plate Fields -->
                     <div class="refl-expand refl-tempPlateFields" style="display: none;">
-                        <div class="shopee-form-row align-top">
-                            <label class="shopee-form-label pt-3">Material *</label>
-                            <div class="shopee-opt-group shopee-form-field">
-                                <label class="shopee-opt-btn"><input type="radio" name="temp_plate_material" value="Acrylic" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Acrylic</span></label>
-                                <label class="shopee-opt-btn"><input type="radio" name="temp_plate_material" value="Aluminum Sheet" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Aluminum Sheet</span></label>
-                                <label class="shopee-opt-btn" style="grid-column: span 2;"><input type="radio" name="temp_plate_material" value="Aluminum Coated (Steel Plate)" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Aluminum Coated (Steel Plate)</span></label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Material *</label>
+                            <div class="shopee-form-field">
+                                <div class="shopee-opt-group">
+                                    <label class="shopee-opt-btn"><input type="radio" name="temp_plate_material" value="Acrylic" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Acrylic</span></label>
+                                    <label class="shopee-opt-btn"><input type="radio" name="temp_plate_material" value="Aluminum Sheet" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Aluminum Sheet</span></label>
+                                    <label class="shopee-opt-btn" ><input type="radio" name="temp_plate_material" value="Aluminum Coated (Steel Plate)" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Aluminum Coated (Steel Plate)</span></label>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Plate Info *</label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Plate info *</label>
                             <div class="shopee-form-field">
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="">
                                     <div><label class="dim-label">Plate Number</label><input type="text" name="temp_plate_number" id="temp_plate_number" class="input-field" placeholder="Must match OR/CR"></div>
-                                    <div><label class="dim-label">Label</label><input type="text" name="temp_plate_text" class="input-field bg-gray-50" value="TEMPORARY PLATE" readonly></div>
+                                    <div><label class="dim-label">Label</label><input type="text" name="temp_plate_text" class="input-field bg-gray-50 bg-opacity-10" value="TEMPORARY PLATE" readonly></div>
                                     <div><label class="dim-label">MV File No.</label><input type="text" name="mv_file_number" class="input-field" placeholder="Optional"></div>
                                     <div><label class="dim-label">Dealer Name</label><input type="text" name="dealer_name" class="input-field" placeholder="Optional"></div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Order Details *</label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Needed date *</label>
                             <div class="shopee-form-field">
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="dim-label">Needed Date</label>
-                                        <input type="date" id="needed_date_temp" class="input-field" min="<?php echo date('Y-m-d'); ?>">
-                                    </div>
-                                    <div>
-                                        <label class="dim-label">Quantity</label>
-                                        <div class="shopee-qty-control">
-                                            <button type="button" onclick="reflQtyDownTemp()" class="shopee-qty-btn">−</button>
-                                            <input type="number" id="quantity_temp" class="shopee-qty-input" min="1" value="<?php echo (int)($_GET['qty'] ?? 1); ?>" oninput="reflQtyClampTemp()">
-                                            <button type="button" onclick="reflQtyUpTemp()" class="shopee-qty-btn">+</button>
-                                        </div>
-                                    </div>
+                                <input type="date" id="needed_date_temp" class="input-field" min="<?php echo date('Y-m-d'); ?>" style="max-width: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Quantity *</label>
+                            <div class="shopee-form-field">
+                                <div class="shopee-qty-control">
+                                    <button type="button" onclick="reflQtyDownTemp()" class="shopee-qty-btn">−</button>
+                                    <input type="number" id="quantity_temp" class="shopee-qty-input" min="1" max="999" value="<?php echo (int)($_GET['qty'] ?? 1); ?>" oninput="reflQtyClampTemp()">
+                                    <button type="button" onclick="reflQtyUpTemp()" class="shopee-qty-btn">+</button>
                                 </div>
                             </div>
                         </div>
@@ -148,62 +145,84 @@ $dimension_presets = [
 
                     <!-- Gate Pass Fields -->
                     <div class="refl-expand refl-gatePassFields" style="display: none;">
-                        <div class="shopee-form-row">
+                        <div class="shopee-form-row shopee-form-row-flat">
                             <label class="shopee-form-label">Subdivision *</label>
-                            <input type="text" name="gate_pass_subdivision" id="gate_pass_subdivision" class="input-field shopee-form-field" placeholder="e.g. GREEN VALLEY SUBDIVISION">
+                            <div class="shopee-form-field">
+                                <input type="text" name="gate_pass_subdivision" id="gate_pass_subdivision" class="input-field" placeholder="e.g. GREEN VALLEY SUBDIVISION" style="">
+                            </div>
                         </div>
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Gate Pass *</label>
-                            <div class="shopee-form-field grid grid-cols-2 gap-4">
-                                <div><label class="dim-label">Pass Number</label><input type="text" name="gate_pass_number" id="gate_pass_number" class="input-field" placeholder="e.g. GP-0215"></div>
-                                <div><label class="dim-label">Plate Number</label><input type="text" name="gate_pass_plate" id="gate_pass_plate" class="input-field" placeholder="e.g. ABC 1234"></div>
-                                <div><label class="dim-label">Validity Year</label><input type="text" name="gate_pass_year" id="gate_pass_year" class="input-field" placeholder="e.g. 2026"></div>
-                                <div><label class="dim-label">Vehicle Type</label><select name="gate_pass_vehicle_type" class="input-field"><option value="">Select</option><option value="Car">Car</option><option value="Motorcycle">Motorcycle</option></select></div>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Gate pass *</label>
+                            <div class="shopee-form-field">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="">
+                                    <div><label class="dim-label">Pass Number</label><input type="text" name="gate_pass_number" id="gate_pass_number" class="input-field" placeholder="e.g. GP-0215"></div>
+                                    <div><label class="dim-label">Plate Number</label><input type="text" name="gate_pass_plate" id="gate_pass_plate" class="input-field" placeholder="e.g. ABC 1234"></div>
+                                    <div><label class="dim-label">Validity Year</label><input type="text" name="gate_pass_year" id="gate_pass_year" class="input-field" placeholder="e.g. 2026"></div>
+                                    <div><label class="dim-label">Vehicle Type</label><select name="gate_pass_vehicle_type" class="input-field"><option value="">Select</option><option value="Car">Car</option><option value="Motorcycle">Motorcycle</option></select></div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Size (IN) *</label>
-                            <div class="shopee-form-field flex items-center gap-3">
-                                <div class="flex-1"><label class="dim-label">Width</label><input type="text" id="dimensions_gatepass_w" class="input-field" placeholder="e.g. 10"></div>
-                                <div class="pt-5 font-bold text-gray-300">×</div>
-                                <div class="flex-1"><label class="dim-label">Height</label><input type="text" id="dimensions_gatepass_h" class="input-field" placeholder="e.g. 12"></div>
-                            </div>
-                        </div>
-
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Logo/File *</label>
-                            <input type="file" name="gate_pass_logo" id="gate_pass_logo" accept=".jpg,.jpeg,.png,.pdf" class="input-field shopee-form-field">
-                        </div>
-
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Order Details *</label>
-                            <div class="shopee-form-field grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="dim-label">Needed Date</label>
-                                    <input type="date" id="needed_date" class="input-field" min="<?php echo date('Y-m-d'); ?>">
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Dimensions (in) *</label>
+                            <div class="shopee-form-field">
+                                <div class="shopee-opt-group mb-4">
+                                    <button type="button" class="shopee-opt-btn" data-width="3" data-height="3" onclick="reflGatePassSelectDimension(3, 3, event)">3×3 in</button>
+                                    <button type="button" class="shopee-opt-btn" data-width="4" data-height="4" onclick="reflGatePassSelectDimension(4, 4, event)">4×4 in</button>
+                                    <button type="button" class="shopee-opt-btn" data-width="5" data-height="5" onclick="reflGatePassSelectDimension(5, 5, event)">5×5 in</button>
+                                    <button type="button" class="shopee-opt-btn" id="gatepass-dim-others-btn" onclick="reflGatePassSelectDimensionOthers(event)">Others</button>
                                 </div>
-                                <div>
-                                    <label class="dim-label">Quantity</label>
-                                    <div class="shopee-qty-control">
-                                        <button type="button" onclick="reflQtyDown()" class="shopee-qty-btn">−</button>
-                                        <input type="number" id="quantity" class="shopee-qty-input" min="1" value="<?php echo (int)($_GET['qty'] ?? 1); ?>" oninput="reflQtyClamp()">
-                                        <button type="button" onclick="reflQtyUp()" class="shopee-qty-btn">+</button>
+                                <input type="hidden" name="gatepass_width" id="gatepass_width_hidden">
+                                <input type="hidden" name="gatepass_height" id="gatepass_height_hidden">
+                                
+                                <div id="gatepass-dim-others-inputs" style="display:none;border-top:1px dashed #eee;padding-top:1rem;margin-top:1rem">
+                                    <div style="width:100%;max-width:440px">
+                                        <div style="display:flex;gap:8px;margin-bottom:4px">
+                                            <div style="flex:1"><label class="dim-label">Width</label></div>
+                                            <div style="width:32px"></div>
+                                            <div style="flex:1"><label class="dim-label">Height</label></div>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <div style="flex:1"><input type="text" id="dimensions_gatepass_w" class="input-field" placeholder="e.g. 10" oninput="reflGatePassSyncOthers()"></div>
+                                            <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
+                                            <div style="flex:1"><input type="text" id="dimensions_gatepass_h" class="input-field" placeholder="e.g. 12" oninput="reflGatePassSyncOthers()"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Upload Design *</label>
+                            <div class="shopee-form-field">
+                                <input type="file" name="gate_pass_logo" id="gate_pass_logo" accept=".jpg,.jpeg,.png,.pdf" class="input-field" style="max-width: 300px; padding: 0.5rem;">
+                            </div>
+                        </div>
+
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Needed date *</label>
+                            <div class="shopee-form-field">
+                                <input type="date" id="needed_date" class="input-field" min="<?php echo date('Y-m-d'); ?>" style="max-width: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Quantity *</label>
+                            <div class="shopee-form-field">
+                                <div class="shopee-qty-control">
+                                    <button type="button" onclick="reflQtyDown()" class="shopee-qty-btn">−</button>
+                                    <input type="number" id="quantity" class="shopee-qty-input" min="1" max="999" value="<?php echo (int)($_GET['qty'] ?? 1); ?>" oninput="reflQtyClamp()">
+                                    <button type="button" onclick="reflQtyUp()" class="shopee-qty-btn">+</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="reflNotesSection" class="shopee-form-row pt-4" style="display:none;">
-                        <label class="shopee-form-label">Notes</label>
-                        <textarea id="notes_shared" rows="2" class="input-field shopee-form-field" placeholder="Any special requests?"></textarea>
-                    </div>
 
                     <!-- Custom Reflectorized Sign Section -->
                     <div id="reflCustomSection" class="refl-expand" style="display: none;">
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label pt-2">Dimensions *</label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Dimensions *</label>
                             <div class="shopee-form-field">
                                 <div class="shopee-opt-group mb-3">
                                     <?php foreach($dimension_presets as $label => $d): ?>
@@ -218,64 +237,81 @@ $dimension_presets = [
                                     </label>
                                 </div>
                                 <input type="hidden" id="reflDimensionsHidden">
-                                <div id="reflDimOthersWrap" class="flex items-center gap-3 border-t border-dashed border-gray-100 pt-4 mt-4" style="display: none;">
-                                    <div class="flex-1 text-center"><label class="dim-label">Width</label><input type="text" id="reflDimOthersW" class="input-field" placeholder="e.g. 10" oninput="reflSyncDimOthers()"></div>
-                                    <div class="pt-5 font-bold text-gray-300">×</div>
-                                    <div class="flex-1 text-center"><label class="dim-label">Height</label><input type="text" id="reflDimOthersH" class="input-field" placeholder="e.g. 14" oninput="reflSyncDimOthers()"></div>
+                                <div id="reflDimOthersWrap" style="display:none;border-top:1px dashed #eee;padding-top:1rem;margin-top:1rem">
+                                    <div style="width:100%;max-width:440px">
+                                        <div style="display:flex;gap:8px;margin-bottom:4px">
+                                            <div style="flex:1"><label class="dim-label">Width</label></div>
+                                            <div style="width:32px"></div>
+                                            <div style="flex:1"><label class="dim-label">Height</label></div>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <div style="flex:1"><input type="text" id="reflDimOthersW" class="input-field" placeholder="e.g. 10" oninput="reflSyncDimOthers()"></div>
+                                            <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
+                                            <div style="flex:1"><input type="text" id="reflDimOthersH" class="input-field" placeholder="e.g. 14" oninput="reflSyncDimOthers()"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label pt-2">Laminate *</label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Laminate *</label>
                             <div class="shopee-opt-group shopee-form-field">
                                 <label class="shopee-opt-btn"><input type="radio" name="laminate_option" value="With Laminate" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>With Lamination</span></label>
                                 <label class="shopee-opt-btn"><input type="radio" name="laminate_option" value="Without Laminate" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Without Lamination</span></label>
                             </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label pt-2">Layout *</label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Layout *</label>
                             <div class="shopee-opt-group shopee-form-field">
                                 <label class="shopee-opt-btn"><input type="radio" name="layout" value="With Layout" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>With Layout</span></label>
                                 <label class="shopee-opt-btn"><input type="radio" name="layout" value="Without Layout" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Without Layout</span></label>
                             </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label pt-2">Brand *</label>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Brand *</label>
                             <div class="shopee-opt-group shopee-form-field">
-                                <label class="shopee-opt-btn"><input type="radio" name="material_type" value="Kiwalite (Japan Brand)" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Kiwalite</span></label>
-                                <label class="shopee-opt-btn"><input type="radio" name="material_type" value="3M Brand" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>3M Brand</span></label>
+                                <label class="shopee-opt-btn" ><input type="radio" name="material_type" value="Kiwalite (Japan Brand)" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>Kiwalite (Japan Brand)</span></label>
+                                <label class="shopee-opt-btn" ><input type="radio" name="material_type" value="3M Brand" style="display:none;" onchange="reflUpdateOptionVisuals(this)"> <span>3M Brand</span></label>
                             </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Design *</label>
-                            <input type="file" name="signage_logo" id="signage_logo" accept=".jpg,.jpeg,.png,.pdf" class="input-field shopee-form-field">
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Upload Design *</label>
+                            <div class="shopee-form-field">
+                                <input type="file" name="signage_logo" id="signage_logo" accept=".jpg,.jpeg,.png,.pdf" class="input-field" style="max-width: 300px; padding: 0.5rem;">
+                            </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Order Details *</label>
-                            <div class="shopee-form-field grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="dim-label">Needed Date</label>
-                                    <input type="date" id="needed_date_custom" class="input-field" min="<?php echo date('Y-m-d'); ?>">
-                                </div>
-                                <div>
-                                    <label class="dim-label">Quantity</label>
-                                    <div class="shopee-qty-control">
-                                        <button type="button" onclick="reflQtyDownCustom()" class="shopee-qty-btn">−</button>
-                                        <input type="number" id="quantity_custom" class="shopee-qty-input" min="1" value="<?php echo (int)($_GET['qty'] ?? 1); ?>" oninput="reflQtyClampCustom()">
-                                        <button type="button" onclick="reflQtyUpCustom()" class="shopee-qty-btn">+</button>
-                                    </div>
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Needed date *</label>
+                            <div class="shopee-form-field">
+                                <input type="date" id="needed_date_custom" class="input-field" min="<?php echo date('Y-m-d'); ?>" style="max-width: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="shopee-form-row shopee-form-row-flat">
+                            <label class="shopee-form-label">Quantity *</label>
+                            <div class="shopee-form-field">
+                                <div class="shopee-qty-control">
+                                    <button type="button" onclick="reflQtyDownCustom()" class="shopee-qty-btn">−</button>
+                                    <input type="number" id="quantity_custom" class="shopee-qty-input" min="1" max="999" value="<?php echo (int)($_GET['qty'] ?? 1); ?>" oninput="reflQtyClampCustom()">
+                                    <button type="button" onclick="reflQtyUpCustom()" class="shopee-qty-btn">+</button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="shopee-form-row">
-                            <label class="shopee-form-label">Notes</label>
-                            <textarea id="notes_custom" rows="2" class="input-field shopee-form-field" placeholder="Any special requests?"></textarea>
+                    </div>
+
+                    <div id="reflNotesSection" class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
+                        <label class="shopee-form-label" style="padding-top: 0.75rem;">Notes</label>
+                        <div class="shopee-form-field">
+                            <div style="display:flex; justify-content:flex-end; margin-bottom: 0.25rem;">
+                                <span id="refl-notes-counter" style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">0 / 500</span>
+                            </div>
+                            <textarea id="notes_global" rows="3" class="input-field" placeholder="Any special requests or instructions..." maxlength="500" oninput="reflUpdateNotesCounter(this)"></textarea>
                         </div>
                     </div>
 
@@ -288,11 +324,14 @@ $dimension_presets = [
                     <input type="hidden" name="unit" id="unit_submit" value="in">
 
                     <div class="shopee-form-row pt-8">
-                        <div style="width: 130px;"></div>
+                        <div style="width: 160px;" class="hidden md:block"></div>
                         <div class="flex gap-4 flex-1">
-                            <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex:1; text-align: center; line-height: 2.2;">Back</a>
-                            <button type="button" onclick="reflSubmitOrder('add_to_cart')" class="shopee-btn-outline" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;" title="Add to Cart"><svg style="width:1.25rem;height:1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            <button type="button" onclick="reflSubmitOrder('buy_now')" class="shopee-btn-primary" style="flex:1.5;">Buy Now</button>
+                            <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">Back</a>
+                            <button type="button" onclick="reflSubmitOrder('add_to_cart')" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700;" title="Add to Cart">
+                                <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Add To Cart
+                            </button>
+                            <button type="button" onclick="reflSubmitOrder('buy_now')" class="shopee-btn-primary" style="flex: 1.5; height: 3.5rem; font-size: 1.1rem; font-weight: 800;">Buy Now</button>
                         </div>
                     </div>
                 </form>
@@ -302,6 +341,38 @@ $dimension_presets = [
 </div>
 
 <script>
+let gatepassDimMode = 'preset';
+
+function reflGatePassSelectDimension(w, h, e) {
+    e.preventDefault();
+    gatepassDimMode = 'preset';
+    const btnGroup = e.target.closest('.shopee-opt-group');
+    btnGroup.querySelectorAll('.shopee-opt-btn').forEach(b => b.classList.remove('active'));
+    const b = e.target.closest('.shopee-opt-btn');
+    if(b) b.classList.add('active');
+    document.getElementById('gatepass-dim-others-inputs').style.display = 'none';
+    document.getElementById('gatepass_width_hidden').value = w;
+    document.getElementById('gatepass_height_hidden').value = h;
+    document.getElementById('dimensions_gatepass_w').value = w;
+    document.getElementById('dimensions_gatepass_h').value = h;
+}
+
+function reflGatePassSelectDimensionOthers(e) {
+    e.preventDefault();
+    gatepassDimMode = 'others';
+    const btnGroup = e.target.closest('.shopee-opt-group');
+    btnGroup.querySelectorAll('.shopee-opt-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('gatepass-dim-others-btn').classList.add('active');
+    document.getElementById('gatepass-dim-others-inputs').style.display = 'block';
+    reflGatePassSyncOthers();
+}
+
+function reflGatePassSyncOthers() {
+    let w = document.getElementById('dimensions_gatepass_w').value.trim();
+    let h = document.getElementById('dimensions_gatepass_h').value.trim();
+    document.getElementById('gatepass_width_hidden').value = w;
+    document.getElementById('gatepass_height_hidden').value = h;
+}
 let reflLastSelectedType = '';
 window.__reflValidationTriggered = false;
 
@@ -398,8 +469,8 @@ function reflCheckFormValid() {
         const num = document.getElementById('gate_pass_number').value.trim();
         const gplate = document.getElementById('gate_pass_plate').value.trim();
         const year = document.getElementById('gate_pass_year').value.trim();
-        const w = document.getElementById('dimensions_gatepass_w').value.trim();
-        const h = document.getElementById('dimensions_gatepass_h').value.trim();
+        const w = document.getElementById('gatepass_width_hidden').value.trim();
+        const h = document.getElementById('gatepass_height_hidden').value.trim();
         const file = document.getElementById('gate_pass_logo').files.length > 0;
         const nd = document.getElementById('needed_date').value;
         const cFields = document.querySelector('.refl-gatePassFields');
@@ -410,7 +481,7 @@ function reflCheckFormValid() {
             else if (!num) msg = 'Please enter gate pass number';
             else if (!gplate) msg = 'Please enter plate number';
             else if (!year) msg = 'Please enter year/validity';
-            else if (!w || !h) msg = 'Please enter dimensions';
+            else if (!w || !h) msg = 'Please select or enter dimensions';
             else if (!file) msg = 'Please upload a design file';
             else if (!nd) msg = 'Please select a needed date';
             reflSetFieldError(cFields, msg);
@@ -444,7 +515,7 @@ function reflCheckFormValid() {
 function reflToggleProductFields() {
     const type = document.getElementById('refl_product_type').value;
     document.querySelectorAll('.refl-expand').forEach(el => el.style.display = 'none');
-    document.getElementById('reflNotesSection').style.display = 'none';
+    // Global notes section is always visible now as it moved to the bottom
 
     // Reset required attributes first
     document.querySelectorAll('.refl-form input, .refl-form select, .refl-form textarea').forEach(el => {
@@ -455,12 +526,10 @@ function reflToggleProductFields() {
 
     if (type === 'Plate Number / Temporary Plate') {
         document.querySelector('.refl-tempPlateFields').style.display = 'block';
-        document.getElementById('reflNotesSection').style.display = 'block';
         document.getElementById('temp_plate_number').setAttribute('required', 'required');
         document.getElementById('needed_date_temp').setAttribute('required', 'required');
     } else if (type === 'Subdivision / Gate Pass (Vehicle Sticker)') {
         document.querySelector('.refl-gatePassFields').style.display = 'block';
-        document.getElementById('reflNotesSection').style.display = 'block';
         document.getElementById('gate_pass_subdivision').setAttribute('required', 'required');
         document.getElementById('gate_pass_number').setAttribute('required', 'required');
         document.getElementById('gate_pass_plate').setAttribute('required', 'required');
@@ -495,20 +564,20 @@ function reflSubmitOrder(action) {
     const form = document.getElementById('reflectorizedForm');
     const type = document.getElementById('refl_product_type').value;
 
+    const globalNotes = document.getElementById('notes_global').value;
+    document.getElementById('notes_hidden').value = globalNotes;
+
     if (type === 'Plate Number / Temporary Plate') {
         document.getElementById('quantity_hidden').value = document.getElementById('quantity_temp').value;
         document.getElementById('needed_date_hidden').value = document.getElementById('needed_date_temp').value;
-        document.getElementById('notes_hidden').value = document.getElementById('notes_shared').value;
         document.getElementById('dimensions_submit').value = 'Standard';
     } else if (type === 'Subdivision / Gate Pass (Vehicle Sticker)') {
         document.getElementById('quantity_hidden').value = document.getElementById('quantity').value;
         document.getElementById('needed_date_hidden').value = document.getElementById('needed_date').value;
-        document.getElementById('notes_hidden').value = document.getElementById('notes_shared').value;
         document.getElementById('dimensions_submit').value = document.getElementById('dimensions_gatepass_w').value + ' x ' + document.getElementById('dimensions_gatepass_h').value;
     } else if (type === 'Custom Reflectorized Sign') {
         document.getElementById('quantity_hidden').value = document.getElementById('quantity_custom').value;
         document.getElementById('needed_date_hidden').value = document.getElementById('needed_date_custom').value;
-        document.getElementById('notes_hidden').value = document.getElementById('notes_custom').value;
         document.getElementById('dimensions_submit').value = document.getElementById('reflDimensionsHidden').value;
     }
 
@@ -541,7 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
-.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
+.dim-label { font-size: 0.70rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
+.dim-sep { height: 44px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
 .refl-expand { display: flex; flex-direction: column; gap: 0rem; }
 .shopee-form-row.align-top { align-items: flex-start; }
 </style>

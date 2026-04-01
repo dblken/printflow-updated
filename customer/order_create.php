@@ -13,9 +13,18 @@ $product_id = $_GET['product_id'] ?? 0;
 $product = null;
 
 if ($product_id) {
-    $result = db_query("SELECT * FROM products WHERE product_id = ? AND status = 'Activated'", 'i', [$product_id]);
+    $result = db_query("
+        SELECT p.*,
+        (SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE oi.product_id = p.product_id AND o.status IN ('Completed', 'Delivered')) as sold_count,
+        (SELECT COUNT(*) FROM reviews r WHERE r.reference_id = p.product_id AND r.review_type = 'product') as review_count,
+        (SELECT AVG(rating) FROM reviews r WHERE r.reference_id = p.product_id AND r.review_type = 'product') as avg_rating
+        FROM products p 
+        WHERE p.product_id = ? AND p.status = 'Activated'", 'i', [$product_id]);
     if (!empty($result)) {
         $product = $result[0];
+        // Ensure sold_count is at least review_count for consistency
+        $product['sold_count'] = max((int)$product['sold_count'], (int)$product['review_count']);
+        
         if (isset($product['category'])) {
             $cat_lower = strtolower($product['category']);
             if (strpos($cat_lower, 'shirt') !== false) {
@@ -304,8 +313,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="shopee-card">
             <!-- Left Side: Image -->
             <div class="shopee-image-section">
-                <div class="sticky top-24">
-                    <div class="shopee-main-image-wrap">
+                <div class="shopee-main-image-wrap">
                         <?php 
                         $display_img = "";
                         // 1. Try photo_path first
@@ -333,7 +341,6 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="w-full h-full flex items-center justify-center bg-gray-50 text-5xl">📦</div>
                         <?php endif; ?>
                     </div>
-                </div>
             </div>
 
             <!-- Right Side: Product Details & Form -->
@@ -342,11 +349,34 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="mb-6 pb-6 border-b border-gray-100">
                     <h1 class="text-2xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($product['name']); ?></h1>
                     
-                    <div class="text-3xl font-bold text-blue-600 mb-4">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex items-center gap-1">
+                            <span class="text-blue-600 font-bold border-b border-blue-600"><?php echo number_format($product['avg_rating'] ?: 0, 1); ?></span>
+                            <div class="flex">
+                                <?php for($i=1; $i<=5; $i++): ?>
+                                    <svg class="h-4 w-4" fill="<?php echo ($i <= round($product['avg_rating'])) ? '#3b82f6' : '#e5e7eb'; ?>" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    </svg>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <div class="h-4 w-px bg-gray-300"></div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-gray-900 font-bold border-b border-gray-900"><?php echo (int)($product['review_count'] ?: 0); ?></span>
+                            <span class="text-gray-500 text-sm">Ratings</span>
+                        </div>
+                        <div class="h-4 w-px bg-gray-300"></div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-gray-900 font-bold"><?php echo (int)($product['sold_count'] ?: 0); ?></span>
+                            <span class="text-gray-500 text-sm">Sold</span>
+                        </div>
+                    </div>
+
+                    <div class="text-3xl font-bold text-blue-600 mb-6">
                         <?php echo format_currency($product['price']); ?>
                     </div>
 
-                    <div class="text-sm text-gray-600 leading-relaxed mb-4">
+                    <div class="text-sm text-gray-600 leading-relaxed mb-6">
                         <?php echo nl2br(htmlspecialchars($product['description'])); ?>
                     </div>
                     
@@ -1016,6 +1046,12 @@ require_once __DIR__ . '/../includes/header.php';
                 return baseRate;
             },
 
+            charCounter(id) {
+                const el = document.getElementById(id);
+                if (!el) return '0 / 500';
+                return el.value.length + ' / 500';
+            },
+
             validateStepForward() {
                 const currentStepEl = this.$el.querySelector(`[x-show="step === ${this.step}"]`);
                 if (!currentStepEl) {
@@ -1024,9 +1060,21 @@ require_once __DIR__ . '/../includes/header.php';
                 }
 
                 // Check standard inputs
-                const inputs = currentStepEl.querySelectorAll('input[required], select[required], textarea[required]');
                 let isValid = true;
                 
+                // Dimension Validation (100 limit)
+                const dims = currentStepEl.querySelectorAll('input[type="number"][name*="width"], input[type="number"][name*="height"], input[type="number"][name*="custom_"]');
+                dims.forEach(d => {
+                    const val = parseFloat(d.value);
+                    if (val > 100) {
+                        isValid = false;
+                        d.setCustomValidity('Maximum size is 100.');
+                    } else {
+                        d.setCustomValidity('');
+                    }
+                });
+
+                const inputs = currentStepEl.querySelectorAll('input[required], select[required], textarea[required]');
                 inputs.forEach(input => {
                     if (!input.checkValidity()) {
                         input.reportValidity();
@@ -1045,11 +1093,23 @@ require_once __DIR__ . '/../includes/header.php';
 
             checkFinalValidation(e) {
                 const form = document.getElementById('customization-form');
+                
+                // Final Dimension Check
+                const dims = form.querySelectorAll('input[name*="width"], input[name*="height"], input[name*="custom_"]');
+                dims.forEach(d => {
+                    const val = parseFloat(d.value);
+                    if (val > 100) {
+                        d.setCustomValidity('Maximum size is 100.');
+                    } else {
+                        d.setCustomValidity('');
+                    }
+                });
+
                 if (!form.checkValidity()) {
                     e.preventDefault();
                     form.reportValidity();
                     // If invalid, find which step has the error and jump to it
-                    const allInputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+                    const allInputs = form.querySelectorAll('input, select, textarea');
                     for (let input of allInputs) {
                         if (!input.checkValidity()) {
                             // Find parent step
@@ -1058,7 +1118,10 @@ require_once __DIR__ . '/../includes/header.php';
                                 const stepMatch = parent.getAttribute('x-show').match(/step === (\d+)/);
                                 if (stepMatch) {
                                     this.step = parseInt(stepMatch[1]);
-                                    setTimeout(() => input.reportValidity(), 100);
+                                    setTimeout(() => {
+                                        input.reportValidity();
+                                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }, 100);
                                     break;
                                 }
                             }
