@@ -12,9 +12,9 @@ $error = '';
 
 // Common Sintraboard dimension presets (inches)
 $dimension_presets = [
-    '12 x 18' => ['w' => 12, 'h' => 18],
-    '18 x 24' => ['w' => 18, 'h' => 24],
-    '24 x 36' => ['w' => 24, 'h' => 36],
+    '12 × 18' => ['w' => 12, 'h' => 18],
+    '18 × 24' => ['w' => 18, 'h' => 24],
+    '24 × 36' => ['w' => 24, 'h' => 36],
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -31,18 +31,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantity = (int)($_POST['quantity'] ?? 1);
     $quantity = max(1, min(999, $quantity));
 
-    $valid_types = ['Flat Type', '2D Type (with Frame)', 'Standee (Back Stand Support)'];
+    $valid_types = ['Flat type', '2D type (with frame)', 'Standee (back stand support)'];
     if ($branch_id < 1) {
         $error = 'Please select a branch.';
     } elseif (empty($sintra_type) || !in_array($sintra_type, $valid_types, true)) {
-        $error = 'Please select a Sintraboard Type.';
+        $error = 'Please select a sintraboard type.';
     } elseif ($dimensions === '') {
         $error = 'Please specify dimensions.';
     } elseif ($unit === '' || !in_array($unit, ['in', 'ft'], true)) {
         $error = 'Please select a unit.';
-    } elseif ($lamination === '' || !in_array($lamination, ['With Lamination', 'Without Lamination'], true)) {
+    } elseif ($lamination === '' || !in_array($lamination, ['With lamination', 'Without lamination'], true)) {
         $error = 'Please select lamination.';
-    } elseif ($layout === '' || !in_array($layout, ['With Layout', 'Without Layout'], true)) {
+    } elseif ($layout === '' || !in_array($layout, ['With layout', 'Without layout'], true)) {
         $error = 'Please select layout.';
     } elseif ($thickness === '' || !in_array($thickness, ['3mm', '5mm', '10mm'], true)) {
         $error = 'Please select thickness.';
@@ -89,9 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['cart'] = [];
                 }
 
-                $product_id = ($sintra_type === 'Flat Type') ? 51 : 54;
+                $product_id = ($sintra_type === 'Flat type') ? 51 : 54;
                 $product_name = $sintra_type;
-                $sintra_price = ($sintra_type === 'Flat Type') ? 150.00 : 800.00;
+                $sintra_price = ($sintra_type === 'Flat type') ? 150.00 : 800.00;
 
                 $item_key = $product_id . '_' . time();
                 $_SESSION['cart'][$item_key] = [
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'source_page'      => 'services',
                     'branch_id'        => $branch_id,
                     'name'             => $product_name,
-                    'category'         => 'Sintraboard Standees',
+                    'category'         => 'Sintraboard standees',
                     'price'            => $sintra_price,
                     'quantity'         => $quantity,
                     'image'            => '📦',
@@ -162,7 +162,7 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
         <div class="text-sm text-gray-500 mb-6 flex items-center gap-2">
             <a href="services.php" class="hover:text-blue-600">Services</a>
             <span>/</span>
-            <span class="font-semibold text-gray-900">Sintraboard & Standees</span>
+            <span class="font-semibold text-gray-900">Sintraboard & standees</span>
         </div>
 
         <?php if ($error): ?>
@@ -173,12 +173,13 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
             <!-- Left Side: Image -->
             <div class="shopee-image-section">
                 <div class="shopee-main-image-wrap">
-                        <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Sintraboard'); ?>" alt="Sintraboard & Standees" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Sintraboard'">
-                    </div>
+                    <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Sintraboard'); ?>" alt="Sintraboard & Standees" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Sintraboard'">
                 </div>
+            </div>
+            
             <!-- Right Side: Form -->
             <div class="shopee-form-section">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Sintraboard & Standees</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Sintraboard & standees</h1>
                 
                 <?php
                 $stats = service_order_get_page_stats('order_sintraboard');
@@ -186,10 +187,6 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                 $review_count = (int)($stats['review_count'] ?? 0);
                 $sold_count = (int)($stats['sold_count'] ?? 0);
                 $sold_display = $sold_count >= 1000 ? number_format($sold_count / 1000, 1) . 'k' : $sold_count;
-                
-                $_s_name = 'PrintFlow Service';
-                $_s_row = db_query("SELECT name FROM services WHERE customer_link LIKE '%order_sintraboard%' LIMIT 1");
-                if(!empty($_s_row)) { $_s_name = $_s_row[0]['name']; }
                 ?>
                 <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
                     <div class="flex items-center gap-1">
@@ -211,11 +208,11 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                 <div class="shopee-form-row shopee-form-row-flat">
                     <label class="shopee-form-label">Branch *</label>
                     <div class="shopee-form-field">
-                        <div class="shopee-opt-group">
+                        <div class="shopee-opt-group opt-grid-3">
                             <?php foreach ($branches as $b): ?>
                                 <label class="shopee-opt-btn" >
                                     <input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
-                                    <span><?php echo htmlspecialchars($b['branch_name']); ?></span>
+                                    <span><?php echo htmlspecialchars(to_sentence_case($b['branch_name'])); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -227,18 +224,22 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                     <div class="shopee-form-field">
                         <div class="shopee-opt-group">
                             <?php
-                            $types = ['Flat Type', '2D Type (with Frame)', 'Standee (Back Stand Support)'];
-                            $type_info = [
-                                'Flat Type' => 'A standard flat sintraboard panel ideal for wall signs, labels, and simple display boards.',
-                                '2D Type (with Frame)' => 'A framed 2D board with cleaner edge presentation, great for more premium display use.',
-                                'Standee (Back Stand Support)' => 'A freestanding board with rear support so it can stand on floors or counters without wall mounting.',
+                            $types = [
+                                'Flat type' => 'Flat type',
+                                '2D type (with frame)' => '2D type (with frame)',
+                                'Standee (back stand support)' => 'Standee (back stand support)'
                             ];
-                            foreach ($types as $t):
-                                $checked = ($sel_type === $t) ? 'checked' : '';
+                            $type_info = [
+                                'Flat type' => 'A standard flat sintraboard panel ideal for wall signs, labels, and simple display boards.',
+                                '2D type (with frame)' => 'A framed 2D board with cleaner edge presentation, great for more premium display use.',
+                                'Standee (back stand support)' => 'A freestanding board with rear support so it can stand on floors or counters without wall mounting.',
+                            ];
+                            foreach ($types as $val => $label):
+                                $checked = ($sel_type === $val || (strtolower($sel_type) === strtolower($val))) ? 'checked' : '';
                             ?>
-                            <label class="shopee-opt-btn sintra-type-row" data-info-title="<?php echo htmlspecialchars($t); ?>" data-info-body="<?php echo htmlspecialchars($type_info[$t] ?? ''); ?>" style="min-width: 250px;">
-                                <input type="radio" name="sintra_type" value="<?php echo htmlspecialchars($t); ?>" style="display:none;" <?php echo $checked; ?> onchange="sintraUpdateOptionVisuals(this)">
-                                <span><?php echo htmlspecialchars($t); ?></span>
+                            <label class="shopee-opt-btn sintra-type-row" data-info-title="<?php echo htmlspecialchars($label); ?>" data-info-body="<?php echo htmlspecialchars($type_info[$val] ?? ''); ?>" style="min-width: 250px;">
+                                <input type="radio" name="sintra_type" value="<?php echo htmlspecialchars($val); ?>" style="display:none;" <?php echo $checked; ?> onchange="sintraUpdateOptionVisuals(this)">
+                                <span><?php echo htmlspecialchars($label); ?></span>
                             </label>
                             <?php endforeach; ?>
                         </div>
@@ -262,7 +263,7 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                         </div>
                         <input type="hidden" name="dimensions" id="sintra_dimensions" value="<?php echo htmlspecialchars($_POST['dimensions'] ?? ''); ?>">
                         
-                        <div id="sintraDimOthersWrap" style="display:none;border-top:1px dashed #eee;padding-top:1rem;margin-top:1rem">
+                        <div id="sintraDimOthersWrap" style="display:none;border-top:1px dashed rgba(255,255,255,0.1);padding-top:1rem;margin-top:1rem">
                             <div style="width:100%;max-width:440px">
                                 <div style="display:flex;gap:8px;margin-bottom:4px">
                                     <div style="flex:1"><label class="dim-label">Width <span class="sintra-dim-others-unit"></span></label></div>
@@ -270,19 +271,19 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                                     <div style="flex:1"><label class="dim-label">Height <span class="sintra-dim-others-unit"></span></label></div>
                                 </div>
                                 <div style="display:flex;align-items:center;gap:8px">
-                                    <div style="flex:1">
-                                        <input type="text" id="sintra_dim_other_w" class="input-field" inputmode="decimal" placeholder="e.g. 10" value="<?php echo htmlspecialchars($other_w); ?>" oninput="sintraSyncDimOthers()">
-                                    </div>
-                                    <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
-                                    <div style="flex:1">
-                                        <input type="text" id="sintra_dim_other_h" class="input-field" inputmode="decimal" placeholder="e.g. 12" value="<?php echo htmlspecialchars($other_h); ?>" oninput="sintraSyncDimOthers()">
-                                    </div>
+                                        <div style="flex:1">
+                                            <input type="number" id="sintra_dim_other_w" class="input-field" placeholder="0" value="<?php echo htmlspecialchars($other_w); ?>" oninput="sintraSyncDimOthers()" data-dimension min="1" max="100">
+                                        </div>
+                                        <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
+                                        <div style="flex:1">
+                                            <input type="number" id="sintra_dim_other_h" class="input-field" placeholder="0" value="<?php echo htmlspecialchars($other_h); ?>" oninput="sintraSyncDimOthers()" data-dimension min="1" max="100">
+                                        </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-4">
-                            <label class="dim-label mb-2">Select Unit</label>
+                            <label class="dim-label mb-2">Select unit</label>
                             <div class="shopee-opt-group">
                                 <label class="shopee-opt-btn">
                                     <input type="radio" name="unit" value="in" required <?php echo $sel_unit === 'in' ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
@@ -301,12 +302,12 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                     <label class="shopee-form-label">Laminate *</label>
                     <div class="shopee-opt-group shopee-form-field">
                         <label class="shopee-opt-btn">
-                            <input type="radio" name="lamination" value="With Lamination" required <?php echo $sel_lamination === 'With Lamination' ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
-                            <span>With Lamination</span>
+                            <input type="radio" name="lamination" value="With lamination" required <?php echo ($sel_lamination === 'With lamination' || $sel_lamination === 'With Lamination') ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
+                            <span>With lamination</span>
                         </label>
                         <label class="shopee-opt-btn">
-                            <input type="radio" name="lamination" value="Without Lamination" <?php echo $sel_lamination === 'Without Lamination' ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
-                            <span>Without Lamination</span>
+                            <input type="radio" name="lamination" value="Without lamination" <?php echo ($sel_lamination === 'Without lamination' || $sel_lamination === 'Without Lamination') ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
+                            <span>Without lamination</span>
                         </label>
                     </div>
                 </div>
@@ -315,12 +316,12 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                     <label class="shopee-form-label">Layout *</label>
                     <div class="shopee-opt-group shopee-form-field">
                         <label class="shopee-opt-btn">
-                            <input type="radio" name="layout" value="With Layout" required <?php echo $sel_layout === 'With Layout' ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
-                            <span>With Layout</span>
+                            <input type="radio" name="layout" value="With layout" required <?php echo ($sel_layout === 'With layout' || $sel_layout === 'With Layout') ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
+                            <span>With layout</span>
                         </label>
                         <label class="shopee-opt-btn">
-                            <input type="radio" name="layout" value="Without Layout" <?php echo $sel_layout === 'Without Layout' ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
-                            <span>Without Layout</span>
+                            <input type="radio" name="layout" value="Without layout" <?php echo ($sel_layout === 'Without layout' || $sel_layout === 'Without Layout') ? 'checked' : ''; ?> style="display:none;" onchange="sintraUpdateOptionVisuals(this)">
+                            <span>Without layout</span>
                         </label>
                     </div>
                 </div>
@@ -338,7 +339,7 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                 </div>
 
                     <div class="shopee-form-row shopee-form-row-flat">
-                        <label class="shopee-form-label">Upload Design *</label>
+                        <label class="shopee-form-label">Upload design *</label>
                         <div class="shopee-form-field">
                             <input type="file" name="design_file" id="design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" required style="max-width: 300px; padding: 0.5rem;">
                         </div>
@@ -365,23 +366,26 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
                 <div class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
                     <label class="shopee-form-label" style="padding-top: 0.75rem;">Notes</label>
                     <div class="shopee-form-field">
-                        <div style="display:flex; justify-content:flex-end; margin-bottom: 0.25rem; ">
-                            <span id="notes-counter" style="font-size: 0.7rem; color: var(--lp-muted); font-weight: 700;">0 / 500</span>
+                        <div style="display:flex; justify-content:flex-end; align-items:center; gap: 10px; margin-bottom: 0.5rem; width: 100%;">
+                            <span class="notes-warn">Max 500 characters</span>
+                            <span class="notes-counter">0 / 500</span>
                         </div>
-                        <textarea name="notes" id="notes-textarea" rows="3" class="input-field" placeholder="Any special requests?" maxlength="500" oninput="updateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
-                        <div id="notes-warn" class="text-xs font-bold mt-1" style="display:none; color: #ef4444;">Maximum characters reached.</div>
+                        <textarea id="notes_global" name="notes" rows="3" class="input-field notes-textarea-global" 
+                            placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                            maxlength="500" 
+                            oninput="reflUpdateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
                     </div>
                 </div>
 
                 <div class="shopee-form-row pt-8">
                     <div style="width: 160px;" class="hidden md:block"></div>
-                    <div class="flex gap-4 flex-1">
-                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">Back</a>
-                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700;">
-                            <svg style="width:1.5rem;height:1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Add To Cart
+                    <div class="flex gap-4 flex-1 justify-end">
+                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="width: 90px; height: 2.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">Back</a>
+                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="width: 140px; height: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700; font-size: 0.85rem; white-space: nowrap;" title="Add to Cart">
+                            <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            Add to cart
                         </button>
-                        <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="flex: 1.5; height: 3.5rem; font-size: 1.1rem; font-weight: 800;">Buy Now</button>
+                        <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="width: 160px; height: 2.25rem; font-size: 0.95rem; font-weight: 800; white-space: nowrap;">Buy now</button>
                     </div>
                 </div>
             </form>
@@ -401,25 +405,12 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
 </div>
 
 <script>
-function updateNotesCounter(el) {
-    const counter = document.getElementById('notes-counter');
-    const warn = document.getElementById('notes-warn');
-    counter.textContent = el.value.length + ' / 500';
-    if(el.value.length >= 500) {
-        counter.style.color = '#ef4444';
-        warn.style.display = 'block';
-    } else {
-        counter.style.color = 'var(--lp-muted)';
-        warn.style.display = 'none';
-    }
-}
-
 function sintraOpenInfoModal(title, body) {
     var modal = document.getElementById('sintraTypeInfoModal');
     var titleEl = document.getElementById('sintraInfoTitle');
     var bodyEl = document.getElementById('sintraInfoBody');
     if (!modal || !titleEl || !bodyEl) return;
-    titleEl.textContent = title || 'Sintraboard Type';
+    titleEl.textContent = title || 'Sintraboard type';
     bodyEl.textContent = body || '';
     modal.style.display = 'flex';
 }
@@ -440,11 +431,12 @@ function sintraUpdateOthersUnitLabels() {
 }
 
 function sintraUpdateOptionVisuals(input) {
-    const name = input.name;
-    document.querySelectorAll('#sintraForm input[name="' + name + '"]').forEach(function(r) {
-        const wrap = r.closest('.shopee-opt-btn');
-        if (wrap) { wrap.classList.remove('active'); if (r.checked) wrap.classList.add('active'); }
-    });
+    const group = input.closest('.shopee-opt-group');
+    if (group) {
+        group.querySelectorAll('.shopee-opt-btn').forEach(btn => btn.classList.remove('active'));
+    }
+    input.closest('.shopee-opt-btn')?.classList.add('active');
+    
     if (input && input.name === 'unit') sintraUpdateOthersUnitLabels();
 }
 
@@ -461,7 +453,7 @@ function sintraSelectDimension(label, w, h) {
 }
 
 function sintraSelectDimensionOthers() {
-    document.getElementById('sintraDimOthersWrap').style.display = 'flex';
+    document.getElementById('sintraDimOthersWrap').style.display = 'block';
     document.getElementById('sintra_dimensions').value = '';
     document.querySelectorAll('.sintra-dim-btn').forEach(function(b) { b.classList.remove('active'); });
     var others = document.querySelector('.sintra-dim-btn[data-others="1"]');
@@ -480,14 +472,21 @@ function sintraQtyUp() {
     var q = document.getElementById('sintra_quantity');
     q.value = Math.min(999, (parseInt(q.value, 10) || 1) + 1);
 }
+
 function sintraQtyDown() {
     var q = document.getElementById('sintra_quantity');
     q.value = Math.max(1, (parseInt(q.value, 10) || 1) - 1);
 }
+
 function sintraQtyClamp() {
     var q = document.getElementById('sintra_quantity');
     var v = parseInt(q.value, 10) || 1;
     q.value = Math.max(1, Math.min(999, v));
+}
+
+function reflUpdateNotesCounter(textarea) {
+    const count = textarea.value.length;
+    document.querySelector('.notes-counter').textContent = `${count} / 500`;
 }
 
 document.getElementById('sintraForm').addEventListener('submit', function(e) {
@@ -500,22 +499,44 @@ document.getElementById('sintraForm').addEventListener('submit', function(e) {
     const lam = this.querySelector('input[name="lamination"]:checked');
     const lay = this.querySelector('input[name="layout"]:checked');
     const thick = this.querySelector('input[name="thickness"]:checked');
-    const file = document.getElementById('sintra_design_file');
+    const file = document.getElementById('design_file');
     const nd = document.getElementById('sintra_needed_date');
 
     if (!branch) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="branch_id"]')?.closest('.shopee-form-row'); }
     if (!type) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="sintra_type"]')?.closest('.shopee-form-row'); }
-    if (!dim) { hasError = true; if (!firstErr) firstErr = document.getElementById('sintra_dimensions').closest('.shopee-form-row'); }
-    if (!lam) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="lamination"]')?.closest('.shopee-form-row'); }
-    if (!lay) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="layout"]')?.closest('.shopee-form-row'); }
-    if (!thick) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="thickness"]')?.closest('.shopee-form-row'); }
-    if (!file || !file.files || file.files.length === 0) { hasError = true; if (!firstErr) firstErr = file.closest('.shopee-form-row'); }
-    if (!nd || !nd.value) { hasError = true; if (!firstErr) firstErr = document.getElementById('sintra-need-qty-card'); }
+    if (sintraDimensionMode === 'preset') {
+        const active = document.querySelector('input[name="dimension_preset"]:checked');
+        if (!active || active.value === 'Others') {
+             // If Others is checked but local logic says preset, or none checked
+             if (!active || (active.value === 'Others' && !document.getElementById('sintra_dimensions').value)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (window.showOrderValidationError) {
+                    window.showOrderValidationError(document.getElementById('sintra_dimensions').closest('.shopee-form-field').querySelector('.shopee-opt-group'), 'Please select a dimension.');
+                } else {
+                    alert('Please select a dimension.');
+                }
+                return;
+             }
+        }
+    } else {
+        const w = parseInt(document.getElementById('sintra_dim_other_w').value, 10) || 0;
+        const h = parseInt(document.getElementById('sintra_dim_other_h').value, 10) || 0;
 
-    if (hasError) {
-        e.preventDefault();
-        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
+        if (w <= 0 || h <= 0 || w > 100 || h > 100) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                if (w <= 0) window.showOrderValidationError(document.getElementById('sintra_dim_other_w'), 'Please enter width.');
+                else if (w > 100) window.showOrderValidationError(document.getElementById('sintra_dim_other_w'), 'Maximum allowed is 100 only.');
+                
+                if (h <= 0) window.showOrderValidationError(document.getElementById('sintra_dim_other_h'), 'Please enter height.');
+                else if (h > 100) window.showOrderValidationError(document.getElementById('sintra_dim_other_h'), 'Maximum allowed is 100 only.');
+            } else {
+                alert('Please enter valid custom dimensions (Max 100).');
+            }
+            return;
+        }
     }
 });
 
@@ -553,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var or = others.querySelector('input[type="radio"]');
                 if (or) or.checked = true;
             }
-            document.getElementById('sintraDimOthersWrap').style.display = 'flex';
+            document.getElementById('sintraDimOthersWrap').style.display = 'block';
         }
     }
     sintraUpdateOthersUnitLabels();
@@ -561,29 +582,18 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Service Specific Tweaks */
-.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
-.need-qty-row { display: flex; gap: 16px; width: 100%; }
-.dim-sep { height: 44px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
-
-@media (max-width: 640px) {
-    .need-qty-row { flex-direction: column; }
-}
-#sintra_quantity::-webkit-outer-spin-button,
-#sintra_quantity::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-#sintra_quantity { -moz-appearance: textfield; appearance: textfield; }
-
+.shopee-form-row-flat { margin-bottom: 1.5rem; display: flex; align-items: center; }
+.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block;  }
+.shopee-qty-control { display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); width: fit-content; background: rgba(15, 23, 42, 0.6); }
+.shopee-qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #f1f5f9; cursor: pointer; font-size: 1.25rem; transition: background 0.2s; }
+.shopee-qty-btn:hover { background: rgba(255,255,255,0.05); }
+.shopee-qty-input { width: 50px; height: 32px; border: none; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); background: none; color: #f1f5f9; text-align: center; -moz-appearance: textfield; font-weight: 600; }
 .sintra-info-modal { position: fixed; inset: 0; z-index: 100000; display:none; align-items: center; justify-content: center; padding: 1rem; }
-.sintra-info-modal[style*="flex"] { display: flex !important; }
 .sintra-info-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
 .sintra-info-modal-card { position: relative; width: 100%; max-width: 520px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem; box-shadow: 0 18px 40px rgba(0,0,0,0.12); }
 .sintra-info-modal-close { position: absolute; top: 0.75rem; right: 0.75rem; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 1.1rem; cursor: pointer; display:flex; align-items:center; justify-content:center; }
 .sintra-info-modal-close:hover { background: #f1f5f9; }
 .sintra-info-modal-title { margin: 0 2rem 0.6rem 0; color: #0f172a; font-size: 1.05rem; font-weight: 800; }
 .sintra-info-modal-body { margin: 0; color: #475569; line-height: 1.6; font-size: 0.92rem; }
-
-@media (max-width: 640px) {
-    .tshirt-actions-row { flex-direction: column; align-items: stretch; }
-}
 </style>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -121,14 +121,35 @@ if (isset($_SESSION['user_id'])) {
                 Notifications
                 <span id="sidebar-notif-badge" data-notif-badge class="nav-badge nav-badge--sidebar-slot" style="visibility:<?php echo $_staff_unread_notif > 0 ? 'visible' : 'hidden'; ?>;"><?php echo $_staff_unread_notif > 99 ? '99+' : ($_staff_unread_notif > 0 ? (int)$_staff_unread_notif : ''); ?></span>
             </a>
+            <a href="/printflow/staff/profile.php" class="nav-item <?php echo $current_page === 'profile.php' ? 'active' : ''; ?>">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                My Profile
+            </a>
         </div>
         <?php endif; ?>
     </nav>
     
     <div class="sidebar-footer">
-        <a href="/printflow/staff/profile.php" class="user-profile" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 6px; transition: background 0.2s;">
-            <div class="user-avatar">
-                <?php echo $user_initial; ?>
+        <?php
+        $sidebar_profile_img = $_SESSION['user_profile_picture'] ?? null;
+        if ($sidebar_profile_img === null && isset($_SESSION['user_id'])) {
+            $sd_user = db_query("SELECT profile_picture FROM users WHERE user_id = ?", 'i', [$_SESSION['user_id']])[0] ?? null;
+            $sidebar_profile_img = $sd_user['profile_picture'] ?? '';
+            $_SESSION['user_profile_picture'] = $sidebar_profile_img;
+        }
+        ?>
+        <a href="/printflow/staff/profile.php" class="user-profile" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: rgba(255,255,255,0.03); border: 1px solid rgba(158, 215, 196, 0.1);">
+            <div class="user-avatar" style="width:40px; height:40px; min-width:40px; border-radius:12px; overflow:hidden; border: 2px solid rgba(158, 215, 196, 0.3); background: var(--pf-secondary); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <?php if (!empty($sidebar_profile_img)): ?>
+                    <img src="/printflow/public/assets/uploads/profiles/<?php echo htmlspecialchars($sidebar_profile_img); ?>" 
+                         alt="Avatar" class="w-full h-full object-cover" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span style="display:none; font-weight:700; color:white;"><?php echo $user_initial; ?></span>
+                <?php else: ?>
+                    <span style="font-weight:700; color:white;"><?php echo $user_initial; ?></span>
+                <?php endif; ?>
             </div>
             <div class="user-info">
                 <div class="user-name-display"><?php echo htmlspecialchars($user_name); ?></div>

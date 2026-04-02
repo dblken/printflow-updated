@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Tarpaulin Printing - Service Order Form
  */
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $notes = trim($_POST['notes'] ?? '');
 
     if (empty($width) || empty($height) || $quantity < 1) {
-        $error = 'Please fill in Dimensions (Width, Height) and Quantity.';
+        $error = 'Please fill in dimensions (Width, Height) and quantity.';
     } elseif ((function_exists('mb_strlen') ? mb_strlen($notes) : strlen($notes)) > 500) {
         $error = 'Notes must not exceed 500 characters.';
     } elseif (empty($needed_date)) {
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['cart'][$item_key] = [
                     'type' => 'Service',
                     'source_page' => 'services',
-                    'name' => 'Tarpaulin Printing',
+                    'name' => 'Tarpaulin printing',
                     'price' => $area * $unit_price * $quantity,
                     'quantity' => $quantity,
                     'category' => 'Tarpaulin',
@@ -148,9 +148,9 @@ if ($sold_count >= 1000) {
             <!-- Right Side: Form -->
             <div class="shopee-form-section">
                 <div class="flex items-start justify-between mb-2">
-                    <h1 class="mr-2 flex-1">Tarpaulin Printing</h1>
+                    <h1 class="mr-2 flex-1">Tarpaulin printing</h1>
                     <button type="button" onclick="openPricelistModal()" style="border: 1px solid #0a2530; color: #0a2530; background: rgba(10, 37, 48, 0.05); padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;" onmouseover="this.style.background='rgba(10, 37, 48, 0.12)'" onmouseout="this.style.background='rgba(10, 37, 48, 0.05)'">
-                        View Price List
+                        View price list
                     </button>
                 </div>
                 
@@ -171,16 +171,15 @@ if ($sold_count >= 1000) {
                     <div class="text-sm text-gray-500"><?php echo $sold_display; ?> Sold</div>
                 </div>
 
-
                 <form action="" method="POST" enctype="multipart/form-data" id="tarpForm" novalidate>
                     <?php echo csrf_field(); ?>
 
                 <div class="shopee-form-row shopee-form-row-flat">
                     <label class="shopee-form-label">Branch *</label>
                     <div class="shopee-form-field">
-                        <div class="shopee-opt-group">
+                        <div class="shopee-opt-group opt-grid-3">
                             <?php foreach($branches as $b): ?>
-                                <label class="shopee-opt-btn"><input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="updateOpt(this)"> <span><?php echo htmlspecialchars($b['branch_name']); ?></span></label>
+                                <label class="shopee-opt-btn"><input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="updateOpt(this)"> <span><?php echo htmlspecialchars(to_sentence_case($b['branch_name'])); ?></span></label>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -190,13 +189,13 @@ if ($sold_count >= 1000) {
                     <label class="shopee-form-label">Size (ft) *</label>
                     <div class="shopee-form-field">
                         <div class="shopee-opt-group">
-                            <button type="button" class="shopee-opt-btn" data-width="3" data-height="4" onclick="selectDimension(3, 4, event)">3×4 FT</button>
-                            <button type="button" class="shopee-opt-btn" data-width="4" data-height="6" onclick="selectDimension(4, 6, event)">4×6 FT</button>
-                            <button type="button" class="shopee-opt-btn" data-width="5" data-height="8" onclick="selectDimension(5, 8, event)">5×8 FT</button>
+                            <button type="button" class="shopee-opt-btn" data-width="3" data-height="4" onclick="selectDimension(3, 4, event)">3×4 ft</button>
+                            <button type="button" class="shopee-opt-btn" data-width="4" data-height="6" onclick="selectDimension(4, 6, event)">4×6 ft</button>
+                            <button type="button" class="shopee-opt-btn" data-width="5" data-height="8" onclick="selectDimension(5, 8, event)">5×8 ft</button>
                             <button type="button" class="shopee-opt-btn" id="dim-others-btn" onclick="selectDimensionOthers(event)">Others</button>
                         </div>
                         
-                                                <div id="dim-others-inputs" style="display:none;border-top:1px dashed rgba(255,255,255,0.1);margin-top:1.5rem;padding-top:1.5rem;width:100%">
+                        <div id="dim-others-inputs" style="display:none;border-top:1px dashed rgba(255,255,255,0.1);margin-top:1.5rem;padding-top:1.5rem;width:100%">
                             <div style="width:100%;max-width:440px">
                                 <div style="display:flex;gap:8px;margin-bottom:4px">
                                     <div style="flex:1"><label class="dim-label">Width (ft)</label></div>
@@ -205,19 +204,12 @@ if ($sold_count >= 1000) {
                                 </div>
                                 <div style="display:flex;align-items:center;gap:8px">
                                     <div style="flex:1">
-                                        <input type="number" step="0.01" id="custom_width" class="input-field" placeholder="0.0" min="1" max="100">
-                                        <div id="width-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 ft.</div>
+                                        <input type="number" id="custom_width" class="input-field" placeholder="0" min="1" max="100" data-dimension>
                                     </div>
-                                    <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">x</div>
+                                    <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
                                     <div style="flex:1">
-                                        <input type="number" step="0.01" id="custom_height" class="input-field" placeholder="0.0" min="1" max="100">
-                                        <div id="height-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 ft.</div>
+                                        <input type="number" id="custom_height" class="input-field" placeholder="0" min="1" max="100" data-dimension>
                                     </div>
-                                </div>
-                                <div style="display:flex;gap:8px;margin-top:6px">
-                                    <div style="flex:1"><span style="font-size:0.75rem;color:var(--lp-muted)">Standard tarpaulin width. Larger sizes may be printed in parts.</span></div>
-                                    <div style="width:32px"></div>
-                                    <div style="flex:1"><span style="font-size:0.75rem;color:var(--lp-muted)">Length can be extended. Larger sizes will be printed in parts and joined.</span></div>
                                 </div>
                             </div>
                         </div>
@@ -238,8 +230,8 @@ if ($sold_count >= 1000) {
                 <div class="shopee-form-row shopee-form-row-flat">
                     <label class="shopee-form-label">Laminate *</label>
                     <div class="shopee-opt-group shopee-form-field">
-                        <label class="shopee-opt-btn"><input type="radio" name="lamination" value="With Laminate" style="display:none;" required onchange="updateOpt(this)"> <span>With Laminate</span></label>
-                        <label class="shopee-opt-btn"><input type="radio" name="lamination" value="Without Laminate" style="display:none;" required onchange="updateOpt(this)"> <span>Without Laminate</span></label>
+                        <label class="shopee-opt-btn"><input type="radio" name="lamination" value="With lamination" style="display:none;" required onchange="updateOpt(this)"> <span>With lamination</span></label>
+                        <label class="shopee-opt-btn"><input type="radio" name="lamination" value="Without lamination" style="display:none;" required onchange="updateOpt(this)"> <span>Without lamination</span></label>
                     </div>
                 </div>
 
@@ -252,7 +244,7 @@ if ($sold_count >= 1000) {
                 </div>
 
                 <div class="shopee-form-row shopee-form-row-flat" id="card-upload">
-                    <label class="shopee-form-label">Upload Design *</label>
+                    <label class="shopee-form-label">Upload design *</label>
                     <div class="shopee-form-field">
                         <input type="file" name="design_file" id="design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" required style="max-width: 300px; padding: 0.5rem;">
                     </div>
@@ -261,8 +253,8 @@ if ($sold_count >= 1000) {
                 <div class="shopee-form-row shopee-form-row-flat" id="card-layout">
                     <label class="shopee-form-label">Layout *</label>
                     <div class="shopee-opt-group shopee-form-field">
-                        <label class="shopee-opt-btn"><input type="radio" name="layout" value="With Layout" style="display:none;" required onchange="updateOpt(this)"> <span>With Layout</span></label>
-                        <label class="shopee-opt-btn"><input type="radio" name="layout" value="Without Layout" style="display:none;" required onchange="updateOpt(this)"> <span>Without Layout</span></label>
+                        <label class="shopee-opt-btn"><input type="radio" name="layout" value="With layout" style="display:none;" required onchange="updateOpt(this)"> <span>With layout</span></label>
+                        <label class="shopee-opt-btn"><input type="radio" name="layout" value="Without layout" style="display:none;" required onchange="updateOpt(this)"> <span>Without layout</span></label>
                     </div>
                 </div>
 
@@ -278,7 +270,7 @@ if ($sold_count >= 1000) {
                     <div class="shopee-form-field">
                         <div class="shopee-qty-control">
                             <button type="button" class="shopee-qty-btn" onclick="decreaseQty()">−</button>
-                            <input type="number" id="quantity-input" name="quantity" class="shopee-qty-input" min="1" value="<?php echo (int)($_POST['quantity'] ?? ($_GET['qty'] ?? 1)); ?>">
+                            <input type="number" id="quantity-input" name="quantity" class="shopee-qty-input" min="1" max="999" value="<?php echo (int)($_POST['quantity'] ?? ($_GET['qty'] ?? 1)); ?>">
                             <button type="button" class="shopee-qty-btn" onclick="increaseQty()">+</button>
                         </div>
                     </div>
@@ -287,22 +279,26 @@ if ($sold_count >= 1000) {
                 <div class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
                     <label class="shopee-form-label" style="padding-top: 0.75rem;">Notes</label>
                     <div class="shopee-form-field">
-                        <div style="display:flex; justify-content:flex-end; margin-bottom: 0.25rem; ">
-                            <span id="notes-counter" style="font-size: 0.7rem; color: var(--lp-muted); font-weight: 700;">0 / 500</span>
+                        <div style="display:flex; justify-content:flex-end; align-items:center; gap: 10px; margin-bottom: 0.5rem; width: 100%;">
+                            <span class="notes-warn">Max 500 characters</span>
+                            <span class="notes-counter">0 / 500</span>
                         </div>
-                        <textarea name="notes" id="notes-textarea" rows="3" class="input-field" placeholder="Any special instructions..." maxlength="500" oninput="updateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
-                        <div id="notes-warn" class="text-xs font-bold mt-1" style="display:none; color: #ef4444;">Maximum characters reached.</div>
+                        <textarea id="notes_global" name="notes" rows="3" class="input-field notes-textarea-global" 
+                            placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                            maxlength="500" 
+                            oninput="reflUpdateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
                     </div>
                 </div>
 
                 <div class="shopee-form-row pt-8">
                     <div style="width: 160px;" class="hidden md:block"></div>
-                    <div class="flex gap-4 flex-1">
-                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; border-color: var(--lp-accent); color: var(--lp-accent); font-weight: 700;">
-                            <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Add To Cart
+                    <div class="flex gap-4 flex-1 justify-end">
+                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="width: 90px; height: 2.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">Back</a>
+                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="width: 140px; height: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700; font-size: 0.85rem; white-space: nowrap;" title="Add to Cart">
+                            <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            Add to cart
                         </button>
-                        <button type="submit" name="action" value="buy_now" id="buyNowBtn" class="shopee-btn-primary" style="flex: 1.5; height: 3.5rem; font-size: 1.1rem; font-weight: 800;">Buy Now</button>
+                        <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="width: 160px; height: 2.25rem; font-size: 0.95rem; font-weight: 800; white-space: nowrap;">Buy now</button>
                     </div>
                 </div>
             </form>
@@ -310,8 +306,6 @@ if ($sold_count >= 1000) {
     </div>
 </div>
 </div>
-
-
 
 <!-- Pricelist Modal -->
 <div id="pricelist-modal" style="display: none; position: fixed; inset: 0; z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; background: rgba(0,0,0,0.5);">
@@ -327,31 +321,18 @@ if ($sold_count >= 1000) {
 </div>
 
 <style>
-/* Service Specific Tweaks */
-.dim-sep { height: 44px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
-.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
-.need-qty-row { display: flex; gap: 16px; width: 100%; }
-
-@media (max-width: 640px) {
-    .need-qty-row { flex-direction: column; }
-}
+.shopee-form-row-flat { margin-bottom: 1.5rem; display: flex; align-items: center; }
+.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block;  }
+.shopee-qty-control { display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); width: fit-content; background: rgba(15, 23, 42, 0.6); }
+.shopee-qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #f1f5f9; cursor: pointer; font-size: 1.25rem; transition: background 0.2s; }
+.shopee-qty-btn:hover { background: rgba(255,255,255,0.05); }
+.shopee-qty-input { width: 50px; height: 32px; border: none; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); background: none; color: #f1f5f9; text-align: center; -moz-appearance: textfield; font-weight: 600; }
+.shopee-qty-input::-webkit-outer-spin-button, .shopee-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 </style>
 
 <script>
 let dimensionMode = 'preset';
 
-function updateNotesCounter(el) {
-    const counter = document.getElementById('notes-counter');
-    const warn = document.getElementById('notes-warn');
-    counter.textContent = el.value.length + ' / 500';
-    if(el.value.length >= 500) {
-        counter.style.color = '#ef4444';
-        warn.style.display = 'block';
-    } else {
-        counter.style.color = 'var(--lp-muted)';
-        warn.style.display = 'none';
-    }
-}
 function openPricelistModal() { document.getElementById('pricelist-modal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
 function closePricelistModal() { document.getElementById('pricelist-modal').style.display = 'none'; document.body.style.overflow = ''; }
 
@@ -366,6 +347,14 @@ function syncDimensionToHidden() {
         wh.value = document.getElementById('custom_width').value;
         hh.value = document.getElementById('custom_height').value;
     }
+}
+
+function updateOpt(input) {
+    const group = input.closest('.shopee-opt-group');
+    if (group) {
+        group.querySelectorAll('.shopee-opt-btn').forEach(btn => btn.classList.remove('active'));
+    }
+    input.closest('.shopee-opt-btn')?.classList.add('active');
 }
 
 function selectDimension(w, h, e) {
@@ -389,70 +378,53 @@ function selectDimensionOthers(e) {
 function increaseQty() { const i = document.getElementById('quantity-input'); i.value = Math.min(999, (parseInt(i.value) || 1) + 1); }
 function decreaseQty() { const i = document.getElementById('quantity-input'); if (parseInt(i.value) > 1) i.value = parseInt(i.value) - 1; }
 
+function reflUpdateNotesCounter(textarea) {
+    const count = textarea.value.length;
+    document.querySelector('.notes-counter').textContent = `${count} / 500`;
+}
+
 document.getElementById('tarpForm').addEventListener('submit', function(e) {
     syncDimensionToHidden();
     
-    let hasError = false;
-    let firstErrorField = null;
-
-    // Reset errors
-    document.getElementById('width-error').style.display = 'none';
-    document.getElementById('height-error').style.display = 'none';
-    document.getElementById('notes-warn').style.display = 'none';
-
+    // Dimension validation is now handled globally in order_validation.js
     if (dimensionMode === 'preset') {
         const active = document.querySelector('.shopee-opt-btn.active[data-width]');
         if (!active) {
-            alert('Please select a dimension.');
             e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                window.showOrderValidationError(document.getElementById('card-dimensions'), 'Please select a dimension.');
+            } else {
+                alert('Please select a dimension.');
+            }
             return;
         }
     } else {
-        const w = parseFloat(document.getElementById('custom_width').value) || 0;
-        const h = parseFloat(document.getElementById('custom_height').value) || 0;
+        const w = parseInt(document.getElementById('custom_width').value, 10) || 0;
+        const h = parseInt(document.getElementById('custom_height').value, 10) || 0;
 
-        if (w <= 0 || h <= 0) {
-            alert('Please enter custom dimensions.');
+        if (w <= 0 || h <= 0 || w > 100 || h > 100) {
             e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                if (w <= 0) window.showOrderValidationError(document.getElementById('custom_width'), 'Please enter width.');
+                else if (w > 100) window.showOrderValidationError(document.getElementById('custom_width'), 'Maximum allowed is 100 only.');
+                
+                if (h <= 0) window.showOrderValidationError(document.getElementById('custom_height'), 'Please enter height.');
+                else if (h > 100) window.showOrderValidationError(document.getElementById('custom_height'), 'Maximum allowed is 100 only.');
+            } else {
+                alert('Please enter valid dimensions (Max 100).');
+            }
             return;
         }
-
-        if (w > 100) {
-            document.getElementById('width-error').style.display = 'block';
-            hasError = true;
-            if (!firstErrorField) firstErrorField = document.getElementById('custom_width');
-        }
-
-        if (h > 100) {
-            document.getElementById('height-error').style.display = 'block';
-            hasError = true;
-            if (!firstErrorField) firstErrorField = document.getElementById('custom_height');
-        }
-    }
-
-    const notes = document.getElementById('notes-textarea').value;
-    if (notes.length > 500) {
-        document.getElementById('notes-warn').style.display = 'block';
-        hasError = true;
-        if (!firstErrorField) firstErrorField = document.getElementById('notes-textarea');
-    }
-
-    if (hasError) {
-        e.preventDefault();
-        if (firstErrorField) {
-            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            firstErrorField.focus();
-        }
-        return;
     }
 });
 
-var finishIcon = document.getElementById('finish-info-icon');
-var finishTooltip = document.getElementById('finish-tooltip');
-if (finishIcon && finishTooltip) {
-    finishIcon.addEventListener('mouseenter', () => finishTooltip.classList.add('visible'));
-    finishIcon.addEventListener('mouseleave', () => finishTooltip.classList.remove('visible'));
-}
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#tarpForm .shopee-opt-btn input:checked').forEach(inp => {
+        inp.closest('.shopee-opt-btn').classList.add('active');
+    });
+});
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

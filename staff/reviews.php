@@ -111,6 +111,7 @@ $reviews = db_query($query_sql, $fetch_types ?: null, $fetch_params ?: null) ?: 
 $page_query_params = ['search'=>$search, 'review_type'=>$review_type, 'rating'=>$rating, 'service'=>$service];
 
 // Fetch images and replies for each review
+$reviews_raw = $reviews;
 $reviews = [];
 foreach ($reviews_raw as $r) {
     $rid = (int)$r['id'];

@@ -110,13 +110,13 @@ $current_user = get_logged_in_user();
 
         /* Bubbles - Full-width rows with justify-content for L/R alignment */
         .bubble-row { display: flex; width: 100%; position: relative; margin-bottom: 8px; }
-        .bubble-row.self { justify-content: flex-end; }
-        .bubble-row.other { justify-content: flex-start; align-items: flex-end; gap: 8px; }
+        .bubble-row.self { flex-direction: row-reverse; gap: 8px; align-items: flex-end; }
+        .bubble-row.other { align-items: flex-end; gap: 8px; }
         .bubble-row.system { justify-content: center; }
 
         .bubble { 
             padding: 0.75rem 1rem; border-radius: 16px; font-size: 0.925rem; font-weight: 500; line-height: 1.5; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-wrap: anywhere; word-break: break-word;
             max-width: 100%;
         }
         .bubble-row.self .bubble { background: #0a2530; color: #fff; border-radius: 18px 18px 4px 18px; }
@@ -132,7 +132,7 @@ $current_user = get_logged_in_user();
         /* msg-content-col: use GRID for self (right-aligns to max-content, not min-content)
            This prevents the letter-stacking bug that flex align-items:flex-end causes */
         .msg-content-col { position: relative; min-width: 0; max-width: 80%; }
-        .bubble-row.self .msg-content-col { display: grid; justify-items: end; width: max-content; max-width: 80%; }
+        .bubble-row.self .msg-content-col { display: grid; justify-items: end; width: auto; max-width: 80%; }
         .bubble-row.other .msg-content-col { display: flex; flex-direction: column; align-items: flex-start; }
         
         .msg-sender-info { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; padding: 0 4px; font-weight: 600; }
@@ -229,11 +229,29 @@ $current_user = get_logged_in_user();
             padding: 1rem 1.25rem; border-top: 1px solid #f1f5f9; background: #fff; 
             flex-shrink: 0; position: relative; z-index: 10; margin-top: auto;
         }
+        .chat-input-area { 
+            display: flex; align-items: center; gap: 12px;
+        }
         .chat-interface-wrapper { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
         .input-bar { 
+            flex: 1;
             display: flex; align-items: center; gap: 10px; background: #f1f5f9; border-radius: 16px; 
             padding: 4px 4px 4px 12px; border: 2px solid transparent; transition: all 0.2s;
         }
+        .mic-btn {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            background: #f1f5f9;
+            border: none;
+            color: #64748b;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .mic-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .mic-btn.recording { background: #fee2e2; border-color: #fecaca; color: #ef4444; }
         .input-bar:focus-within { background: #fff; border-color: #0a2530; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
         .input-bar input { flex: 1; background: transparent; border: none; outline: none; padding: 10px 0; font-size: 0.95rem; font-weight: 500; }
         
@@ -328,23 +346,94 @@ $current_user = get_logged_in_user();
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Voice Recording Features */
-        .chat-input-area { display: flex; align-items: center; gap: 8px; width: 100%; }
-        .mic-btn { 
-            width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            border: none; background: #f5f5f5; color: #64748b; cursor: pointer; transition: all 0.2s;
+        /* Modern Voice Player UI */
+        .voice-bubble-player {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            min-width: 250px;
+            margin: 4px 0;
         }
-        .mic-btn:hover { background: #e0e0e0; color: #0f172a; }
-        .mic-btn.recording { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
-        .recording-status { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 10px; color: #ef4444; font-weight: 800; font-size: 0.85rem; }
-        .recording-indicator { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-        
-        .hidden { display: none !important; }
-        
-        #msgInput { border: none !important; background: transparent !important; }
+        .bubble-row.self .voice-bubble-player { background: rgba(255,255,255,0.1); color: #fff; }
+        .bubble-row.other .voice-bubble-player { background: #f1f5f9; color: #1e293b; }
 
-        /* Icon Override for bootstrap icons */
+        .play-pause-btn {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: #0a2530;
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            flex-shrink: 0;
+        }
+        .bubble-row.self .play-pause-btn { background: #fff; color: #0a2530; }
+        .play-pause-btn:hover { transform: scale(1.1); opacity: 0.9; }
+
+        .v-waveform-container {
+            flex: 1;
+            height: 30px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .v-waveform-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .v-duration {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            min-width: 35px;
+            text-align: right;
+        }
+        .bubble-row.self .v-duration { color: rgba(255,255,255,0.8); }
+
+        .recording-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.1);
+            border-radius: 12px;
+            padding: 2px 10px;
+            margin: 0 4px;
+            overflow: hidden;
+        }
+        .rec-timer { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #ef4444; font-size: 0.85rem; min-width: 35px; }
+        .rec-pulse { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse-rec 1s infinite; flex-shrink: 0; }
+        #recordingCanvas {
+            flex: 1;
+            height: 30px;
+            background: transparent;
+        }
+        
+        #voicePreviewArea {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 6px 12px;
+            margin: 0 4px;
+            flex: 1;
+        }
+
+        @keyframes pulse-rec {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .hidden { display: none !important; }
+        #msgInput { border: none !important; background: transparent !important; }
         .bi { font-size: 1.1rem; }
     </style>
 </head>
@@ -472,18 +561,21 @@ $current_user = get_logged_in_user();
                                  <input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off">
                              </div>
 
-                             <div class="recording-status hidden" id="recordStatus">
-                                 <div class="recording-indicator"></div>
-                                 <span id="recordText">Recording...</span> <span id="timer" class="ml-2 font-mono">0:00</span>
+                             <div class="recording-panel hidden" id="recordStatus">
+                                 <div class="rec-pulse" title="Recording"></div>
+                                 <canvas id="recordingCanvas"></canvas>
+                                 <span class="rec-timer" id="timer">0:00</span>
                              </div>
 
-                             <button class="mic-btn hidden" id="cancelRecord" title="Cancel Recording" style="background:#ef4444; border-color:#ef4444; color:#fff;">
-                                 <i class="bi bi-trash3-fill"></i>
-                             </button>
-
-                             <button class="mic-btn hidden" id="stopRecord" title="Stop & Send" style="background:#10b981; border-color:#10b981; color:#fff;">
-                                 <i class="bi bi-stop-fill"></i>
-                             </button>
+                             <div id="voicePreviewArea">
+                                 <button type="button" class="play-pause-btn" id="previewPlayBtn" onclick="togglePreviewPlayback()">
+                                     <i class="bi bi-play-fill" id="previewPlayIcon"></i>
+                                 </button>
+                                 <div class="v-waveform-container" id="previewWaveformContainer">
+                                     <canvas id="previewWaveformCanvas" class="v-waveform-canvas"></canvas>
+                                 </div>
+                                 <span class="v-duration" id="previewDuration">0:00</span>
+                             </div>
 
                              <button type="button" class="btn-send" id="btnSend" onclick="sendMsg()" title="Send">
                                  <i class="bi bi-send"></i>
@@ -734,13 +826,17 @@ function appendMsgUI(m) {
         row.classList.add('grouped-msg-next');
     }
     
-    // Setup Avatar (Only for OTHER, self messages do not get an avatar)
+    // Setup Avatar (Both sides now get an avatar in this modern layout)
     let avatarHtml = '';
-    if (!m.is_system && !m.is_self) {
+    if (!m.is_system) {
+        const avSrc = m.sender_avatar ? `${window.baseUrl}/${m.sender_avatar}` : '';
+        const initial = (m.sender_name || (m.is_self ? 'S' : 'C'))[0].toUpperCase();
+        
         if (m.sender_avatar) {
-            avatarHtml = `<img src="${window.baseUrl}/${m.sender_avatar}" class="msg-avatar" onerror="this.outerHTML='<div class=\\'msg-avatar\\'>${(m.sender_name||'U')[0]}</div>'">`;
+            avatarHtml = `<img src="${avSrc}" class="msg-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                          <div class="msg-avatar" style="display:none;">${initial}</div>`;
         } else {
-            avatarHtml = `<div class="msg-avatar">${(m.sender_name||'U')[0]}</div>`;
+            avatarHtml = `<div class="msg-avatar">${initial}</div>`;
         }
     }
 
@@ -782,12 +878,17 @@ function appendMsgUI(m) {
     if (m.message_type === 'voice') {
         const audioSrc = m.message_file || m.file_path || m.image_path;
         colHtml += `
-        <div class="voice-msg" style="min-width: 220px; padding: 4px 0;">
-            <audio controls style="height: 32px; width: 100%; border-radius: 20px;">
-                <source src="${audioSrc}" type="audio/webm">
-                Your browser does not support the audio element.
-            </audio>
+        <div class="voice-bubble-player" id="voice-p-${m.id}">
+            <button class="play-pause-btn" onclick="toggleVoicePlayer(${m.id}, '${audioSrc}')">
+                <i class="bi bi-play-fill" id="v-icon-${m.id}" style="font-size: 1.2rem; margin-left: 2px;"></i>
+            </button>
+            <div class="v-waveform-container" onclick="seekVoice(${m.id}, event)">
+                <canvas class="v-waveform-canvas" id="v-canvas-${m.id}"></canvas>
+            </div>
+            <span class="v-duration" id="v-dur-${m.id}">0:00</span>
+            <audio id="v-audio-${m.id}" src="${audioSrc}" ontimeupdate="updateVoiceProgress(${m.id})" onended="resetVoicePlayer(${m.id})" onloadedmetadata="initVoiceDuration(${m.id})"></audio>
         </div>`;
+        setTimeout(() => drawWaveformFromUrl(audioSrc, `v-canvas-${m.id}`, m.is_self ? 'rgba(255,255,255,0.7)' : '#64748b'), 50);
     } else if (m.image_path) {
         if (m.file_type === 'video') {
             const ss = m.image_path.replace(/'/g, "\\'");
@@ -1209,7 +1310,7 @@ function renderMediaGrid() {
     }).join('');
 }
 
-// --- Voice Recording Logic ---
+// --- Voice Recording Logic with Waveform ---
 let mediaRecorder;
 let audioChunks = [];
 let timerInterval;
@@ -1221,6 +1322,79 @@ const status = document.getElementById("recordStatus");
 const timerDisplay = document.getElementById("timer");
 const inputBar = document.getElementById("inputContainer");
 const cancelBtn = document.getElementById("cancelRecord");
+
+let audioCtx;
+let analyser;
+let source;
+let animationId;
+let previewAudio;
+
+function startVoiceVisualizer(stream) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const canvas = document.getElementById("recordingCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function draw() {
+        animationId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            x += barWidth + 1;
+        }
+    }
+    draw();
+}
+
+function stopVoiceVisualizer() {
+    if (animationId) cancelAnimationFrame(animationId);
+    if (audioCtx) audioCtx.close();
+}
+
+async function drawStaticWaveform(blob, canvasId, color = '#64748b') {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const rawData = audioBuffer.getChannelData(0); 
+    const samples = 70; 
+    const blockSize = Math.floor(rawData.length / samples);
+    const filteredData = [];
+    for (let i = 0; i < samples; i++) {
+        let blockStart = blockSize * i;
+        let sum = 0;
+        for (let j = 0; j < blockSize; j++) {
+            sum = sum + Math.abs(rawData[blockStart + j]);
+        }
+        filteredData.push(sum / blockSize);
+    }
+    const multiplier = Math.pow(Math.max(...filteredData), -1);
+    const normalizedData = filteredData.map(n => n * multiplier);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const width = canvas.width / samples;
+    for (let i = 0; i < samples; i++) {
+        const height = normalizedData[i] * canvas.height;
+        ctx.fillStyle = color;
+        ctx.fillRect(i * width, (canvas.height - height) / 2, width - 1, height);
+    }
+    audioCtx.close();
+}
 
 if (startBtn) {
     startBtn.onclick = async () => {
@@ -1249,11 +1423,9 @@ if (startBtn) {
                 }
             }, 1000);
 
-            mediaRecorder.ondataavailable = e => {
-                audioChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = sendAudio;
+            mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+            mediaRecorder.onstop = showVoicePreview;
+            startVoiceVisualizer(stream);
         } catch (err) {
             console.error("Mic access denied:", err);
             alert("Microphone access is required for voice recording.");
@@ -1266,7 +1438,14 @@ if (stopBtn) {
 }
 
 if (cancelBtn) {
-    cancelBtn.onclick = () => cancelRecording();
+    cancelBtn.onclick = () => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.onstop = null; // Don't show preview
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+        clearVoicePreview();
+    };
 }
 
 function stopRecording() {
@@ -1274,6 +1453,7 @@ function stopRecording() {
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
+    stopVoiceVisualizer();
     clearInterval(timerInterval);
     status.classList.add("hidden");
     stopBtn.classList.add("hidden");
@@ -1288,6 +1468,7 @@ function cancelRecording() {
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
+    stopVoiceVisualizer();
     clearInterval(timerInterval);
     status.classList.add("hidden");
     stopBtn.classList.add("hidden");
@@ -1297,9 +1478,216 @@ function cancelRecording() {
     timerDisplay.textContent = '0:00';
 }
 
+/* Custom Voice Player Logic */
+function toggleVoicePlayer(id, src) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    const icon = document.getElementById(`v-icon-${id}`);
+    
+    document.querySelectorAll('audio').forEach(a => {
+        if (a.id !== `v-audio-${id}`) {
+            a.pause();
+            const sid = a.id.replace('v-audio-', '');
+            const sicon = document.getElementById(`v-icon-${sid}`);
+            if (sicon) {
+                sicon.classList.remove('bi-pause-fill');
+                sicon.classList.add('bi-play-fill');
+            }
+        }
+    });
+
+    if (audio.paused) {
+        audio.play().catch(e => console.error("Play failed:", e));
+        icon.classList.remove('bi-play-fill');
+        icon.classList.add('bi-pause-fill');
+    } else {
+        audio.pause();
+        icon.classList.remove('bi-pause-fill');
+        icon.classList.add('bi-play-fill');
+    }
+}
+
+function updateVoiceProgress(id) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    const canvas = document.getElementById(`v-canvas-${id}`);
+    const dur = document.getElementById(`v-dur-${id}`);
+    if (!audio || !canvas) return;
+    const percent = audio.currentTime / audio.duration;
+    dur.textContent = formatAudioTime(audio.currentTime);
+    drawWaveformWithProgress(canvas, audio, percent);
+}
+
+const waveformCache = {};
+
+async function drawWaveformFromUrl(url, canvasId, color) {
+    if (waveformCache[url]) {
+        drawRawToCanvas(canvasId, waveformCache[url], color);
+        return;
+    }
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const rawData = audioBuffer.getChannelData(0); 
+        const samples = 60; 
+        const blockSize = Math.floor(rawData.length / samples);
+        const filteredData = [];
+        for (let i = 0; i < samples; i++) {
+            let blockStart = blockSize * i;
+            let sum = 0;
+            for (let j = 0; j < blockSize; j++) {
+                sum = sum + Math.abs(rawData[blockStart + j]);
+            }
+            filteredData.push(sum / blockSize);
+        }
+        const multiplier = Math.pow(Math.max(...filteredData), -1);
+        const normalizedData = filteredData.map(n => n * multiplier);
+        waveformCache[url] = normalizedData;
+        drawRawToCanvas(canvasId, normalizedData, color);
+        audioCtx.close();
+    } catch(e) { console.error("Waveform error:", e); }
+}
+
+function drawRawToCanvas(canvasId, data, color, progress = 0) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const samples = data.length;
+    const width = canvas.width / samples;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < samples; i++) {
+        const height = data[i] * canvas.height;
+        const isPlayed = (i / samples) < progress;
+        ctx.fillStyle = isPlayed ? '#0ea5e9' : color;
+        ctx.fillRect(i * width, (canvas.height - height) / 2, width - 1, height);
+    }
+}
+
+function drawWaveformWithProgress(canvas, audio, progress) {
+    const url = audio.src;
+    const data = waveformCache[url];
+    if (!data) return;
+    const isSelf = canvas.closest('.bubble-row').classList.contains('self');
+    drawRawToCanvas(canvas.id, data, isSelf ? 'rgba(255,255,255,0.7)' : '#64748b', progress);
+}
+
+function resetVoicePlayer(id) {
+    const icon = document.getElementById(`v-icon-${id}`);
+    const canvas = document.getElementById(`v-canvas-${id}`);
+    const dur = document.getElementById(`v-dur-${id}`);
+    const audio = document.getElementById(`v-audio-${id}`);
+    if (icon) { icon.classList.remove('bi-pause-fill'); icon.classList.add('bi-play-fill'); }
+    if (canvas && audio) drawWaveformWithProgress(canvas, audio, 0);
+    if (dur && audio) dur.textContent = formatAudioTime(audio.duration);
+}
+
+function initVoiceDuration(id) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    const dur = document.getElementById(`v-dur-${id}`);
+    if (audio && dur) dur.textContent = formatAudioTime(audio.duration);
+}
+
+function seekVoice(id, event) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    if (!audio || !audio.duration) return;
+    const container = event.currentTarget;
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const percent = x / rect.width;
+    audio.currentTime = percent * audio.duration;
+}
+
+function formatAudioTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
+let pendingVoiceBlob = null;
+
+function sendMsg() {
+    const text = document.getElementById('msgInput').value.trim();
+    if (!text && !uploadFiles.length && !pendingVoiceBlob) return;
+    
+    if (pendingVoiceBlob) {
+        sendAudio();
+        return;
+    }
+
+    const fd = new FormData();
+    fd.append('order_id', activeId);
+    if (replyToMessageId) fd.append('reply_id', replyToMessageId);
+    if (text) fd.append('message', text);
+    uploadFiles.forEach(f => fd.append('image[]', f));
+    
+    document.getElementById('msgInput').value = '';
+    uploadFiles = [];
+    document.getElementById('imgPreviewArea').style.display = 'none';
+    cancelReply();
+    
+    api('/public/api/chat/send_message.php', 'POST', fd)
+        .then(data => { if (data.success) { loadMsgs(); } });
+}
+
+function showVoicePreview() {
+    pendingVoiceBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    if (pendingVoiceBlob.size === 0) {
+        pendingVoiceBlob = null;
+        return;
+    }
+    document.getElementById("voicePreviewArea").style.display = 'flex';
+    document.getElementById("inputContainer").classList.add("hidden");
+    document.getElementById("btnSend").classList.add("active");
+    document.getElementById("cancelRecord").classList.remove("hidden");
+
+    drawStaticWaveform(pendingVoiceBlob, 'previewWaveformCanvas', '#0a2530');
+    
+    const tempAudio = new Audio(URL.createObjectURL(pendingVoiceBlob));
+    tempAudio.onloadedmetadata = () => {
+        document.getElementById("previewDuration").textContent = formatAudioTime(tempAudio.duration);
+    };
+}
+
+function togglePreviewPlayback() {
+    if (!pendingVoiceBlob) return;
+    const icon = document.getElementById("previewPlayIcon");
+    
+    if (!previewAudio) {
+        previewAudio = new Audio(URL.createObjectURL(pendingVoiceBlob));
+        previewAudio.onended = () => {
+            icon.classList.replace('bi-pause-fill', 'bi-play-fill');
+            previewAudio = null;
+        };
+    }
+
+    if (previewAudio.paused) {
+        previewAudio.play();
+        icon.classList.replace('bi-play-fill', 'bi-pause-fill');
+    } else {
+        previewAudio.pause();
+        icon.classList.replace('bi-pause-fill', 'bi-play-fill');
+    }
+}
+
+function clearVoicePreview() {
+    if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+    pendingVoiceBlob = null;
+    audioChunks = [];
+    document.getElementById("voicePreviewArea").style.display = 'none';
+    document.getElementById("inputContainer").classList.remove("hidden");
+    document.getElementById("cancelRecord").classList.add("hidden");
+    const stopRec = document.getElementById("stopRecord");
+    if (stopRec) stopRec.classList.add("hidden");
+    document.getElementById("recordStatus").classList.add("hidden");
+    document.getElementById("startRecord").classList.remove("recording");
+    const icon = document.getElementById("previewPlayIcon");
+    if (icon) icon.classList.replace('bi-pause-fill', 'bi-play-fill');
+}
+
 function sendAudio() {
-    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-    if (blob.size === 0) return;
+    if (!pendingVoiceBlob) return;
 
     const btn = document.getElementById('btnSend');
     const originalContent = btn.innerHTML;
@@ -1307,8 +1695,9 @@ function sendAudio() {
     btn.innerHTML = `<i class='bi bi-hourglass-split animate-spin'></i>`;
 
     const formData = new FormData();
-    formData.append("voice", blob);
+    formData.append("voice", pendingVoiceBlob);
     formData.append("order_id", activeId);
+    if (replyToMessageId) formData.append('reply_id', replyToMessageId);
 
     fetch(window.baseUrl + "/public/api/chat/send_voice.php", {
         method: "POST",
@@ -1317,6 +1706,8 @@ function sendAudio() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
+            clearVoicePreview();
+            cancelReply();
             loadMsgs();
         } else {
             alert(data.error || "Voice upload failed");

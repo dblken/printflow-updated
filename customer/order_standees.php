@@ -9,63 +9,59 @@ require_role('Customer');
 $customer_id = get_user_id();
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $branch_id = trim($_POST['branch_id'] ?? '1');
-    $size = trim($_POST['size'] ?? ''); $with_stand = trim($_POST['with_stand'] ?? '');
+    $branch_id = (int)($_POST['branch_id'] ?? 1);
+    $size = trim($_POST['size'] ?? ''); 
+    $with_stand = trim($_POST['with_stand'] ?? '');
     $needed_date = trim($_POST['needed_date'] ?? '');
-    $quantity = (int)($_POST['quantity'] ?? 1); $notes = trim($_POST['notes'] ?? '');
+    $quantity = (int)($_POST['quantity'] ?? 1); 
+    $notes = trim($_POST['notes'] ?? '');
+
     if (empty($size) || empty($needed_date) || $quantity < 1) {
-        $error = 'Please fill in Size and Quantity.';
+        $error = 'Please fill in size, needed date, and quantity.';
+    } elseif ((function_exists('mb_strlen') ? mb_strlen($notes) : strlen($notes)) > 500) {
+        $error = 'Notes must not exceed 500 characters.';
     } elseif (!isset($_FILES['design_file']) || $_FILES['design_file']['error'] !== UPLOAD_ERR_OK) {
         $error = 'Please upload your design.';
-    }
-
-    if (empty($error)) {
-        // Process file for session
-        $tmp_dir = service_order_temp_dir();
-        $db_data = file_get_contents($_FILES['design_file']['tmp_name']);
-        $ext = pathinfo($_FILES['design_file']['name'], PATHINFO_EXTENSION);
-        $tmp_filename = uniqid('standee_') . '.' . $ext;
-        $tmp_path = $tmp_dir . DIRECTORY_SEPARATOR . $tmp_filename;
-        file_put_contents($tmp_path, $db_data);
-        
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime  = finfo_file($finfo, $_FILES['design_file']['tmp_name']);
-        finfo_close($finfo);
-
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
-        }
-
-        $product_id = 0; // Service order
-        $item_key = 'stand_' . time();
-        
-        $_SESSION['cart'][$item_key] = [
-            'product_id'     => $product_id,
-            'source_page'    => 'services',
-            'branch_id'      => $branch_id,
-            'name'           => 'Sintraboard Standees',
-            'category'       => 'Sintraboard Standees',
-            'price'          => 0, // Determined at review or staff side
-            'quantity'       => $quantity,
-            'image'          => '🕴️',
-            'customization'  => [
-                'Size' => $size,
-                'With_Stand' => $with_stand ?: 'No',
-                'needed_date' => $needed_date
-            ],
-            'design_notes'   => $notes,
-            'design_tmp_path'=> $tmp_path,
-            'design_mime'    => $mime,
-            'design_name'    => $_FILES['design_file']['name'],
-            'reference_tmp_path' => null,
-            'reference_mime'     => null,
-            'reference_name'     => null
-        ];
-
-        if (($_POST['action'] ?? '') === 'buy_now' || isset($_POST['buy_now'])) {
-            redirect(BASE_URL . '/customer/order_review.php?item=' . urlencode($item_key));
+    } else {
+        $valid = service_order_validate_file($_FILES['design_file']);
+        if (!$valid['ok']) {
+            $error = $valid['error'];
         } else {
-            redirect(BASE_URL . '/customer/cart.php');
+            $item_key = 'stand_' . time() . '_' . rand(100, 999);
+            $original_name = $_FILES['design_file']['name'];
+            $mime = $valid['mime'];
+            $ext = pathinfo($original_name, PATHINFO_EXTENSION);
+            $new_name = uniqid('tmp_') . '.' . $ext;
+            $tmp_dest = service_order_temp_dir() . DIRECTORY_SEPARATOR . $new_name;
+
+            if (move_uploaded_file($_FILES['design_file']['tmp_name'], $tmp_dest)) {
+                $_SESSION['cart'][$item_key] = [
+                    'type' => 'Service',
+                    'source_page' => 'services',
+                    'name' => 'Sintraboard standees',
+                    'category' => 'Sintraboard standees',
+                    'price' => 0, 
+                    'quantity' => $quantity,
+                    'branch_id' => $branch_id,
+                    'design_tmp_path' => $tmp_dest,
+                    'design_name' => $original_name,
+                    'design_mime' => $mime,
+                    'customization' => [
+                        'size' => $size,
+                        'with_stand' => $with_stand ?: 'No',
+                        'needed_date' => $needed_date,
+                        'notes' => $notes
+                    ]
+                ];
+
+                if (($_POST['action'] ?? '') === 'buy_now' || isset($_POST['buy_now'])) {
+                    redirect(BASE_URL . '/customer/order_review.php?item=' . urlencode($item_key));
+                } else {
+                    redirect(BASE_URL . '/customer/cart.php');
+                }
+            } else {
+                $error = 'Failed to process uploaded file.';
+            }
         }
     }
 }
@@ -85,19 +81,20 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
         <div class="text-sm text-gray-500 mb-6 flex items-center gap-2">
             <a href="services.php" class="hover:text-blue-600">Services</a>
             <span>/</span>
-            <span class="font-semibold text-gray-900">Sintraboard Standees</span>
+            <span class="font-semibold text-gray-900">Sintraboard standees</span>
         </div>
 
         <div class="shopee-card">
             <!-- Left Side: Image -->
             <div class="shopee-image-section">
                 <div class="shopee-main-image-wrap">
-                        <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Standees'); ?>" alt="Sintraboard Standees" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Standees'">
-                    </div>
+                    <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Standees'); ?>" alt="Sintraboard Standees" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Standees'">
                 </div>
+            </div>
+            
             <!-- Right Side: Form -->
             <div class="shopee-form-section">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Sintraboard Standees</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Sintraboard standees</h1>
                 
                 <?php
                 $stats = service_order_get_page_stats('order_standees');
@@ -105,10 +102,6 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
                 $review_count = (int)($stats['review_count'] ?? 0);
                 $sold_count = (int)($stats['sold_count'] ?? 0);
                 $sold_display = $sold_count >= 1000 ? number_format($sold_count / 1000, 1) . 'k' : $sold_count;
-                
-                $_s_name = 'PrintFlow Service';
-                $_s_row = db_query("SELECT name FROM services WHERE customer_link LIKE '%order_standees%' LIMIT 1");
-                if(!empty($_s_row)) { $_s_name = $_s_row[0]['name']; }
                 ?>
                 <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
                     <div class="flex items-center gap-1">
@@ -132,9 +125,9 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
                     <div class="shopee-form-row shopee-form-row-flat">
                         <label class="shopee-form-label">Branch *</label>
                         <div class="shopee-form-field">
-                            <div class="shopee-opt-group">
+                            <div class="shopee-opt-group opt-grid-3">
                                 <?php foreach($branches as $b): ?>
-                                    <label class="shopee-opt-btn"><input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="standeeUpdateOpt(this)"> <span><?php echo htmlspecialchars($b['branch_name']); ?></span></label>
+                                    <label class="shopee-opt-btn"><input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="standeeUpdateOpt(this)"> <span><?php echo htmlspecialchars(to_sentence_case($b['branch_name'])); ?></span></label>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -145,37 +138,29 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
                         <label class="shopee-form-label">Dimensions *</label>
                         <div class="shopee-form-field">
                             <div class="shopee-opt-group">
-                                <button type="button" class="shopee-opt-btn" data-width="2" data-height="5" onclick="selectDimension(2, 5, event)">2×5 FT</button>
-                                <button type="button" class="shopee-opt-btn" data-width="2" data-height="6" onclick="selectDimension(2, 6, event)">2×6 FT</button>
-                                <button type="button" class="shopee-opt-btn" data-width="2.5" data-height="6" onclick="selectDimension(2.5, 6, event)">2.5×6 FT</button>
+                                <button type="button" class="shopee-opt-btn" data-width="2" data-height="5" onclick="selectDimension(2, 5, event)">2×5 ft</button>
+                                <button type="button" class="shopee-opt-btn" data-width="2" data-height="6" onclick="selectDimension(2, 6, event)">2×6 ft</button>
+                                <button type="button" class="shopee-opt-btn" data-width="2.5" data-height="6" onclick="selectDimension(2.5, 6, event)">2.5×6 ft</button>
                                 <button type="button" class="shopee-opt-btn" id="dim-others-btn" onclick="selectDimensionOthers(event)">Others</button>
                             </div>
-                            <input type="hidden" name="width" id="width_hidden">
-                            <input type="hidden" name="height" id="height_hidden">
-                            <input type="hidden" name="unit" value="ft">
-                            <!-- We still pass 'size' for backend compatibility if needed, or if it expects width/height -->
                             <input type="hidden" name="size" id="size_hidden">
                             
-                                                    <div id="dim-others-inputs" class="shopee-form-row-flat" style="display:none;border-top:1px dashed rgba(255,255,255,0.1);margin-top:1.5rem;padding-top:1.5rem;width:100%">
-                            <div style="width:100%;max-width:440px">
-                                <div style="display:flex;gap:8px;margin-bottom:4px">
-                                    <div style="flex:1"><label class="dim-label">Width (ft)</label></div>
-                                    <div style="width:32px"></div>
-                                    <div style="flex:1"><label class="dim-label">Height (ft)</label></div>
-                                </div>
-                                <div style="display:flex;align-items:center;gap:8px">
-                                    <div style="flex:1">
-                                        <input type="number" step="0.01" id="custom_width" class="input-field" placeholder="e.g. 2" min="1" max="100">
-                                        <div id="width-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 ft.</div>
+                            <div id="dim-others-inputs" style="display:none;border-top:1px dashed rgba(255,255,255,0.1);margin-top:1.5rem;padding-top:1.5rem;width:100%">
+                                <div style="width:100%;max-width:440px">
+                                    <div style="display:flex;gap:8px;margin-bottom:4px">
+                                        <div style="flex:1"><label class="dim-label">Width (ft)</label></div>
+                                        <div style="width:32px"></div>
+                                        <div style="flex:1"><label class="dim-label">Height (ft)</label></div>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:8px">
+                                        <div style="flex:1">
+                                        <input type="number" id="custom_width" class="input-field" placeholder="0" min="1" max="100" step="1" data-dimension>
                                     </div>
                                     <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
                                     <div style="flex:1">
-                                        <input type="number" step="0.01" id="custom_height" class="input-field" placeholder="e.g. 5" min="1" max="100">
-                                        <div id="height-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 ft.</div>
+                                        <input type="number" id="custom_height" class="input-field" placeholder="0" min="1" max="100" step="1" data-dimension>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -190,20 +175,20 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
                     </div>
 
                     <div class="shopee-form-row shopee-form-row-flat">
-                        <label class="shopee-form-label">Upload Design *</label>
+                        <label class="shopee-form-label">Upload design *</label>
                         <div class="shopee-form-field">
-                            <input type="file" name="design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" required style="max-width: 300px; padding: 0.5rem;">
+                            <input type="file" name="design_file" id="design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" required style="max-width: 300px; padding: 0.5rem;">
                         </div>
                     </div>
 
-                    <div class="shopee-form-row shopee-form-row-flat" id="card-date-souvenir">
+                    <div class="shopee-form-row shopee-form-row-flat">
                         <label class="shopee-form-label">Needed date *</label>
                         <div class="shopee-form-field">
                             <input type="date" name="needed_date" id="standee_needed_date" class="input-field" required min="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['needed_date'] ?? ''); ?>" style="max-width: 200px;">
                         </div>
                     </div>
 
-                    <div class="shopee-form-row shopee-form-row-flat" id="card-qty-souvenir">
+                    <div class="shopee-form-row shopee-form-row-flat">
                         <label class="shopee-form-label">Quantity *</label>
                         <div class="shopee-form-field">
                             <div class="shopee-qty-control">
@@ -217,23 +202,26 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
                     <div class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
                         <label class="shopee-form-label" style="padding-top: 0.75rem;">Notes</label>
                         <div class="shopee-form-field">
-                            <div style="display:flex; justify-content:flex-end; margin-bottom: 0.25rem; ">
-                                <span id="notes-counter" style="font-size: 0.7rem; color: var(--lp-muted); font-weight: 700;">0 / 500</span>
+                            <div style="display:flex; justify-content:flex-end; align-items:center; gap: 10px; margin-bottom: 0.5rem; width: 100%;">
+                                <span class="notes-warn">Max 500 characters</span>
+                                <span class="notes-counter">0 / 500</span>
                             </div>
-                            <textarea name="notes" id="notes-textarea" rows="3" class="input-field" placeholder="Any special instructions..." maxlength="500" oninput="updateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
-                            <div id="notes-warn" class="text-xs font-bold mt-1" style="display:none; color: #ef4444;">Maximum characters reached.</div>
+                            <textarea id="notes_global" name="notes" rows="3" class="input-field notes-textarea-global" 
+                                placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                                maxlength="500" 
+                                oninput="reflUpdateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
                         </div>
                     </div>
 
                     <div class="shopee-form-row pt-8">
                         <div style="width: 160px;" class="hidden md:block"></div>
-                        <div class="flex gap-4 flex-1">
-                            <a href="services.php" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700;">Back</a>
-                            <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="flex: 1; height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; border-color: var(--lp-accent); color: var(--lp-accent); font-weight: 700;">
-                                <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                Add To Cart
+                        <div class="flex gap-4 flex-1 justify-end">
+                            <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="width: 90px; height: 2.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">Back</a>
+                            <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="width: 140px; height: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700; font-size: 0.85rem; white-space: nowrap;" title="Add to Cart">
+                                <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Add to cart
                             </button>
-                            <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="flex: 1.5; height: 3.5rem; font-size: 1.1rem; font-weight: 800;">Buy Now</button>
+                            <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="width: 160px; height: 2.25rem; font-size: 0.95rem; font-weight: 800; white-space: nowrap;">Buy now</button>
                         </div>
                     </div>
                 </form>
@@ -243,29 +231,21 @@ $qty_default = max(1, min(999, (int)($_GET['qty'] ?? 1)));
 </div>
 
 <script>
-function updateNotesCounter(el) {
-    const counter = document.getElementById('notes-counter');
-    const warn = document.getElementById('notes-warn');
-    counter.textContent = el.value.length + ' / 500';
-    if(el.value.length >= 500) {
-        counter.style.color = '#ef4444';
-        warn.style.display = 'block';
-    } else {
-        counter.style.color = 'var(--lp-muted)';
-        warn.style.display = 'none';
-    }
-}
-
 function standeeQtyUp() { const i = document.getElementById('standee-qty'); i.value = Math.min(999, (parseInt(i.value) || 1) + 1); }
 function standeeQtyDown() { const i = document.getElementById('standee-qty'); i.value = Math.max(1, (parseInt(i.value) || 1) - 1); }
 function standeeQtyClamp() { const i = document.getElementById('standee-qty'); let v = parseInt(i.value) || 1; i.value = Math.max(1, Math.min(999, v)); }
 
 function standeeUpdateOpt(input) {
-    const name = input.name;
-    document.querySelectorAll(`input[name="${name}"]`).forEach(function(r) {
-        const wrap = r.closest('.shopee-opt-btn');
-        if (wrap) wrap.classList.toggle('active', r.checked);
-    });
+    const group = input.closest('.shopee-opt-group');
+    if (group) {
+        group.querySelectorAll('.shopee-opt-btn').forEach(btn => btn.classList.remove('active'));
+        input.closest('.shopee-opt-btn').classList.add('active');
+    }
+}
+
+function reflUpdateNotesCounter(textarea) {
+    const count = textarea.value.length;
+    document.querySelector('.notes-counter').textContent = `${count} / 500`;
 }
 
 let dimensionMode = 'preset';
@@ -281,9 +261,7 @@ function selectDimension(w, h, e) {
     const b = e.target.closest('.shopee-opt-btn');
     if(b) b.classList.add('active');
     document.getElementById('dim-others-inputs').style.display = 'none';
-    document.getElementById('width_hidden').value = w;
-    document.getElementById('height_hidden').value = h;
-    document.getElementById('size_hidden').value = w + 'x' + h + ' ft';
+    document.getElementById('size_hidden').value = w + '×' + h + ' ft';
 }
 
 function selectDimensionOthers(e) {
@@ -295,17 +273,14 @@ function selectDimensionOthers(e) {
         }
     });
     document.getElementById('dim-others-btn').classList.add('active');
-    document.getElementById('dim-others-inputs').style.display = 'flex';
+    document.getElementById('dim-others-inputs').style.display = 'block';
     syncOthersDimensions();
 }
 
 function syncOthersDimensions() {
     let w = parseFloat(document.getElementById('custom_width').value) || 0;
     let h = parseFloat(document.getElementById('custom_height').value) || 0;
-    
-    document.getElementById('width_hidden').value = w;
-    document.getElementById('height_hidden').value = h;
-    document.getElementById('size_hidden').value = w + 'x' + h + ' ft';
+    document.getElementById('size_hidden').value = (w && h) ? w + '×' + h + ' ft' : '';
 }
 
 document.getElementById('custom_width').addEventListener('input', syncOthersDimensions);
@@ -315,57 +290,56 @@ document.getElementById('standeeForm').addEventListener('submit', function(e) {
     let hasError = false;
     let firstErr = null;
 
-    // Reset errors
     document.getElementById('width-error').style.display = 'none';
     document.getElementById('height-error').style.display = 'none';
 
     const branch = this.querySelector('input[name="branch_id"]:checked');
     const stand = this.querySelector('input[name="with_stand"]:checked');
-    const file = this.querySelector('input[name="design_file"]');
+    const file = document.getElementById('design_file');
     const nd = document.getElementById('standee_needed_date');
 
-    if (!branch) { hasError = true; if(!firstErr) firstErr = this.querySelector('.shopee-opt-group'); }
+    if (!branch) { hasError = true; if(!firstErr) firstErr = this.querySelector('input[name="branch_id"]')?.closest('.shopee-form-row'); }
     
     if (dimensionMode === 'preset') {
-        const active = this.querySelector('.shopee-opt-btn.active');
-        if (!active && (this.querySelector('button[data-width]') || document.getElementById('dim-others-btn'))) {
-            alert('Please select dimensions.');
-            hasError = true;
-            if(!firstErr) firstErr = document.getElementById('dim-others-btn').closest('.shopee-form-row');
+        const active = document.querySelector('.shopee-opt-btn.active[data-width]');
+        if (!active) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                window.showOrderValidationError(document.getElementById('dim-others-btn').closest('.shopee-opt-group'), 'Please select a dimension.');
+            } else {
+                alert('Please select a dimension.');
+            }
+            return;
         }
+        document.getElementById('size_hidden').value = active.dataset.width + 'x' + active.dataset.height + ' ft';
     } else {
-        const w = parseFloat(document.getElementById('custom_width').value) || 0;
-        const h = parseFloat(document.getElementById('custom_height').value) || 0;
-        if (w <= 0 || h <= 0) {
-            alert('Please enter dimensions.');
-            hasError = true;
-            if(!firstErr) firstErr = document.getElementById('custom_width');
-        } else {
-            if (w > 100) {
-                document.getElementById('width-error').style.display = 'block';
-                hasError = true;
-                if (!firstErr) firstErr = document.getElementById('custom_width');
+        const w = parseInt(document.getElementById('custom_width').value, 10) || 0;
+        const h = parseInt(document.getElementById('custom_height').value, 10) || 0;
+
+        if (w <= 0 || h <= 0 || w > 100 || h > 100) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                if (w <= 0) window.showOrderValidationError(document.getElementById('custom_width'), 'Please enter width.');
+                else if (w > 100) window.showOrderValidationError(document.getElementById('custom_width'), 'Maximum allowed is 100 only.');
+                
+                if (h <= 0) window.showOrderValidationError(document.getElementById('custom_height'), 'Please enter height.');
+                else if (h > 100) window.showOrderValidationError(document.getElementById('custom_height'), 'Maximum allowed is 100 only.');
+            } else {
+                alert('Please enter valid dimensions (Max 100).');
             }
-            if (h > 100) {
-                document.getElementById('height-error').style.display = 'block';
-                hasError = true;
-                if (!firstErr) firstErr = document.getElementById('custom_height');
-            }
+            return;
         }
+        document.getElementById('size_hidden').value = w + 'x' + h + ' ft (Custom)';
     }
 
     if (!stand) { hasError = true; if(!firstErr) firstErr = this.querySelector('input[name="with_stand"]')?.closest('.shopee-form-row'); }
-    if (!file || (!file.files || file.files.length === 0)) { 
-        if (!file.placeholderColor) { // Check if we should ignore for edit mode (custom logic usually handles it but I'll stick to basic)
-             hasError = true; if(!firstErr) firstErr = file; 
-        }
-    }
+    if (!file || (!file.files || file.files.length === 0)) { hasError = true; if(!firstErr) firstErr = file.closest('.shopee-form-row'); }
     if (!nd || !nd.value) { hasError = true; if(!firstErr) firstErr = nd; }
 
-    const notes = document.getElementById('notes-textarea').value;
-    if (notes.length > 500) {
-        hasError = true; if(!firstErr) firstErr = document.getElementById('notes-textarea');
-    }
+    const notes = document.getElementById('notes_global').value;
+    if (notes.length > 500) { hasError = true; if(!firstErr) firstErr = document.getElementById('notes_global'); }
 
     if (hasError) {
         e.preventDefault();
@@ -385,7 +359,12 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-.dim-label { font-size: 0.70rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
-.dim-sep { height: 44px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
+.shopee-form-row-flat { margin-bottom: 1.5rem; display: flex; align-items: center; }
+.dim-label { font-size: 0.70rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block;  }
+.shopee-qty-control { display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); width: fit-content; background: rgba(15, 23, 42, 0.6); }
+.shopee-qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #f1f5f9; cursor: pointer; font-size: 1.25rem; transition: background 0.2s; }
+.shopee-qty-btn:hover { background: rgba(255,255,255,0.05); }
+.shopee-qty-input { width: 50px; height: 32px; border: none; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); background: none; color: #f1f5f9; text-align: center; -moz-appearance: textfield; font-weight: 600; }
+.shopee-qty-input::-webkit-outer-spin-button, .shopee-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 </style>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

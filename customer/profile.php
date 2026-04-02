@@ -224,27 +224,32 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <style>
-/* ── Modern Profile Page (Refactored to Project Specs) ─── */
+/* ── Modern Profile Page (Refactored to Dark Theme) ─── */
 :root {
     --pf-primary: #030d11;
     --pf-secondary: #0a1f26;
     --pf-accent: #53c5e0;
     --pf-accent-hover: #32a1c4;
-    --pf-text-main: #030d11; /* Changed to dark for the white container as requested */
-    --pf-text-muted: #64748b;
-    --pf-border: #e2e8f0;
-    --pf-card-bg: #ffffff;
+    --pf-text-main: #f1f5f9;
+    --pf-text-muted: #94a3b8;
+    --pf-border: rgba(83, 197, 224, 0.2);
+    --pf-card-bg: rgba(10, 31, 38, 0.7);
+    --pf-glass-bg: rgba(3, 13, 17, 0.8);
+    --pf-glass-blur: blur(12px);
 }
+
+body { background: var(--pf-primary); color: var(--pf-text-main); }
 
 /* 1. SINGLE MAIN CONTAINER */
 .profile-container {
     max-width: 1200px;
-    margin: 40px auto;
-    padding: 2.5rem;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    overflow: hidden; /* Prevent overflow */
+    margin: 20px auto;
+    padding: 1.5rem;
+    background: var(--pf-card-bg);
+    backdrop-filter: var(--pf-glass-blur);
+    border-radius: 0;
+    border: 1px solid var(--pf-border);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     box-sizing: border-box;
 }
 
@@ -252,7 +257,7 @@ require_once __DIR__ . '/../includes/header.php';
 .profile-grid {
     display: grid;
     grid-template-columns: 280px 1fr;
-    gap: 2.5rem;
+    gap: 1.5rem;
     align-items: start;
 }
 
@@ -273,9 +278,9 @@ require_once __DIR__ . '/../includes/header.php';
 
 .sidebar-content {
     text-align: center;
-    padding: 1.5rem;
-    background: #f8fafc;
-    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 0;
     border: 1px solid var(--pf-border);
 }
 
@@ -286,14 +291,16 @@ require_once __DIR__ . '/../includes/header.php';
 }
 
 .profile-avatar-ring {
-    width: 130px; height: 130px;
-    border-radius: 50%;
+    width: 140px; height: 140px;
+    border-radius: 0;
     overflow: hidden;
-    background: #fff;
-    border: 3px solid #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background: var(--pf-secondary);
+    border: 3px solid var(--pf-accent);
+    box-shadow: 0 0 20px rgba(83, 197, 224, 0.3);
     margin: 0 auto;
+    transition: all 0.4s ease;
 }
+.profile-avatar-ring:hover { border-radius: 0; }
 
 .profile-avatar-ring img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -301,7 +308,7 @@ require_once __DIR__ . '/../includes/header.php';
     position: absolute;
     bottom: 5px; right: 5px;
     width: 32px; height: 32px;
-    border-radius: 50%;
+    border-radius: 0;
     background: var(--pf-accent);
     color: #fff;
     display: flex; align-items: center; justify-content: center;
@@ -311,43 +318,39 @@ require_once __DIR__ . '/../includes/header.php';
 }
 
 .profile-user-name {
-    font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;
+    font-size: 1.5rem; font-weight: 800; color: var(--pf-text-main); margin-bottom: 0.25rem;
 }
 
 .profile-user-email {
-    font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; word-break: break-all;
+    font-size: 0.875rem; color: var(--pf-text-muted); margin-bottom: 1.5rem; word-break: break-all;
 }
 
 .profile-info-pill {
-    display: flex; justify-content: space-between; padding: 0.75rem 0;
-    border-top: 1px solid #e2e8f0; font-size: 0.813rem;
+    display: flex; justify-content: space-between; padding: 0.875rem 0;
+    border-top: 1px solid var(--pf-border); font-size: 0.85rem;
 }
 
 /* ─ MAIN CONTENT (RIGHT SIDE) ─ */
 .profile-main-content {
-    display: flex; flex-direction: column; gap: 2rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
 }
 
 .profile-card {
-    background: #fff;
-    padding: 0; /* padding handled in card inner */
-    transition: all 0.3s ease;
-}
-
-.profile-card:hover {
-    transform: translateY(-2px);
+    background: transparent;
+    padding: 0;
 }
 
 .profile-card-title {
-    font-size: 1.125rem; font-weight: 700; color: #0f172a; 
-    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;
+    font-size: 1.2rem; font-weight: 800; color: var(--pf-accent); 
+    margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em;
 }
 
 /* ─ FORM LAYOUT & ELEMENTS ─ */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    gap: 0.75rem;
     box-sizing: border-box;
 }
 
@@ -361,23 +364,25 @@ require_once __DIR__ . '/../includes/header.php';
 }
 
 .pf-label {
-    display: block; font-size: 0.75rem; font-weight: 700; 
-    color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.025em;
+    display: block; font-size: 0.65rem; font-weight: 800; 
+    color: var(--pf-text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;
 }
 
 .pf-input {
-    width: 100%; padding: 12px 14px;
-    border: 1px solid #cbd5e1; border-radius: 8px;
-    font-size: 0.95rem; color: #1e293b; background: #fff;
-    box-sizing: border-box; transition: 0.2s;
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--pf-border); border-radius: 0;
+    font-size: 0.95rem; color: var(--pf-text-main); background: rgba(0, 0, 0, 0.2);
+    box-sizing: border-box; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pf-input:focus {
-    outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px rgba(83, 197, 224, 0.1);
+    outline: none; border-color: var(--pf-accent); background: rgba(0, 0, 0, 0.3); box-shadow: none;
 }
 
+.pf-input::placeholder { color: rgba(255,255,255,0.2); }
+
 .pf-btn-primary {
-    padding: 12px 24px; border-radius: 8px; border: none;
+    padding: 12px 24px; border-radius: 0; border: none;
     background: var(--pf-accent); color: #fff; font-weight: 700;
     cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px;
 }
@@ -397,15 +402,15 @@ require_once __DIR__ . '/../includes/header.php';
 .profile-nav-item a.active { background: #fff; color: var(--pf-accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
 /* Alerts */
-.pf-alert { padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid transparent; }
-.pf-alert-error { background: #fef2f2; color: #b91c1c; border-left-color: #ef4444; }
-.pf-alert-success { background: #f0fdf4; color: #15803d; border-left-color: #22c55e; }
+.pf-alert { padding: 1.25rem 1.5rem; border-radius: 0; margin-bottom: 2.5rem; border-left: 5px solid transparent; backdrop-filter: blur(4px); }
+.pf-alert-error { background: rgba(239, 68, 68, 0.1); color: #fecaca; border-left-color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.pf-alert-success { background: rgba(34, 197, 94, 0.1); color: #bbf7d0; border-left-color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
 
 .live-indicator { font-size: 0.75rem; margin-top: 4px; min-height: 1.25rem; transition: 0.2s; }
 .live-indicator.error { color: #dc2626; font-weight: 600; }
 </style>
 
-<div class="min-h-screen py-10" style="background: #f1f5f9;">
+<div class="min-h-screen py-10">
     <div class="profile-container">
 
         <?php if ($error): ?>
@@ -429,8 +434,8 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php if (!empty($customer['profile_picture'])): ?>
                                 <img src="/printflow/public/assets/uploads/profiles/<?php echo htmlspecialchars($customer['profile_picture']); ?>?t=<?php echo time(); ?>" alt="Avatar" id="profile-preview">
                             <?php else: ?>
-                                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;">
-                                    <svg width="48" height="48" fill="none" stroke="#94a3b8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                             <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);">
+                                    <svg width="60" height="60" fill="none" stroke="var(--pf-accent)" viewBox="0 0 24 24" style="opacity:0.4;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                 </div>
                                 <img src="" alt="Profile" style="display:none;width:100%;height:100%;object-fit:cover;" id="profile-preview">
                             <?php endif; ?>
@@ -454,22 +459,6 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
 
-                <nav class="profile-nav-card">
-                    <ul class="profile-nav-list">
-                        <li class="profile-nav-item"><a href="#section-profile" class="active">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                            Profile Info
-                        </a></li>
-                        <li class="profile-nav-item"><a href="#section-address">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            Address Book
-                        </a></li>
-                        <li class="profile-nav-item"><a href="#section-password">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            Security
-                        </a></li>
-                    </ul>
-                </nav>
             </aside>
 
             <!-- ── MAIN CONTENT (RIGHT SIDE) ── -->
@@ -503,7 +492,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                             <div class="pf-field-group">
                                 <label class="pf-label">Email Address (Locked)</label>
-                                <input type="email" class="pf-input" style="background:#f1f5f9; cursor:not-allowed;" value="<?php echo htmlspecialchars($customer['email']); ?>" readonly>
+                                <input type="email" class="pf-input" style="background:rgba(255,255,255,0.05); cursor:not-allowed; opacity: 0.6;" value="<?php echo htmlspecialchars($customer['email']); ?>" readonly>
                             </div>
                             <div class="pf-field-group">
                                 <label for="contact_number" class="pf-label">Contact Number</label>
@@ -520,7 +509,6 @@ require_once __DIR__ . '/../includes/header.php';
                                     <div>
                                         <label for="gender" class="pf-label">Gender</label>
                                         <select id="gender" name="gender" class="pf-input">
-                                            <option value="">Select</option>
                                             <option value="Male" <?php echo ($customer['gender'] ?? '') === 'Male' ? 'selected' : ''; ?>>Male</option>
                                             <option value="Female" <?php echo ($customer['gender'] ?? '') === 'Female' ? 'selected' : ''; ?>>Female</option>
                                             <option value="Other" <?php echo ($customer['gender'] ?? '') === 'Other' ? 'selected' : ''; ?>>Other</option>
@@ -537,7 +525,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <!-- Address Section -->
-                <div class="profile-card" id="section-address" style="padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+                <div class="profile-card" id="section-address" style="padding-top: 3rem; border-top: 1px solid var(--pf-border); margin-top: 2rem;">
                     <h3 class="profile-card-title">Address & Delivery</h3>
                     
                     <form method="POST" action="" id="address-form">
@@ -588,9 +576,9 @@ require_once __DIR__ . '/../includes/header.php';
                             <input type="text" id="addr_street" name="street_address" class="pf-input" placeholder="e.g. #123 Sampaguita st., Phase 2" value="<?php echo htmlspecialchars($customer['street_address'] ?? ''); ?>">
                         </div>
 
-                        <div id="addr-preview" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; margin-top:1.5rem; font-size:0.875rem;">
-                            <span style="color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Delivery Summary</span>
-                            <div id="addr-preview-text" style="color:#0f172a; line-height:1.4;"></div>
+                        <div id="addr-preview" style="display:none; background:rgba(255,255,255,0.03); border:1px solid var(--pf-border); border-radius:0; padding:1.25rem; margin-top:2rem; font-size:0.9rem;">
+                            <span style="color:var(--pf-accent); font-weight:800; display:block; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em; font-size:0.75rem;">Delivery Summary</span>
+                            <div id="addr-preview-text" style="color:var(--pf-text-main); line-height:1.6; font-weight:500;"></div>
                         </div>
 
                         <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
@@ -600,7 +588,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <!-- Security Section -->
-                <div class="profile-card" id="section-password" style="padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+                <div class="profile-card" id="section-password" style="padding-top: 3rem; border-top: 1px solid var(--pf-border); margin-top: 2rem;">
                     <h3 class="profile-card-title">Security & Password</h3>
                     
                     <form method="POST" action="">
@@ -621,10 +609,10 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="pf-field-group">
                                 <label for="new_password" class="pf-label">New Password</label>
                                 <input type="password" id="new_password" name="new_password" class="pf-input" placeholder="8+ characters" required minlength="8">
-                                <ul id="pw-checklist" style="list-style:none; padding:10px 0 0; margin:0; display:flex; flex-wrap:wrap; gap:6px;">
-                                    <li id="pw-rule-len" style="font-size:0.625rem; padding:3px 8px; background:#f1f5f9; border-radius:4px; color:#94a3b8;">8+ chars</li>
-                                    <li id="pw-rule-upper" style="font-size:0.625rem; padding:3px 8px; background:#f1f5f9; border-radius:4px; color:#94a3b8;">Uppercase</li>
-                                    <li id="pw-rule-num" style="font-size:0.625rem; padding:3px 8px; background:#f1f5f9; border-radius:4px; color:#94a3b8;">Number</li>
+                                <ul id="pw-checklist" style="list-style:none; padding:12px 0 0; margin:0; display:flex; flex-wrap:wrap; gap:8px;">
+                                    <li id="pw-rule-len" style="font-size:0.65rem; font-weight:700; padding:4px 10px; background:rgba(255,255,255,0.05); border-radius:0; color:var(--pf-text-muted);">8+ chars</li>
+                                    <li id="pw-rule-upper" style="font-size:0.65rem; font-weight:700; padding:4px 10px; background:rgba(255,255,255,0.05); border-radius:0; color:var(--pf-text-muted);">Uppercase</li>
+                                    <li id="pw-rule-num" style="font-size:0.65rem; font-weight:700; padding:4px 10px; background:rgba(255,255,255,0.05); border-radius:0; color:var(--pf-text-muted);">Number</li>
                                 </ul>
                             </div>
                             <div class="pf-field-group">
@@ -658,10 +646,10 @@ require_once __DIR__ . '/../includes/header.php';
     padding-right: 2.8rem;
 }
 .addr-select-wrap select:disabled {
-    background: #f3f7f9;
-    color: #9ca3af;
+    background: rgba(0,0,0,0.2);
+    color: rgba(255,255,255,0.2);
     cursor: not-allowed;
-    border-color: #e5e7eb;
+    border-color: var(--pf-border);
 }
 .addr-spinner {
     display: none;
@@ -670,7 +658,7 @@ require_once __DIR__ . '/../includes/header.php';
     width: 14px;
     height: 14px;
     border: 2px solid #d1d5db;
-    border-top-color: #0a2530;
+    border-top-color: var(--pf-accent);
     border-radius: 50%;
     animation: addr-spin 0.7s linear infinite;
     pointer-events: none;

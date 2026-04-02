@@ -1478,3 +1478,17 @@ function pf_admin_url(string $script, array $query = [], ?string $fragment = nul
     }
     return $url;
 }
+
+/**
+ * Convert string to sentence case (only first letter of first word capitalized).
+ * 
+ * @param string $str
+ * @return string
+ */
+function to_sentence_case($str) {
+    if (empty($str)) return '';
+    // Handle special cases like "2X3 FT" where we might want "2x3 ft"
+    // But for general text, lowercase everything and uppercase first char.
+    $str = mb_strtolower(trim((string)$str), 'UTF-8');
+    return mb_strtoupper(mb_substr($str, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($str, 1, null, 'UTF-8');
+}

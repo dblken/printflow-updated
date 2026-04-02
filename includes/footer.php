@@ -45,7 +45,7 @@ function _ft_detect_social(string $url): array {
 
     <!-- Footer: layout and design (self-contained so it always displays correctly) -->
     <style>
-        .ft-footer { width: 100%; background: #00151b; color: #e2e8f0; margin-top: 2.5rem; box-sizing: border-box; border-top: none; }
+        .ft-footer { width: 100%; background: #00151b; color: #e2e8f0; margin-top: 2.5rem; box-sizing: border-box; border-top: 1px solid rgba(83, 197, 224, 0.15); position: relative; z-index: 10; isolation: isolate; }
         .ft-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; box-sizing: border-box; }
         .ft-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
         @media (min-width: 768px) { .ft-grid { grid-template-columns: repeat(4, 1fr); gap: 2.5rem; } }

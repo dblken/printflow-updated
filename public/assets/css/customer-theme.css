@@ -24,10 +24,15 @@
 .bg-gray-50, .bg-slate-50 { background-color: transparent !important; }
 .border-gray-100, .border-gray-200, .border-slate-200 { border-color: var(--lp-border) !important; }
 
-/* Global Body Override */
+/* Global Body Override - Precisely Synchronized with Landing Page UI/UX */
 body.customer-theme {
     background-color: var(--lp-bg) !important;
-    background-image: radial-gradient(circle at 50% 50%, var(--lp-bg2), var(--lp-bg)) !important;
+    background-image: 
+        radial-gradient(ellipse 800px 600px at 50% 15%, var(--lp-glow) 0%, transparent 80%),
+        radial-gradient(circle at 50% 0%, var(--lp-bg2), var(--lp-bg)) !important;
+    background-size: 100% 100% !important;
+    background-attachment: fixed !important;
+    background-position: center top !important;
     color: var(--lp-text) !important;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
@@ -36,17 +41,30 @@ body.customer-theme {
     overflow-x: hidden;
 }
 
-/* Grid Overlay */
+/* Bulletproof Grid Overlay (Mimicking Landing Page Hero) */
 body.customer-theme::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: -1;
+    content: "" !important;
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px) !important;
+    background-size: 60px 60px !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+/* Ensure content stays above the grid but below modals/headers */
+body.customer-theme main#main-content {
+    position: relative !important;
+    z-index: 2 !important;
+    background: transparent !important;
+}
+
+/* Supplemental Lighting */
+body.customer-theme::after {
+    display: none !important;
 }
 
 /* Content Container Overrides */
@@ -83,15 +101,16 @@ body.customer-theme #modal-intro-text {
     color: var(--lp-muted) !important;
 }
 
-/* Navbar Enhancement */
+/* Navbar Enhancement (Precise Match to Landing Page) */
 body.customer-theme #main-header {
     background: rgba(10, 37, 48, 0.85) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
     border-bottom: 1px solid var(--lp-border) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
 }
 
+/* Gradient Logo text */
 body.customer-theme #main-header .text-2xl.font-bold,
 body.customer-theme #main-header .text-xl.font-bold {
     background: linear-gradient(135deg, #fff, var(--lp-accent-l)) !important;
@@ -100,8 +119,40 @@ body.customer-theme #main-header .text-xl.font-bold {
     color: transparent !important;
 }
 
+/* Nav Links Styling */
+body.customer-theme #main-header a.nav-link {
+    color: var(--lp-muted) !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    transition: color 0.2s !important;
+}
+
 body.customer-theme #main-header a.nav-link:hover {
+    color: #fff !important;
+}
+
+body.customer-theme #main-header a.nav-link.nav-active {
     color: var(--lp-accent-l) !important;
+}
+
+/* Register / Action Button */
+body.customer-theme #main-header .btn-gradient-primary,
+body.customer-theme #main-header .pf-auth-cta {
+    background: var(--lp-accent) !important;
+    border: 1px solid rgba(255, 255, 255, .12) !important;
+    border-radius: 0.5rem !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    transition: box-shadow .25s, background .25s, transform 0.2s !important;
+}
+
+body.customer-theme #main-header .btn-gradient-primary:hover,
+body.customer-theme #main-header .pf-auth-cta:hover {
+    background: #2a82a3 !important;
+    box-shadow: 0 0 24px var(--lp-glow) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* Glassmorphism Cards & Containers */
@@ -398,7 +449,7 @@ body.customer-theme .shopee-layout-container .shopee-card {
     backdrop-filter: blur(24px) !important;
     -webkit-backdrop-filter: blur(24px) !important;
     border: 1px solid var(--lp-border) !important;
-    border-radius: 2rem !important;
+    border-radius: 0 !important;
     padding: 2.5rem !important;
     margin-bottom: 3rem !important;
     box-shadow: 0 40px 100px rgba(0,0,0,0.4) !important;
@@ -512,11 +563,36 @@ body.customer-theme .shopee-opt-group {
     gap: 0.75rem !important;
 }
 
+body.customer-theme .opt-grid-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.75rem !important;
+}
+body.customer-theme .opt-grid-4 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.75rem !important;
+}
+body.customer-theme .opt-grid-5 {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0.75rem !important;
+}
+@media (max-width: 640px) {
+    body.customer-theme .opt-grid-3,
+    body.customer-theme .opt-grid-4,
+    body.customer-theme .opt-grid-5 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+
 body.customer-theme .shopee-opt-btn {
     min-width: 80px !important; /* Smaller min-width to allow more per row */
     flex: 0 1 auto !important; /* Allow shrink to fit 1 row, but do not stretch */
-    height: 44px !important;
-    padding: 0 1rem !important;
+    min-height: 44px !important;
+    height: auto !important;
+    padding: 0.5rem 1rem !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -524,21 +600,18 @@ body.customer-theme .shopee-opt-btn {
     border: 1px solid transparent !important;
     border-radius: 0 !important;
     color: var(--lp-text) !important;
-    font-size: 0.85rem !important;
+    font-size: 0.75rem !important; /* Slightly smaller to fit Better */
     font-weight: 600 !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
     text-align: center !important;
-    white-space: nowrap !important; /* Prevent text wrap */
-    text-transform: uppercase !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
 }
 
-/* Force Capslock on Titles and Labels */
-body.customer-theme h1,
-body.customer-theme .shopee-form-label,
 body.customer-theme .breadcrumb-item,
 body.customer-theme .service-title {
-    text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
 }
 
@@ -580,7 +653,7 @@ body.customer-theme .shopee-qty-control {
     display: inline-flex !important;
     align-items: center;
     border: 1px solid var(--lp-border);
-    border-radius: 0.5rem;
+    border-radius: 0; /* Unified Pointed Corner Design */
     overflow: hidden;
     background: rgba(255,255,255,0.03);
 }
@@ -617,8 +690,8 @@ body.customer-theme .shopee-qty-input {
 
 body.customer-theme .placement-card {
     background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid var(--lp-border) !important;
-    border-radius: 1rem !important;
+    border: none !important;
+    border-radius: 0 !important;
     padding: 0.75rem !important;
     transition: all 0.2s !important;
 }
@@ -636,7 +709,12 @@ body.customer-theme .placement-card:has(input:checked) {
 
 body.customer-theme .placement-img-wrap {
     background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 0.75rem !important;
+    border-radius: 0 !important;
+}
+
+body.customer-theme .shopee-main-image-wrap,
+body.customer-theme .shopee-main-image {
+    border-radius: 0 !important;
 }
 
 body.customer-theme .shopee-btn-primary {
@@ -647,7 +725,6 @@ body.customer-theme .shopee-btn-primary {
     height: 2.5rem !important;
     border-radius: 0 !important;
     font-weight: 800 !important;
-    text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
     box-shadow: 0 4px 15px var(--lp-glow) !important;
     cursor: pointer;
@@ -669,7 +746,6 @@ body.customer-theme .shopee-btn-outline {
     height: 2.5rem !important;
     border-radius: 0 !important;
     font-weight: 800 !important;
-    text-transform: uppercase !important;
     font-size: 0.875rem !important;
     transition: all 0.2s !important;
 }
@@ -688,7 +764,8 @@ body.customer-theme .shopee-form-label {
 
 body.customer-theme .bg-blue-50 {
     background: rgba(83, 197, 224, 0.1) !important;
-    border: 1px solid rgba(83, 197, 224, 0.2) !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
 
 body.customer-theme .text-blue-800,
@@ -756,7 +833,6 @@ body.customer-theme .shopee-category {
     font-size: 0.65rem !important;
     font-weight: 800 !important;
     color: var(--lp-accent-l) !important;
-    text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
     margin-bottom: 0.5rem !important;
 }
@@ -780,7 +856,6 @@ body.customer-theme .shopee-btn {
     padding: 0.6rem !important;
     font-size: 0.8rem !important;
     font-weight: 700 !important;
-    text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
     transition: all 0.2s !important;
 }
@@ -828,4 +903,28 @@ body.customer-theme #notes-textarea {
 .notes-limit-reached {
     color: #ef4444 !important; /* Red */
     font-weight: 800 !important;
+}
+
+/* Standardized Notes Components */
+.notes-textarea-global {
+    min-height: 100px !important;
+    max-height: 250px !important;
+    resize: vertical !important;
+    width: 100% !important;
+}
+
+.notes-warn {
+    font-size: 0.75rem !important;
+    color: #ef4444 !important;
+    font-weight: 800 !important;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.notes-counter {
+    font-size: 0.75rem !important;
+    color: #94a3b8 !important;
+    font-weight: 700 !important;
 }

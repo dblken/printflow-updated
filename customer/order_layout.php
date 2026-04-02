@@ -82,7 +82,7 @@ $branches = db_query("SELECT id, branch_name FROM branches WHERE status = 'Activ
 $_svc = db_query("SELECT hero_image FROM services WHERE customer_link LIKE '%order_layout%' LIMIT 1");
 $display_img = (!empty($_svc) && !empty($_svc[0]['hero_image'])) ? $_svc[0]['hero_image'] : '';
 if ($display_img !== '' && strpos($display_img, 'http') === false && $display_img[0] !== '/') { $display_img = '/' . ltrim($display_img, '/'); }
-$layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Other'];
+$layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Others'];
 ?>
 <div class="min-h-screen py-8">
     <div class="shopee-layout-container">
@@ -90,19 +90,20 @@ $layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Other'];
         <div class="text-sm text-gray-500 mb-6 flex items-center gap-2">
             <a href="services.php" class="hover:text-blue-600">Services</a>
             <span>/</span>
-            <span class="font-semibold text-gray-900">Layout Design</span>
+            <span class="font-semibold text-gray-900">Layout design</span>
         </div>
 
         <div class="shopee-card">
             <!-- Left Side: Image -->
             <div class="shopee-image-section">
                 <div class="shopee-main-image-wrap">
-                        <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Layout+Design'); ?>" alt="Layout Design" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Layout+Design'">
-                    </div>
+                    <img src="<?php echo htmlspecialchars($display_img ?: 'https://placehold.co/600x600/f8fafc/0f172a?text=Layout+Design'); ?>" alt="Layout Design" class="shopee-main-image" onerror="this.src='https://placehold.co/600x600/f8fafc/0f172a?text=Layout+Design'">
                 </div>
+            </div>
+            
             <!-- Right Side: Form -->
             <div class="shopee-form-section">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Layout & Graphic Design</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Layout & graphic design</h1>
                 
                 <?php
                 $stats = service_order_get_page_stats('order_layout');
@@ -110,10 +111,6 @@ $layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Other'];
                 $review_count = (int)($stats['review_count'] ?? 0);
                 $sold_count = (int)($stats['sold_count'] ?? 0);
                 $sold_display = $sold_count >= 1000 ? number_format($sold_count / 1000, 1) . 'k' : $sold_count;
-                
-                $_s_name = 'PrintFlow Service';
-                $_s_row = db_query("SELECT name FROM services WHERE customer_link LIKE '%order_layout%' LIMIT 1");
-                if(!empty($_s_row)) { $_s_name = $_s_row[0]['name']; }
                 ?>
                 <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
                     <div class="flex items-center gap-1">
@@ -122,7 +119,7 @@ $layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Other'];
                         <?php endfor; ?>
                         
                         <?php if ($review_count > 0): ?>
-                            <a href="reviews.php?service=<?php echo urlencode($_s_name); ?>" class="text-sm text-gray-500 hover:text-blue-500 hover:underline ml-1 cursor-pointer">(<?php echo number_format($review_count); ?> Reviews)</a>
+                            <a href="reviews.php?service_id=<?php echo $stats['service_id']; ?>" class="text-sm text-gray-500 hover:text-blue-500 hover:underline ml-1 cursor-pointer">(<?php echo number_format($review_count); ?> Reviews)</a>
                         <?php endif; ?>
                     </div>
                     <div class="h-4 w-px bg-gray-200"></div>
@@ -134,58 +131,76 @@ $layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Other'];
                 <form method="POST" enctype="multipart/form-data" id="layoutForm" novalidate>
                     <?php echo csrf_field(); ?>
 
-                    <div class="shopee-form-row">
+                    <div class="shopee-form-row shopee-form-row-flat">
                         <label class="shopee-form-label">Branch *</label>
-                        <select name="branch_id" class="input-field shopee-form-field" required>
-                            <option value="" selected disabled>Select Branch</option>
-                            <?php foreach($branches as $b): ?>
-                                <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['branch_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="shopee-form-row">
-                        <label class="shopee-form-label pt-2">Type of Layout *</label>
-                        <div class="shopee-opt-group shopee-form-field">
-                            <?php foreach ($layout_types as $lt): ?>
-                            <label class="shopee-opt-btn"><input type="radio" name="layout_type" value="<?php echo htmlspecialchars($lt); ?>" required style="display:none;" onchange="layoutUpdateOpt(this)" <?php echo (($_POST['layout_type'] ?? '') === $lt) ? 'checked' : ''; ?>> <span><?php echo htmlspecialchars($lt); ?></span></label>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-
-                    <div class="shopee-form-row">
-                        <label class="shopee-form-label pt-2">Rush Order? *</label>
-                        <div class="shopee-opt-group shopee-form-field">
-                            <label class="shopee-opt-btn"><input type="radio" name="rush" value="No" required style="display:none;" onchange="layoutUpdateOpt(this)" <?php echo (($_POST['rush'] ?? 'No') === 'No') ? 'checked' : ''; ?>> <span>No</span></label>
-                            <label class="shopee-opt-btn"><input type="radio" name="rush" value="Yes" style="display:none;" onchange="layoutUpdateOpt(this)" <?php echo (($_POST['rush'] ?? '') === 'Yes') ? 'checked' : ''; ?>> <span>Yes (+Fee)</span></label>
-                        </div>
-                    </div>
-
-                    <div class="shopee-form-row pt-4 border-t border-gray-50">
-                        <label class="shopee-form-label pt-2">Needed Date *</label>
                         <div class="shopee-form-field">
-                            <div class="w-1/2">
-                                <input type="date" name="needed_date" id="layout_needed_date" class="input-field shopee-form-field" required min="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['needed_date'] ?? ''); ?>">
+                            <select name="branch_id" class="input-field" required>
+                                <option value="" selected disabled>Select branch</option>
+                                <?php foreach($branches as $b): ?>
+                                    <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars(to_sentence_case($b['branch_name'])); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="shopee-form-row shopee-form-row-flat">
+                        <label class="shopee-form-label">Type of layout *</label>
+                        <div class="shopee-form-field">
+                            <div class="shopee-opt-group">
+                                <?php foreach ($layout_types as $lt): ?>
+                                <label class="shopee-opt-btn"><input type="radio" name="layout_type" value="<?php echo htmlspecialchars($lt); ?>" required style="display:none;" onchange="layoutUpdateOpt(this)" <?php echo (($_POST['layout_type'] ?? '') === $lt) ? 'checked' : ''; ?>> <span><?php echo htmlspecialchars($lt); ?></span></label>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
 
-                    <div class="shopee-form-row">
-                        <label class="shopee-form-label">Description</label>
-                        <textarea name="description" rows="4" class="input-field shopee-form-field" placeholder="Describe your layout needs, text to include, preferred colors..."><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                    <div class="shopee-form-row shopee-form-row-flat">
+                        <label class="shopee-form-label">Rush order? *</label>
+                        <div class="shopee-form-field">
+                            <div class="shopee-opt-group">
+                                <label class="shopee-opt-btn"><input type="radio" name="rush" value="No" required style="display:none;" onchange="layoutUpdateOpt(this)" <?php echo (($_POST['rush'] ?? 'No') === 'No') ? 'checked' : ''; ?>> <span>No</span></label>
+                                <label class="shopee-opt-btn"><input type="radio" name="rush" value="Yes" style="display:none;" onchange="layoutUpdateOpt(this)" <?php echo (($_POST['rush'] ?? '') === 'Yes') ? 'checked' : ''; ?>> <span>Yes (+ fee)</span></label>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="shopee-form-row">
-                        <label class="shopee-form-label">Reference <span class="text-xs text-gray-400 font-normal">(Optional)</span></label>
-                        <input type="file" name="reference_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field shopee-form-field">
+                    <div class="shopee-form-row shopee-form-row-flat">
+                        <label class="shopee-form-label">Needed date *</label>
+                        <div class="shopee-form-field">
+                            <input type="date" name="needed_date" id="layout_needed_date" class="input-field" required min="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['needed_date'] ?? ''); ?>" style="max-width: 200px;">
+                        </div>
+                    </div>
+
+                    <div class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
+                        <label class="shopee-form-label" style="padding-top: 0.75rem;">Description</label>
+                        <div class="shopee-form-field">
+                            <div style="display:flex; justify-content:flex-end; align-items:center; gap: 10px; margin-bottom: 0.5rem; width: 100%;">
+                                <span class="notes-warn">Max 500 characters</span>
+                                <span class="notes-counter">0 / 500</span>
+                            </div>
+                            <textarea id="notes_global" name="description" rows="3" class="input-field notes-textarea-global" 
+                                placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                                maxlength="500" 
+                                oninput="reflUpdateNotesCounter(this)"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                        </div>
+                    </div>
+
+                    <div class="shopee-form-row shopee-form-row-flat">
+                        <label class="shopee-form-label">Reference</label>
+                        <div class="shopee-form-field">
+                            <input type="file" name="reference_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" style="max-width: 300px; padding: 0.5rem;">
+                        </div>
                     </div>
 
                     <div class="shopee-form-row pt-8">
-                        <div style="width: 130px;"></div>
-                        <div class="flex gap-4 flex-1">
-                            <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex:1;">Back</a>
-                            <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="flex:1;">Add to Cart</button>
-                            <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="flex:1.5;">Buy Now</button>
+                        <div style="width: 160px;" class="hidden md:block"></div>
+                        <div class="flex gap-4 flex-1 justify-end">
+                            <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="width: 90px; height: 2.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">Back</a>
+                            <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="width: 140px; height: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700; font-size: 0.85rem; white-space: nowrap;" title="Add to Cart">
+                                <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Add to cart
+                            </button>
+                            <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="width: 160px; height: 2.25rem; font-size: 0.95rem; font-weight: 800; white-space: nowrap;">Buy now</button>
                         </div>
                     </div>
                 </form>
@@ -196,11 +211,16 @@ $layout_types = ['Logo', 'Banner', 'Invitation', 'Poster', 'Other'];
 
 <script>
 function layoutUpdateOpt(input) {
-    const name = input.name;
-    document.querySelectorAll(`input[name="${name}"]`).forEach(function(r) {
-        const wrap = r.closest('.shopee-opt-btn');
-        if (wrap) wrap.classList.toggle('active', r.checked);
-    });
+    const group = input.closest('.shopee-opt-group');
+    if (group) {
+        group.querySelectorAll('.shopee-opt-btn').forEach(btn => btn.classList.remove('active'));
+        input.closest('.shopee-opt-btn').classList.add('active');
+    }
+}
+
+function reflUpdateNotesCounter(textarea) {
+    const count = textarea.value.length;
+    document.querySelector('.notes-counter').textContent = `${count} / 500`;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -211,6 +231,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Any layout specific styles can go here */
+.shopee-form-row-flat { margin-bottom: 1.5rem; display: flex; align-items: center; }
 </style>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

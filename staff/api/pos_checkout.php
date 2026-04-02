@@ -87,8 +87,8 @@ try {
 
     // Create Order
     // For POS walk-ins, we use status 'Completed' and payment_status 'Paid'
+    // Automatically use the assigned branch from the logged-in admin account
     $branch_id = (int)($_SESSION['branch_id'] ?? 1);
-    if ($branch_id < 1) $branch_id = 1;
 
     // Determine order_type based on items (if any has customization, map to custom)
     $order_type = 'product';

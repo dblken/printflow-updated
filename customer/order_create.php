@@ -399,12 +399,12 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span class="bg-gray-900 text-white text-xs font-bold px-2 py-0.5 rounded" x-text="'STEP ' + step"></span>
                                 <p class="text-sm text-gray-500 font-semibold uppercase m-0" 
                                    x-text="(productCategory === 'Sintraboard & Standees' || productCategory === 'Sintraboard Flat') ? 
-                                           (step==1?'Board Details':step==2?'Design Upload':step==3?'Stand & Finishing':'Final Review') : 
+                                           (step==1?'Board details':step==2?'Design upload':step==3?'Stand & finishing':'Final review') : 
                                            (productCategory === 'T-Shirts') ? 
-                                           (step==1?'Shirt Details':step==2?'Printing Details':step==3?'Design Upload':'Final Review') : 
+                                           (step==1?'Shirt details':step==2?'Printing details':step==3?'Design upload':'Final review') : 
                                            (productCategory === 'Tarpaulin') ? 
-                                           (step==1?'Size & Material':step==2?'Finishing Options':step==3?'Design Details':'Final Review') : 
-                                           (step==1?'Vehicle Details':step==2?'Design Upload':step==3?'Size & Options':'Final Review')"></p>
+                                           (step==1?'Size & material':step==2?'Finishing options':step==3?'Design details':'Final review') : 
+                                           (step==1?'Vehicle details':step==2?'Design upload':step==3?'Size & options':'Final review')"></p>
                             </div>
                         </div>
                     </div>
@@ -430,8 +430,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         <!-- Step 1: Specific Details -->
                                         <div x-show="step === 1">
                                             <div style="margin-bottom:1.5rem; background:#f9fafb; padding:1.25rem; border:1px solid #e5e7eb;">
-                                                <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Select Branch *</label>
+                                                <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Select branch *</label>
                                                 <select name="branch_id" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;" required>
+                                                    <option value="" disabled selected>Select branch</option>
                                                     <?php foreach($branches as $b): ?>
                                                         <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['branch_name']); ?></option>
                                                     <?php endforeach; ?>
@@ -441,22 +442,22 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- Sintra Board Fields (Standees & Flat) -->
                                             <div x-show="productCategory === 'Sintraboard & Standees' || productCategory === 'Sintraboard Flat'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Size & Board Details</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Size & board details</h3>
                                                 </div>
                                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                                                     <div>
-                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Width (inches) *</label>
-                                                        <input type="number" name="width" step="0.01" min="0.01" class="input-field" placeholder="e.g. 24" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory.includes('Sintraboard')">
+                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; ">Width (inches) *</label>
+                                                        <input type="number" name="width" min="1" max="100" class="input-field" placeholder="e.g. 24" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory.includes('Sintraboard')" data-dimension>
                                                     </div>
                                                     <div>
                                                         <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Height (inches) *</label>
-                                                        <input type="number" name="height" step="0.01" min="0.01" class="input-field" placeholder="e.g. 36" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory.includes('Sintraboard')">
+                                                        <input type="number" name="height" min="1" max="100" class="input-field" placeholder="e.g. 36" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory.includes('Sintraboard')" data-dimension>
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Thickness *</label>
                                                     <select name="thickness" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory.includes('Sintraboard')">
-                                                        <option value="" disabled selected>Select Thickness</option>
+                                                        <option value="" disabled selected>Select thickness</option>
                                                         <option value="3mm">3mm</option>
                                                         <option value="5mm">5mm</option>
                                                         <option value="10mm">10mm</option>
@@ -467,19 +468,19 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- T-Shirt Details -->
                                             <div x-show="productCategory === 'T-Shirts'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Shirt Details</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Shirt details</h3>
                                                 </div>
 
                                                 <div style="background:#f9fafb; padding:1.25rem; border-radius:0; border:1px solid #e5e7eb;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Shirt Source *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Shirt source *</label>
                                                     <div style="display:flex; gap:0.75rem;">
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="shirtSource === 'Shop' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="shirt_source" value="Shop" x-model="shirtSource" class="sr-only">
-                                                            Shop-Provided Shirt
+                                                            Shop-provided shirt
                                                         </label>
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="shirtSource === 'Client' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="shirt_source" value="Client" x-model="shirtSource" class="sr-only">
-                                                            Client-Provided Shirt
+                                                            Client-provided shirt
                                                         </label>
                                                     </div>
                                                 </div>
@@ -488,32 +489,32 @@ require_once __DIR__ . '/../includes/header.php';
                                                 <div x-show="shirtSource === 'Shop'" x-transition style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                                                         <div>
-                                                            <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Shirt Type *</label>
+                                                            <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Shirt type *</label>
                                                             <select name="shirt_type" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                                <option value="" disabled selected>Select Type</option>
-                                                                <option value="Round Neck">Round Neck</option>
-                                                                <option value="V-Neck">V-Neck</option>
-                                                                <option value="Polo Shirt">Polo Shirt</option>
+                                                                <option value="" disabled selected>Select type</option>
+                                                                <option value="Round neck">Round neck</option>
+                                                                <option value="V-neck">V-neck</option>
+                                                                <option value="Polo shirt">Polo shirt</option>
                                                                 <option value="Oversized">Oversized</option>
-                                                                <option value="Long Sleeve">Long Sleeve</option>
+                                                                <option value="Long sleeve">Long sleeve</option>
                                                             </select>
                                                         </div>
                                                         <div>
-                                                            <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Shirt Color *</label>
+                                                            <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Shirt color *</label>
                                                             <input type="text" name="shop_shirt_color" class="input-field" placeholder="e.g. Black, White, Navy..." style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory === 'T-Shirts' && shirtSource === 'Shop'">
                                                         </div>
                                                     </div>
                                                     <div>
                                                         <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Size *</label>
                                                         <select name="shop_shirt_size" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory === 'T-Shirts' && shirtSource === 'Shop'">
-                                                            <option value="" disabled selected>Select Size</option>
+                                                            <option value="" disabled selected>Select size</option>
                                                             <option value="XS">XS</option>
                                                             <option value="S">S</option>
                                                             <option value="M">M</option>
                                                             <option value="L">L</option>
                                                             <option value="XL">XL</option>
                                                             <option value="XXL">XXL</option>
-                                                            <option value="Custom Size">Custom Size</option>
+                                                            <option value="Custom size">Custom size</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -522,13 +523,13 @@ require_once __DIR__ . '/../includes/header.php';
                                                 <div x-show="shirtSource === 'Client'" x-transition style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                                                         <div>
-                                                            <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Shirt Color *</label>
+                                                            <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Shirt color *</label>
                                                             <input type="text" name="client_shirt_color" class="input-field" placeholder="Color of your shirt" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory === 'T-Shirts' && shirtSource === 'Client'">
                                                         </div>
                                                         <div>
                                                             <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Material *</label>
                                                             <select name="client_shirt_material" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory === 'T-Shirts' && shirtSource === 'Client'">
-                                                                <option value="" disabled selected>Select Material</option>
+                                                                <option value="" disabled selected>Select material</option>
                                                                 <option value="Cotton">Cotton</option>
                                                                 <option value="Polyester">Polyester</option>
                                                                 <option value="Dry-fit">Dry-fit</option>
@@ -549,19 +550,19 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- Tarpaulin Details -->
                                             <div x-show="productCategory === 'Tarpaulin'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Size & Material</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Size & material</h3>
                                                 </div>
 
                                                 <div style="background:#f9fafb; padding:1.25rem; border-radius:0; border:1px solid #e5e7eb;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Size Specification *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Size specification *</label>
                                                     <div style="display:flex; gap:0.75rem; margin-bottom:1rem;">
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="tarpSizeOption === 'Preset' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="tarp_size_option" value="Preset" x-model="tarpSizeOption" class="sr-only">
-                                                            Preset Sizes
+                                                            Preset sizes
                                                         </label>
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="tarpSizeOption === 'Custom' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="tarp_size_option" value="Custom" x-model="tarpSizeOption" class="sr-only">
-                                                            Custom Size
+                                                            Custom size
                                                         </label>
                                                     </div>
 
@@ -579,15 +580,15 @@ require_once __DIR__ . '/../includes/header.php';
                                                     <!-- Custom Sizes -->
                                                     <div x-show="tarpSizeOption === 'Custom'" x-transition style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                                                         <div>
-                                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:0.25rem;">WIDTH</label>
-                                                            <input type="number" name="tarp_width" x-model="tarpWidth" min="0.1" step="0.1" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
+                                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:0.25rem;">Width</label>
+                                                            <input type="number" name="tarp_width" x-model="tarpWidth" min="1" max="100" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;" data-dimension>
                                                         </div>
                                                         <div>
-                                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:0.25rem;">HEIGHT</label>
-                                                            <input type="number" name="tarp_height" x-model="tarpHeight" min="0.1" step="0.1" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
+                                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:0.25rem;">Height</label>
+                                                            <input type="number" name="tarp_height" x-model="tarpHeight" min="1" max="100" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;" data-dimension>
                                                         </div>
                                                         <div style="grid-column: span 2;">
-                                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:0.25rem;">UNIT</label>
+                                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:0.25rem;">Unit</label>
                                                             <select name="tarp_unit" x-model="tarpUnit" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
                                                                 <option value="ft">Feet (ft)</option>
                                                                 <option value="in">Inches (in)</option>
@@ -602,11 +603,11 @@ require_once __DIR__ . '/../includes/header.php';
                                                         <select name="tarp_material" x-model="tarpMaterial" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
                                                             <option value="10oz">10oz (Standard)</option>
                                                             <option value="13oz">13oz (Thicker)</option>
-                                                            <option value="15oz">15oz (Heavy Duty)</option>
+                                                            <option value="15oz">15oz (Heavy duty)</option>
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Finish Type *</label>
+                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Finish type *</label>
                                                         <select name="tarp_finish" x-model="tarpFinish" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
                                                             <option value="Glossy">Glossy</option>
                                                             <option value="Matte">Matte</option>
@@ -628,7 +629,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Year Model *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Year model *</label>
                                                     <input type="number" name="vehicle_year" min="1900" max="<?php echo date('Y') + 1; ?>" class="input-field" placeholder="e.g. 2024" style="width:100%; border-radius:0; border:1px solid #d1d5db;" :required="productCategory === 'Decals & Stickers' || productCategory === 'Stickers'">
                                                 </div>
                                             </div>
@@ -640,27 +641,27 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- T-Shirt Printing Details -->
                                             <div x-show="productCategory === 'T-Shirts'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;" x-cloak>
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Printing Details</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Printing details</h3>
                                                 </div>
                                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                                                     <div>
-                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Printing Method *</label>
+                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Printing method *</label>
                                                         <select name="printing_method" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                            <option value="" disabled selected>Select Method</option>
+                                                            <option value="" disabled selected>Select method</option>
                                                             <option value="Sublimation">Sublimation</option>
-                                                            <option value="Heat Transfer Vinyl (HTV)">Heat Transfer Vinyl (HTV)</option>
+                                                            <option value="Heat Transfer Vinyl (HTV)">Heat transfer vinyl (HTV)</option>
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Design Placement *</label>
+                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Design placement *</label>
                                                         <select name="shirt_placement" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                            <option value="" disabled selected>Select Placement</option>
-                                                            <option value="Front Only">Front Only</option>
-                                                            <option value="Back Only">Back Only</option>
-                                                            <option value="Front & Back">Front & Back</option>
-                                                            <option value="Left Chest">Left Chest</option>
-                                                            <option value="Full Front">Full Front</option>
-                                                            <option value="Sleeve Print">Sleeve Print</option>
+                                                            <option value="" disabled selected>Select placement</option>
+                                                            <option value="Front only">Front only</option>
+                                                            <option value="Back only">Back only</option>
+                                                            <option value="Front & Back">Front & back</option>
+                                                            <option value="Left chest">Left chest</option>
+                                                            <option value="Full front">Full front</option>
+                                                            <option value="Sleeve print">Sleeve print</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -669,24 +670,24 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- Tarpaulin Finishing Options -->
                                             <div x-show="productCategory === 'Tarpaulin'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Finishing Options</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Finishing options</h3>
                                                 </div>
 
                                                 <div>
                                                     <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Edges *</label>
                                                     <select name="tarp_edges" x-model="tarpEdges" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                        <option value="Heat Cut Only">Heat Cut Only (Standard)</option>
-                                                        <option value="Folded & Sewn Edges">Folded & Sewn Edges (+₱2/sqft)</option>
+                                                        <option value="Heat cut only">Heat cut only (standard)</option>
+                                                        <option value="Folded & sewn edges">Folded & sewn edges (+₱2/sqft)</option>
                                                     </select>
                                                 </div>
 
                                                 <div style="background:#f9fafb; padding:1.25rem; border-radius:0; border:1px solid #e5e7eb;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Grommets / Eyelets *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Grommets / eyelets *</label>
                                                     <select name="tarp_grommet_option" x-model="tarpGrommetOption" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                        <option value="No Grommets">No Grommets</option>
-                                                        <option value="With Grommets (All Sides)">With Grommets (All Sides)</option>
-                                                        <option value="Top & Bottom Only">Top & Bottom Only</option>
-                                                        <option value="Custom Placement">Custom Placement</option>
+                                                        <option value="No grommets">No grommets</option>
+                                                        <option value="With grommets (all sides)">With grommets (all sides)</option>
+                                                        <option value="Top & bottom only">Top & bottom only</option>
+                                                        <option value="Custom placement">Custom placement</option>
                                                     </select>
                                                     
                                                     <div x-show="tarpGrommetOption === 'Custom Placement'" x-transition style="margin-top:1rem;">
@@ -697,24 +698,28 @@ require_once __DIR__ . '/../includes/header.php';
 
                                             <div x-show="productCategory !== 'T-Shirts' && productCategory !== 'Tarpaulin'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Design Details</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Design details</h3>
                                                 </div>
 
                                                 <div style="background:#f9fafb; border:2px dashed #d1d5db; border-radius:0; padding:1.25rem;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Upload Final Design * <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(JPG, PNG, AI, PSD)</span></label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Upload final design * <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(JPG, PNG, AI, PSD)</span></label>
                                                     <input type="file" name="design_upload" id="design_upload_field" class="input-field" accept=".jpg,.jpeg,.png,.ai,.psd" style="width:100%; background:white; padding:0.5rem; border-radius:0; border:1px solid #d1d5db;" :required="productCategory !== 'T-Shirts' && productCategory !== 'Tarpaulin'">
                                                     <p style="font-size:0.7rem; color:#6b7280; margin-top:6px;">📎 Mandatory for manufacturing. Max: 5MB</p>
                                                 </div>
                                                 
                                                 <div>
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Upload Reference Image <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(Optional)</span></label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Upload reference image <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(Optional)</span></label>
                                                     <input type="file" name="reference_upload" class="input-field" accept=".jpg,.jpeg,.png" style="width:100%; border-radius:0; padding:0.5rem; border:1px solid #d1d5db;">
                                                     <p style="font-size:0.7rem; color:#6b7280; margin-top:6px;">📎 Accepted: JPG, PNG</p>
                                                 </div>
                                                 
                                                 <div>
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Design Description <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(Optional)</span></label>
-                                                    <textarea name="design_description" rows="3" class="input-field" placeholder="Describe your preferred style, colors, or special instructions..." style="width:100%; border-radius:0; border:1px solid #d1d5db;"></textarea>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Design description <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(Optional)</span></label>
+                                                    <textarea name="design_description" id="notes_generic" rows="3" class="input-field" 
+                                                              placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                                                              style="width:100%; border-radius:0; border:1px solid #d1d5db; resize:vertical; min-height:80px; max-height:200px;" 
+                                                              maxlength="500" oninput="updateSmallCounter(this)"></textarea>
+                                                    <div style="text-align:right; font-size:0.7rem; color:#94a3b8; margin-top:4px;" class="char-counter">0 / 500</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -725,45 +730,49 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- T-Shirt Design Upload & Size Options -->
                                             <div x-show="productCategory === 'T-Shirts'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;" x-cloak>
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Design Upload</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Design upload</h3>
                                                 </div>
 
                                                 <div style="background:#f9fafb; border:2px dashed #d1d5db; border-radius:0; padding:1.25rem;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Upload Final Design * <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(JPG, PNG, PDF, AI)</span></label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Upload final design * <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(JPG, PNG, PDF, AI)</span></label>
                                                     <input type="file" name="tshirt_design_upload" id="tshirt_design_upload_field" class="input-field" accept=".jpg,.jpeg,.png,.pdf,.ai" style="width:100%; background:white; padding:0.5rem; border-radius:0; border:1px solid #d1d5db;" :required="productCategory === 'T-Shirts'">
                                                     <p style="font-size:0.7rem; color:#6b7280; margin-top:6px;">📎 Max file size: 10MB</p>
                                                 </div>
                                                 
                                                 <div style="background:#f9fafb; padding:1.25rem; border-radius:0; border:1px solid #e5e7eb;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Print Size *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Print size *</label>
                                                     <select name="print_size" class="input-field" x-model="printSize" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                        <option value="" disabled selected>Select Print Size</option>
-                                                        <option value="Small (Pocket Size)">Small (Pocket Size)</option>
+                                                        <option value="" disabled selected>Select print size</option>
+                                                        <option value="Small (Pocket size)">Small (Pocket size)</option>
                                                         <option value="Medium (A4)">Medium (A4)</option>
                                                         <option value="Large (A3)">Large (A3)</option>
-                                                        <option value="Custom Size">Custom Size</option>
+                                                        <option value="Custom size">Custom size</option>
                                                     </select>
                                                     
                                                     <div x-show="printSize === 'Custom Size'" x-transition style="margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                                                         <div>
-                                                            <input type="text" name="tshirt_custom_width" class="input-field" placeholder="Width (in or cm)" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
+                                                            <input type="number" max="100" name="tshirt_custom_width" class="input-field" placeholder="Width (in or cm)" style="width:100%; border-radius:0; border:1px solid #d1d5db;" data-dimension>
                                                         </div>
                                                         <div>
-                                                            <input type="text" name="tshirt_custom_height" class="input-field" placeholder="Height (in or cm)" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
+                                                            <input type="number" max="100" name="tshirt_custom_height" class="input-field" placeholder="Height (in or cm)" style="width:100%; border-radius:0; border:1px solid #d1d5db;" data-dimension>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 
                                                 <div>
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Additional Notes <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(Optional)</span></label>
-                                                    <textarea name="tshirt_design_description" rows="3" class="input-field" placeholder="Add special instructions (e.g., palakihin ang logo, tanggalin background, center design)." style="width:100%; border-radius:0; border:1px solid #d1d5db;"></textarea>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Additional notes <span style="font-weight:500; font-size:0.75rem; color:#6b7280; text-transform:none;">(Optional)</span></label>
+                                                    <textarea name="tshirt_design_description" id="notes_tshirt" rows="3" class="input-field" 
+                                                              placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                                                              style="width:100%; border-radius:0; border:1px solid #d1d5db; resize:vertical; min-height:80px; max-height:200px;" 
+                                                              maxlength="500" oninput="updateSmallCounter(this)"></textarea>
+                                                    <div style="text-align:right; font-size:0.7rem; color:#94a3b8; margin-top:4px;" class="char-counter">0 / 500</div>
                                                 </div>
                                             </div>
 
                                             <!-- Tarpaulin Design Details -->
                                             <div x-show="productCategory === 'Tarpaulin'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Design Details</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Design details</h3>
                                                 </div>
 
                                                 <div style="background:#f9fafb; border:2px dashed #d1d5db; border-radius:0; padding:1.25rem;">
@@ -773,7 +782,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                 </div>
 
                                                 <div style="background:#f9fafb; padding:1.25rem; border-radius:0; border:1px solid #e5e7eb;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Design Service Option *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Design service option *</label>
                                                     <div style="display:flex; gap:0.75rem; margin-bottom:1rem;">
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="tarpDesignService === 'Ready' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="tarp_design_service" value="Ready" x-model="tarpDesignService" class="sr-only">
@@ -786,7 +795,11 @@ require_once __DIR__ . '/../includes/header.php';
                                                     </div>
                                                     
                                                     <div x-show="tarpDesignService === 'Requested'" x-transition>
-                                                        <textarea name="tarp_design_description" class="input-field" placeholder="Describe your event or theme (e.g., Birthday, Graduation, Business promotion)..." style="width:100%; border-radius:0; border:1px solid #d1d5db; min-height:80px;"></textarea>
+                                                        <textarea name="tarp_design_description" id="notes_tarpaulin" class="input-field" 
+                                                                  placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                                                                  style="width:100%; border-radius:0; border:1px solid #d1d5db; resize:vertical; min-height:80px; max-height:200px;" 
+                                                                  maxlength="500" oninput="updateSmallCounter(this)"></textarea>
+                                                        <div style="text-align:right; font-size:0.7rem; color:#94a3b8; margin-top:4px;" class="char-counter">0 / 500</div>
                                                         <p style="font-size:0.7rem; color:#92400e; margin-top:6px; font-weight:700;">Note: Design service adds ₱50.00 to total.</p>
                                                     </div>
                                                 </div>
@@ -795,14 +808,14 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- Sintraboard Stand & Finishing -->
                                             <div x-show="productCategory === 'Sintraboard & Standees' || productCategory === 'Sintraboard Flat'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;" x-cloak>
                                                 <div style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Stand & Finishing Options</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Stand & finishing options</h3>
                                                 </div>
 
                                                 <!-- Stand Type (hidden for Sintra Board Flat) -->
                                                 <div x-show="productCategory === 'Sintraboard & Standees'">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Stand Type *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Stand type *</label>
                                                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem;">
-                                                        <?php foreach(['With Metal Stand'=>'Metal Stand','With Foldable Support (Easel Type)'=>'Foldable','Board Only (No Stand)'=>'Board Only'] as $val=>$label): ?>
+                                                        <?php foreach(['With Metal Stand'=>'Metal stand','With Foldable Support (Easel Type)'=>'Foldable','Board Only (No Stand)'=>'Board only'] as $val=>$label): ?>
                                                         <label style="display:flex; align-items:center; justify-content:center; gap:6px; padding:0.75rem; border:1px solid #d1d5db; border-radius:0; cursor:pointer; font-size:0.8rem; font-weight:700; color:black; text-align:center; transition: all 0.2s; text-transform:uppercase;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
                                                             <input type="radio" name="stand_type" value="<?php echo $val; ?>" style="accent-color:black;">
                                                             <?php echo $label; ?>
@@ -813,9 +826,9 @@ require_once __DIR__ . '/../includes/header.php';
 
                                                 <!-- Flat Type Options (visible for Sintra Board Flat) -->
                                                 <div x-show="productCategory === 'Sintraboard Flat'" x-cloak>
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Flat Type Options *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Flat type options *</label>
                                                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-                                                        <?php foreach(['With Double-Sided Foam Tape'=>'With Tape', 'With Holes/Eyelets'=>'With Eyelets', 'Board Only (No Adhesive)'=>'Board Only'] as $val=>$label): ?>
+                                                        <?php foreach(['With Double-Sided Foam Tape'=>'With tape', 'With Holes/Eyelets'=>'With eyelets', 'Board Only (No Adhesive)'=>'Board only'] as $val=>$label): ?>
                                                         <label style="display:flex; align-items:center; justify-content:center; gap:6px; padding:0.75rem; border:1px solid #d1d5db; border-radius:0; cursor:pointer; font-size:0.8rem; font-weight:700; color:black; text-align:center; transition: all 0.2s; text-transform:uppercase;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
                                                             <input type="radio" name="flat_type" value="<?php echo $val; ?>" style="accent-color:black;">
                                                             <?php echo $label; ?>
@@ -828,16 +841,16 @@ require_once __DIR__ . '/../includes/header.php';
                                                     <div>
                                                         <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Lamination</label>
                                                         <select name="lamination" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                            <option value="No Lamination">No Lamination</option>
+                                                            <option value="No lamination">No lamination</option>
                                                             <option value="Matte">Matte</option>
                                                             <option value="Gloss">Gloss</option>
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Cut Type *</label>
+                                                        <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Cut type *</label>
                                                         <select name="cut_type" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
-                                                            <option value="Standard Rectangle Cut">Standard Rectangle Cut</option>
-                                                            <option value="Die-Cut (Custom Shape)">Die-Cut (Custom Shape)</option>
+                                                            <option value="Standard rectangle cut">Standard rectangle cut</option>
+                                                            <option value="Die-Cut (Custom shape)">Die-cut (Custom shape)</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -846,51 +859,51 @@ require_once __DIR__ . '/../includes/header.php';
                                             <!-- Generic Decal Size & Options -->
                                             <div x-show="productCategory !== 'Sintraboard & Standees' && productCategory !== 'Sintraboard Flat' && productCategory !== 'T-Shirts' && productCategory !== 'Tarpaulin'" style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div x-show="productCategory === 'Decals & Stickers' || productCategory === 'Stickers'" style="text-align:center; padding-bottom:0.75rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Size & Options</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Size & options</h3>
                                                 </div>
 
                                                 <div>
                                                     <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:black; text-transform:uppercase;">Placement *</label>
                                                     <select name="placement" class="input-field" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
                                                         <option value="" disabled selected>Select placement</option>
-                                                        <option value="Side Fairings">Side Fairings</option>
+                                                        <option value="Side fairings">Side fairings</option>
                                                         <option value="Tank">Tank</option>
                                                         <option value="Fender">Fender</option>
-                                                        <option value="Door Panel">Door Panel</option>
+                                                        <option value="Door panel">Door panel</option>
                                                         <option value="Hood">Hood</option>
                                                         <option value="Windshield">Windshield</option>
-                                                        <option value="Full Body">Full Body</option>
+                                                        <option value="Full body">Full body</option>
                                                         <option value="Others">Others</option>
                                                     </select>
                                                 </div>
                                                 
                                                 <div style="background:#f9fafb; padding:1.25rem; border-radius:0; border:1px solid #e5e7eb;">
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Size Options *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Size options *</label>
                                                     <div style="display:flex; gap:0.75rem;">
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="sizeOption === 'OEM Size' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="size_option" value="OEM Size" x-model="sizeOption" style="display:none;">
-                                                            OEM Standard
+                                                            OEM standard
                                                         </label>
                                                         <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:0.75rem; background:white; border:2px solid; border-radius:0; cursor:pointer; font-weight:700; transition:all 0.2s; text-transform:uppercase; font-size:0.85rem;" :style="sizeOption === 'Custom Size' ? 'border-color:black; color:black' : 'border-color:#e5e7eb; color:#6b7280'">
                                                             <input type="radio" name="size_option" value="Custom Size" x-model="sizeOption" style="display:none;">
-                                                            Custom Size
+                                                            Custom size
                                                         </label>
                                                     </div>
                                                     
                                                     <div x-show="sizeOption === 'Custom Size'" x-transition style="margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                                                         <div>
-                                                            <input type="text" name="custom_width" class="input-field" placeholder="Width (in)" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
+                                                            <input type="number" max="100" name="custom_width" class="input-field" placeholder="Width (in)" style="width:100%; border-radius:0; border:1px solid #d1d5db;" data-dimension>
                                                         </div>
                                                         <div>
-                                                            <input type="text" name="custom_height" class="input-field" placeholder="Height (in)" style="width:100%; border-radius:0; border:1px solid #d1d5db;">
+                                                            <input type="number" max="100" name="custom_height" class="input-field" placeholder="Height (in)" style="width:100%; border-radius:0; border:1px solid #d1d5db;" data-dimension>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <div>
-                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Select Material *</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:700; margin-bottom:0.75rem; color:black; text-transform:uppercase;">Select material *</label>
                                                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-                                                        <?php foreach(['Glossy Vinyl', 'Matte Vinyl', 'Reflectorized', 'Chrome', 'Carbon Fiber Texture'] as $mat): ?>
+                                                        <?php foreach(['Glossy vinyl', 'Matte vinyl', 'Reflectorized', 'Chrome', 'Carbon fiber texture'] as $mat): ?>
                                                             <label style="display:flex; align-items:center; gap:6px; padding:0.6rem; border:1px solid #d1d5db; border-radius:0; cursor:pointer; font-size:0.8rem; font-weight:600; color:black; transition: background 0.2s; text-transform:uppercase;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
                                                                 <input type="radio" name="material_type" value="<?php echo $mat; ?>" style="accent-color:black;">
                                                                 <?php echo $mat; ?>
@@ -902,11 +915,11 @@ require_once __DIR__ . '/../includes/header.php';
 
                                         </div>
 
-                                        <!-- Step 4: Final Review -->
+                                        <!-- Step 4: Final review -->
                                         <div x-show="step === 4">
                                             <div style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
                                                 <div style="text-align:center; padding-bottom:1rem;">
-                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Final Review</h3>
+                                                    <h3 style="font-weight:800; color:black; margin:0; text-transform:uppercase; letter-spacing:0.05em;">Final review</h3>
                                                 </div>
 
                                                 <div style="background:#f9fafb; border-radius:0; border:1px solid #e5e7eb; padding:1.5rem; text-align:center;">
@@ -924,10 +937,10 @@ require_once __DIR__ . '/../includes/header.php';
                                                     
                                                     <div style="height:1px; background:#e5e7eb; margin:1rem 0;"></div>
 
-                                                    <label style="display:block; font-size:0.875rem; font-weight:800; color:black; margin-bottom:1rem; text-transform:uppercase;">Select Quantity</label>
+                                                    <label style="display:block; font-size:0.875rem; font-weight:800; color:black; margin-bottom:1rem; text-transform:uppercase;">Select quantity</label>
                                                     <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
                                                         <button type="button" @click="if(orderQty > 1) orderQty--" style="width:40px; height:40px; border-radius:0; border:1px solid black; background:white; font-size:1.2rem; display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='black'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='black';">-</button>
-                                                        <input type="number" name="quantity" x-model="orderQty" min="1" max="<?php echo $product['stock_quantity']; ?>" style="width:70px; height:40px; border-radius:0; border:2px solid black; text-align:center; font-size:1.1rem; font-weight:800; color:black;">
+                                                        <input type="number" name="quantity" x-model="orderQty" min="1" max="999" style="width:70px; height:40px; border-radius:0; border:2px solid black; text-align:center; font-size:1.1rem; font-weight:800; color:black;">
                                                         <button type="button" @click="if(orderQty < <?php echo $product['stock_quantity']; ?>) orderQty++" style="width:40px; height:40px; border-radius:0; border:1px solid black; background:white; font-size:1.2rem; display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='black'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='black';">+</button>
                                                     </div>
                                                     <p style="font-size:0.75rem; color:#6b7280; margin-top:10px; font-weight:600; text-transform:uppercase;"><?php echo $product['stock_quantity']; ?> items in stock</p>
@@ -987,7 +1000,29 @@ require_once __DIR__ . '/../includes/header.php';
         white-space: nowrap;
         border-width: 0;
     }
+
+    /* Standardized Textarea for Notes */
+    .input-field {
+        border-radius: 0 !important;
+        font-family: inherit;
+        font-size: 0.875rem;
+        padding: 0.75rem;
+    }
+    textarea.input-field {
+        resize: vertical;
+        min-height: 80px;
+        max-height: 200px;
+    }
 </style>
+
+<script>
+    function updateSmallCounter(el) {
+        const counter = el.nextElementSibling;
+        if (counter && counter.classList.contains('char-counter')) {
+            counter.textContent = el.value.length + ' / 500';
+        }
+    }
+</script>
 
 <script>
     /* alpine:init runs only once per session; Turbo visits need Alpine.data registered when this script runs. */
@@ -1052,6 +1087,13 @@ require_once __DIR__ . '/../includes/header.php';
                 return el.value.length + ' / 500';
             },
 
+            updateSmallCounter(el) {
+                const counter = el.nextElementSibling;
+                if (counter && counter.classList.contains('char-counter')) {
+                   counter.textContent = el.value.length + ' / 500';
+                }
+            },
+
             validateStepForward() {
                 const currentStepEl = this.$el.querySelector(`[x-show="step === ${this.step}"]`);
                 if (!currentStepEl) {
@@ -1063,12 +1105,15 @@ require_once __DIR__ . '/../includes/header.php';
                 let isValid = true;
                 
                 // Dimension Validation (100 limit)
-                const dims = currentStepEl.querySelectorAll('input[type="number"][name*="width"], input[type="number"][name*="height"], input[type="number"][name*="custom_"]');
+                const dims = currentStepEl.querySelectorAll('input[name*="width"], input[name*="height"], input[name*="custom_"], input[id*="width"], input[id*="height"]');
                 dims.forEach(d => {
                     const val = parseFloat(d.value);
-                    if (val > 100) {
+                    if (!isNaN(val) && val > 100) {
                         isValid = false;
-                        d.setCustomValidity('Maximum size is 100.');
+                        d.setCustomValidity('Maximum allowed is 100 only.');
+                        if (window.showOrderValidationError) {
+                            window.showOrderValidationError(d, 'Maximum allowed is 100 only.');
+                        }
                     } else {
                         d.setCustomValidity('');
                     }
@@ -1095,11 +1140,11 @@ require_once __DIR__ . '/../includes/header.php';
                 const form = document.getElementById('customization-form');
                 
                 // Final Dimension Check
-                const dims = form.querySelectorAll('input[name*="width"], input[name*="height"], input[name*="custom_"]');
+                const dims = form.querySelectorAll('input[name*="width"], input[name*="height"], input[name*="custom_"], input[id*="width"], input[id*="height"]');
                 dims.forEach(d => {
                     const val = parseFloat(d.value);
-                    if (val > 100) {
-                        d.setCustomValidity('Maximum size is 100.');
+                    if (!isNaN(val) && val > 100) {
+                        d.setCustomValidity('Maximum allowed is 100 only.');
                     } else {
                         d.setCustomValidity('');
                     }

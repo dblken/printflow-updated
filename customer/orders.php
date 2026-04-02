@@ -421,7 +421,7 @@ window.addEventListener('DOMContentLoaded', () => {
 .im-table th {
     text-align: left; padding: 0.75rem 0.5rem;
     font-size: 0.7rem; font-weight: 800; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: 0.08em;
+    letter-spacing: 0.08em;
     border-bottom: 1px solid #f1f5f9;
 }
 .im-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
@@ -463,7 +463,7 @@ window.addEventListener('DOMContentLoaded', () => {
     border-radius: 1.25rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
-.im-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 900; margin-bottom: 6px; letter-spacing: 0.1em; }
+.im-label { font-size: 0.65rem; color: #94a3b8; font-weight: 900; margin-bottom: 6px; letter-spacing: 0.1em; }
 .im-val { font-size: 0.95rem; font-weight: 800; color: #1e293b; }
 
 /* Cancel Modal Override */

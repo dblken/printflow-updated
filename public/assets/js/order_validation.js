@@ -2,12 +2,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const forms = document.querySelectorAll('form');
     
     forms.forEach(form => {
-        const buyNowBtn = form.querySelector('button[name="buy_now"], button[value="Buy Now"], button[type="submit"]');
-        if (!buyNowBtn) return;
+        // Find if this form has any dimension-related fields
+        const dimensionFieldsList = form.querySelectorAll('input[name*="width"], input[name*="height"], input[name*="length"], input[id*="width"], input[id*="height"], input[id*="length"], [data-dimension]');
+        
+        dimensionFieldsList.forEach(field => {
+            if (field.type === 'number' || field.type === 'text') {
+                field.type = 'text';
+                field.setAttribute('inputmode', 'numeric');
+                field.setAttribute('pattern', '[0-9]*');
+                field.setAttribute('maxlength', '3'); // To prevent pasting millions visibly
+            }
+        });
+        
+        const hasDimensionFields = dimensionFieldsList.length > 0;
+        
+        // If it doesn't have dimensions, we still might want general validation if it's an order form
+        const isOrderForm = form.id && (form.id.includes('Form') || form.id.includes('create'));
+        
+        if (!hasDimensionFields && !isOrderForm) return;
         
         form.setAttribute('novalidate', 'novalidate');
         
         form.addEventListener('submit', function(e) {
+            console.log('Form submission caught for validation:', form.id);
             let isValid = true;
             let firstInvalidField = null;
             
@@ -43,6 +60,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
+            // 2. Global Dimension Validation (Max 100)
+            const dimCheck = validateDimensions(form);
+            if (!dimCheck.valid) {
+                isValid = false;
+                if (!firstInvalidField) firstInvalidField = dimCheck.firstInvalid;
+            }
+            
             const customValidationEvent = new CustomEvent('customOrderValidation', {
                 cancelable: true,
                 detail: { form: form, showError: showError }
@@ -57,7 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!isValid) {
+                console.warn('Form validation failed. Blocking submission.');
                 e.preventDefault();
+                e.stopPropagation();
                 e.stopImmediatePropagation();
                 
                 if (firstInvalidField) {
@@ -68,13 +94,53 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => firstInvalidField.focus(), 500);
                     }
                 }
+                return false;
             }
         }, true);
 
         // Clear error on input/change
         form.addEventListener('input', function(e) {
-            clearErrorOnElement(e.target);
+            const el = e.target;
+            clearErrorOnElement(el);
+            
+            // Real-time Dimension Check & Enforcement
+            const name = (el.name || "").toLowerCase();
+            const id = (el.id || "").toLowerCase();
+            const isDimension = (name.includes('width') || name.includes('height') || name.includes('length') || 
+                                 id.includes('width') || id.includes('height') || id.includes('length') ||
+                                 el.hasAttribute('data-dimension'));
+            
+            if (isDimension && el.tagName === 'INPUT' && !el.disabled) {
+                // Remove all non-numeric characters (strictly no decimals)
+                let v = el.value.replace(/[^0-9]/g, '');
+                
+                if (v && v.length > 0) {
+                    const parsed = parseInt(v, 10);
+                    if (!isNaN(parsed)) {
+                        if (parsed > 100) {
+                            v = "100";
+                            showOrderValidationError(el, "Maximum allowed is 100 only.");
+                            el.style.backgroundColor = "#fef2f2";
+                            setTimeout(() => { el.style.backgroundColor = ""; }, 500);
+                        }
+                    }
+                }
+                
+                if (el.value !== v) {
+                    el.value = v;
+                }
+            }
         });
+
+        // Ensure final cleanup on blur
+        form.addEventListener('blur', function(e) {
+            const el = e.target;
+            if (el.tagName === 'INPUT' && (el.name || "").toLowerCase().includes('width') || (el.id || "").toLowerCase().includes('width') || el.hasAttribute('data-dimension')) {
+                 const v = parseFloat(el.value);
+                 if (!isNaN(v) && v > 100) el.value = 100;
+            }
+        }, true);
+        
         form.addEventListener('change', function(e) {
             clearErrorOnElement(e.target);
             if (e.target.type === 'radio') {
@@ -234,4 +300,63 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         document.head.appendChild(style);
     }
+    // Global Dimension Validation (Max 100)
+    function validateDimensions(form) {
+        let firstInvalid = null;
+        let allValid = true;
+        
+        const dimensionInputs = form.querySelectorAll('input');
+        dimensionInputs.forEach(input => {
+            const name = (input.name || "").toLowerCase();
+            const id = (input.id || "").toLowerCase();
+            
+            // Targeted dimension fields (Width, Height, Length)
+            const isDimension = (name.includes('width') || name.includes('height') || name.includes('length') || 
+                                 id.includes('width') || id.includes('height') || id.includes('length') ||
+                                 input.hasAttribute('data-dimension'));
+            
+            if (isDimension && !input.disabled) {
+                const rawVal = input.value;
+                const val = parseFloat(rawVal);
+                
+                if (!isNaN(val) && val > 100) {
+                    allValid = false;
+                    if (!firstInvalid) firstInvalid = input;
+                    showError(input, "Maximum allowed is 100 only.");
+                    // Fallback alert for critical enforcement
+                    pfAlert("Order Error: Maximum dimension allowed is 100 on " + (getFieldName(input, form) || "dimensions") + ".", "Critical Error");
+                } else if (rawVal && val < 0) {
+                     // Catch negative values globally
+                     allValid = false;
+                     if (!firstInvalid) firstInvalid = input;
+                     showError(input, "Dimensions cannot be negative.");
+                }
+            }
+        });
+        
+        return { valid: allValid, firstInvalid: firstInvalid };
+    }
+
+    window.reflUpdateNotesCounter = function(el) {
+        const wrap = el.closest(".shopee-form-field");
+        if (!wrap) return;
+        const counter = wrap.querySelector(".notes-counter");
+        const warn = wrap.querySelector(".notes-warn");
+        
+        if (counter) counter.textContent = el.value.length + " / 500";
+        
+        if (el.value.length >= 500) {
+            if (counter) counter.style.color = "#ef4444";
+            if (warn) {
+                warn.style.opacity = "1";
+                warn.style.transform = "translateY(0)";
+            }
+        } else {
+            if (counter) counter.style.color = "#94a3b8";
+            if (warn) {
+                warn.style.opacity = "0";
+                warn.style.transform = "translateY(5px)";
+            }
+        }
+    };
 });

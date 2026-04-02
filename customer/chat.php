@@ -33,25 +33,769 @@ require_once __DIR__ . '/../includes/header.php';
 
 
 <style>
-/* --- Core Layout & Premium Aesthetics --- */
-body.chat-page main#main-content { padding-top: 0 !important; background: transparent !important; }
-#chat-outer { width: 100vw; height: 100vh; margin: 0; }
+/* ====================================================
+   Customer Chat — Full-Page Premium Dark Glass Theme
+   PrintFlow · Navy-Cyan Design System
+   ==================================================== */
 
-/* Custom Chat Internal UI Tuning */
-.chat-sidebar { border-right: 1px solid var(--lp-border); }
-.chat-item-name { color: var(--lp-heading); }
-.chat-header { background: rgba(0, 49, 61, 0.4) !important; border-bottom: 1px solid var(--lp-border); }
-.role-badge { background: var(--lp-accent); color: #fff; }
-.msg-bubble { box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important; }
-
-/* Modal Backgrounds for Chat */
-.order-details-modal-content, .dropdown-menu {
-    background: var(--lp-surface) !important;
-    border: 1px solid var(--lp-border) !important;
+/* Reset page chrome for full-height chat */
+body.chat-page {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
 }
-.dropdown-item { border-bottom-color: var(--lp-border); }
-.dropdown-item:hover { background: rgba(83, 197, 224, 0.1); }
+body.chat-page::before {
+    display: none !important;
+}
+body.chat-page main#main-content {
+    padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+}
+#chat-outer {
+    width: 100%;
+    height: calc(100vh - 64px); /* subtract header */
+    display: flex;
+    overflow: hidden;
+    background: #00151b;
+}
+
+/* --- Two-Panel Shell --- */
+.glass-shell {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.chat-sidebar {
+    width: 320px;
+    min-width: 280px;
+    max-width: 360px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 35, 43, 0.95);
+    border-right: 1px solid rgba(83, 197, 224, 0.12);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+.sidebar-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+    border-bottom: 1px solid rgba(83,197,224,0.1);
+    flex-shrink: 0;
+}
+.sidebar-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #eaf6fb;
+    margin: 0 0 0.875rem 0;
+    letter-spacing: -0.01em;
+}
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-icon {
+    position: absolute;
+    left: 0.7rem;
+    width: 16px;
+    height: 16px;
+    color: #53C5E0;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.search-container input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(83,197,224,0.2);
+    border-radius: 10px;
+    padding: 0.55rem 0.875rem 0.55rem 2.25rem;
+    color: #e0f2fe;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.search-container input::placeholder { color: #4a7a8a; }
+.search-container input:focus { border-color: rgba(83,197,224,0.5); }
+
+/* Tabs */
+.conv-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(83,197,224,0.1);
+    flex-shrink: 0;
+}
+.conv-tab {
+    flex: 1;
+    text-align: center;
+    padding: 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #4a7a8a;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.conv-tab.active {
+    color: #53C5E0;
+    border-bottom-color: #53C5E0;
+}
+.conv-tab:hover:not(.active) { color: #8bbdcc; }
+
+/* Conversation List */
+#convList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+#convList::-webkit-scrollbar { width: 4px; }
+#convList::-webkit-scrollbar-track { background: transparent; }
+#convList::-webkit-scrollbar-thumb { background: rgba(83,197,224,0.2); border-radius: 4px; }
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1.25rem;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.18s;
+}
+.chat-item:hover { background: rgba(83,197,224,0.06); }
+.chat-item.active {
+    background: rgba(83,197,224,0.1);
+    border-left-color: #53C5E0;
+}
+.chat-item-body { flex: 1; min-width: 0; }
+.chat-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+.chat-item-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #eaf6fb;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chat-item-time {
+    font-size: 0.7rem;
+    color: #4a7a8a;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.chat-item-meta {
+    font-size: 0.73rem;
+    color: #53C5E0;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chat-item-preview {
+    font-size: 0.78rem;
+    color: #6a9eaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Avatar */
+.avatar-stack { position: relative; flex-shrink: 0; }
+.avatar-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00313d, #005068);
+    border: 2px solid rgba(83,197,224,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #53C5E0;
+    overflow: hidden;
+}
+.avatar-img img { width: 100%; height: 100%; object-fit: cover; }
+.online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #64748b;
+    border: 2px solid #00232b;
+}
+.online-dot.visible { background: #10b981; }
+
+/* ===== MAIN PANEL ===== */
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #00151b;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Chat Header */
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(0,35,43,0.9);
+    border-bottom: 1px solid rgba(83,197,224,0.12);
+    flex-shrink: 0;
+    z-index: 10;
+    min-height: 64px;
+}
+.chat-header-info { flex: 1; min-width: 0; }
+.chat-header-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #eaf6fb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.status-pill {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(16,185,129,0.18);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,0.3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.chat-actions { display: flex; align-items: center; gap: 0.5rem; }
+.action-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(83,197,224,0.15);
+    color: #8bbdcc;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-size: 1rem;
+}
+.action-btn:hover { background: rgba(83,197,224,0.12); color: #53C5E0; border-color: rgba(83,197,224,0.3); }
+
+/* Dropdown */
+.dropdown-menu {
+    position: absolute;
+    right: 0; top: calc(100% + 8px);
+    background: #00313d;
+    border: 1px solid rgba(83,197,224,0.2);
+    border-radius: 12px;
+    min-width: 180px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 100;
+    overflow: hidden;
+    display: none;
+}
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: #c2dfeb;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    border-bottom: 1px solid rgba(83,197,224,0.1);
+    transition: background 0.15s;
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background: rgba(83,197,224,0.1); color: #eaf6fb; }
+
+/* ===== MESSAGES ===== */
+#messageBox {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+#messageBox::-webkit-scrollbar { width: 5px; }
+#messageBox::-webkit-scrollbar-track { background: transparent; }
+#messageBox::-webkit-scrollbar-thumb { background: rgba(83,197,224,0.2); border-radius: 4px; }
+
+/* Message Row */
+.msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.625rem;
+    max-width: 78%;
+    position: relative;
+}
+.msg-row.self { flex-direction: row-reverse; margin-left: auto; }
+.msg-row.other { margin-right: auto; }
+.msg-row.system {
+    margin: 0.75rem auto;
+    max-width: 90%;
+    justify-content: center;
+}
+.msg-row.grouped-msg-next .msg-avatar { visibility: hidden; }
+
+.msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00313d, #005068);
+    border: 1.5px solid rgba(83,197,224,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+    color: #53C5E0;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.msg-avatar img { width:100%; height:100%; object-fit:cover; }
+
+.msg-content-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    max-width: 75%;
+    position: relative;
+}
+.msg-row.self .msg-content-col { align-items: flex-end; }
+
+.msg-sender-info {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #53C5E0;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.role-badge {
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #32a1c4;
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Bubble */
+.msg-bubble {
+    padding: 0.6rem 0.9rem;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+}
+.msg-row.other .msg-bubble {
+    background: rgba(0,49,61,0.85);
+    border: 1px solid rgba(83,197,224,0.15);
+    color: #dff3fa;
+    border-bottom-left-radius: 4px;
+}
+.msg-row.self .msg-bubble {
+    background: linear-gradient(135deg, #1a5a72, #0d3d52);
+    border: 1px solid rgba(83,197,224,0.3);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+}
+.msg-row.system .msg-bubble {
+    background: rgba(83,197,224,0.07);
+    border: 1px solid rgba(83,197,224,0.15);
+    color: #8bbdcc;
+    font-size: 0.78rem;
+    text-align: center;
+    border-radius: 999px;
+    padding: 0.3rem 1rem;
+}
+
+/* Reply preview inside bubble */
+.reply-preview-bubble {
+    display: block;
+    background: rgba(0,0,0,0.2);
+    border-left: 3px solid #53C5E0;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    color: #a0ccd8;
+    text-decoration: none;
+    cursor: pointer;
+}
+.reply-preview-bubble:hover { background: rgba(0,0,0,0.3); }
+
+/* Message meta / timestamp */
+.msg-meta {
+    font-size: 0.65rem;
+    color: #4a7a8a;
+    font-weight: 600;
+}
+
+/* Seen indicator */
+.seen-wrapper { display: flex; justify-content: flex-end; }
+.seen-indicator {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background-size: cover;
+    background-color: #32a1c4;
+    border: 1.5px solid rgba(83,197,224,0.4);
+}
+
+/* Hover actions */
+.msg-hover-actions {
+    display: none;
+    position: absolute;
+    top: -28px;
+    right: 0;
+    background: #00313d;
+    border: 1px solid rgba(83,197,224,0.2);
+    border-radius: 8px;
+    flex-direction: row;
+    gap: 2px;
+    z-index: 10;
+    padding: 3px;
+}
+.msg-row:hover .msg-hover-actions { display: flex; }
+.msg-action-icon {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #8bbdcc;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+}
+.msg-action-icon:hover { background: rgba(83,197,224,0.15); color: #53C5E0; }
+
+/* Reactions */
+.reaction-picker {
+    display: none;
+    position: absolute;
+    top: -44px;
+    left: 0;
+    background: #00313d;
+    border: 1px solid rgba(83,197,224,0.2);
+    border-radius: 999px;
+    padding: 4px 8px;
+    gap: 4px;
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.msg-content-col:hover .reaction-picker { display: flex; }
+.reaction-btn {
+    background: none; border: none;
+    font-size: 1.1rem; cursor: pointer;
+    transition: transform 0.15s;
+    padding: 2px;
+    border-radius: 50%;
+}
+.reaction-btn:hover { transform: scale(1.35); }
+.reaction-display-container { margin-top: 3px; }
+.reaction-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0,49,61,0.8);
+    border: 1px solid rgba(83,197,224,0.2);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    cursor: default;
+}
+
+/* ===== MEDIA GALLERY ===== */
+.gallery-panel {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 280px;
+    background: rgba(0,25,33,0.98);
+    border-left: 1px solid rgba(83,197,224,0.15);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 20;
+}
+.gallery-panel.active { transform: translateX(0); }
+.gallery-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1rem 0.75rem;
+    border-bottom: 1px solid rgba(83,197,224,0.1);
+}
+.gallery-title { font-size: 0.9rem; font-weight: 800; color: #eaf6fb; margin: 0; }
+.gallery-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(83,197,224,0.1);
+}
+.g-tab {
+    flex: 1; text-align: center;
+    padding: 0.5rem;
+    font-size: 0.75rem; font-weight: 700;
+    color: #4a7a8a; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.g-tab.active { color: #53C5E0; border-bottom-color: #53C5E0; }
+.gallery-content { flex: 1; overflow-y: auto; padding: 0.75rem; }
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+.gallery-item {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: rgba(0,49,61,0.5);
+    position: relative;
+}
+.gallery-item img, .gallery-item video { width:100%; height:100%; object-fit:cover; }
+.gallery-item:hover { opacity: 0.85; }
+.gallery-item .vid-icon {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+}
+.gallery-item .vid-icon svg { width: 24px; height: 24px; fill: white; opacity: 0.9; }
+
+/* ===== CHAT FOOTER / INPUT ===== */
+.chat-footer {
+    padding: 1rem 1.25rem;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+.chat-footer.disabled { opacity: 0.5; pointer-events: none; }
+
+.input-shell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f1f5f9;
+    border-radius: 16px;
+    padding: 2px 4px 2px 12px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    flex: 1;
+}
+.input-shell:focus-within { 
+    background: #fff; 
+    border-color: #0a2530; 
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); 
+}
+
+.input-icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    cursor: pointer; color: #64748b;
+    transition: all 0.15s; background: transparent;
+    border-radius: 12px;
+}
+.input-icon-btn:hover { background: rgba(10,37,48,0.05); color: #0a2530; }
+
+.chat-input {
+    flex: 1;
+    background: transparent !important;
+    border: none !important; 
+    outline: none !important;
+    color: #1e293b !important;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 10px 0;
+}
+.chat-input::placeholder { color: #94a3b8; }
+.chat-input:disabled { cursor: not-allowed; }
+
+.mic-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    border: none;
+    color: #64748b;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+.mic-btn.recording { background: #fee2e2; border-color: #fecaca; color: #ef4444; }
+.mic-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+.send-btn {
+    background: #0a2530;
+    color: #fff;
+    border: none;
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.send-btn:hover { opacity: 0.9; transform: scale(1.05); box-shadow: 0 4px 12px rgba(10,37,48,0.2); }
+.send-btn:active { transform: scale(0.96); }
+.send-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Modern Voice Player UI */
+.voice-bubble-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    min-width: 250px;
+    margin: 4px 0;
+}
+.msg-row.other .voice-bubble-player { background: #f1f5f9; color: #1e293b; }
+.msg-row.self .voice-bubble-player { background: rgba(255,255,255,0.1); color: #fff; }
+
+.play-pause-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #0a2530;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    flex-shrink: 0;
+}
+.msg-row.self .play-pause-btn { background: #fff; color: #0a2530; }
+.play-pause-btn:hover { transform: scale(1.1); opacity: 0.9; }
+
+.v-waveform-container {
+    flex: 1;
+    height: 30px;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.v-waveform-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.v-duration {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    min-width: 35px;
+    text-align: right;
+}
+.msg-row.self .v-duration { color: rgba(255,255,255,0.8); }
+
+/* Recording Panel */
+.recording-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.1);
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin: 0 4px;
+    overflow: hidden;
+}
+.rec-timer { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #ef4444; font-size: 0.85rem; min-width: 35px; }
+.rec-pulse { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse-rec 1s infinite; flex-shrink: 0; }
+#recordingCanvas {
+    flex: 1;
+    height: 30px;
+    background: transparent;
+}
+
+/* Voice Preview before sending */
+#voicePreviewArea {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin: 0 4px;
+    flex: 1;
+}
+
+@keyframes pulse-rec {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* Reply preview box */
+#replyPreviewBox {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    background: rgba(0,35,43,0.95);
+    border-top: 1px solid rgba(83,197,224,0.12);
+}
+.reply-content-box {
+    flex: 1;
+    background: rgba(83,197,224,0.07);
+    border-left: 3px solid #53C5E0;
+    border-radius: 6px;
+    padding: 4px 10px;
+}
+.reply-heading { font-size: 0.65rem; font-weight: 800; color: #53C5E0; text-transform: uppercase; letter-spacing: 0.05em; }
+.reply-text-preview { font-size: 0.8rem; color: #8bbdcc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cancel-reply-btn {
+    background: none; border: none; color: #4a7a8a; cursor: pointer;
+    padding: 4px; border-radius: 6px; transition: color 0.15s;
+}
+.cancel-reply-btn:hover { color: #ff6b6b; }
+
+/* Media mobile */
+.mobile-menu-btn { display: none; }
+
+/* Chat image */
+.chat-image-wrap { cursor: pointer; border-radius: 12px; overflow: hidden; max-width: 260px; }
+.chat-image-wrap img { width: 100%; display: block; }
+
+/* Utility */
+.hidden { display: none !important; }
+
+/* Mobile */
+@media (max-width: 900px) {
+    .chat-sidebar {
+        position: absolute; left: 0; top: 0; bottom: 0; z-index: 30;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+    }
+    .chat-sidebar.open { transform: translateX(0); }
+    .mobile-menu-btn { display: flex; }
+}
+/* Chat footer integration */
+.ft-footer {
+    margin-top: 0 !important;
+}
 </style>
+
 
 <div id="chat-outer">
     <div class="glass-shell" id="chatShell">
@@ -95,7 +839,7 @@ body.chat-page main#main-content { padding-top: 0 !important; background: transp
                     <p class="m-0 text-sm opacity-60" id="activeMeta">Choose an order to start</p>
                 </div>
                 <!-- Archived Sync Notice -->
-                <div id="archivedNotice" style="display:none; padding:4px 12px; border-radius:8px; background:#fef2f2; border:1px solid #fee2e2; font-size:0.7rem; font-weight:800; color:#ef4444; margin-right:1rem;">
+                <div id="archivedNotice" style="display:none; padding: 4px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.7rem; font-weight: 800; color: #ef4444; margin-right: 1rem;">
                     <i class="bi bi-archive-fill mr-1"></i> ARCHIVED
                 </div>
                 <div class="chat-actions">
@@ -149,7 +893,7 @@ body.chat-page main#main-content { padding-top: 0 !important; background: transp
             </div>
 
             <!-- Previews -->
-            <div id="imgPreviews" style="display:none; padding: 10px 1.5rem; background: #fff; border-top:1px solid #f1f5f9; display:flex; gap:8px;"></div>
+            <div id="imgPreviews" style="display:none; padding: 10px 1.5rem; background: rgba(0,35,43,0.9); border-top:1px solid rgba(83,197,224,0.1); display:flex; gap:8px;"></div>
             
             <div id="replyPreviewBox">
                 <div class="reply-content-box overflow-hidden">
@@ -171,26 +915,37 @@ body.chat-page main#main-content { padding-top: 0 !important; background: transp
                     <div class="input-shell flex-1" id="inputContainer">
                         <label class="input-icon-btn m-0" title="Send Picture">
                             <input type="file" id="imgInput" accept="image/*,video/mp4,video/webm,video/quicktime" multiple class="hidden">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"/></svg>
+                            <i class="bi bi-image"></i>
                         </label>
-                        <input type="text" id="chatInput" class="chat-input" placeholder="Aa" autocomplete="off" disabled>
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off" disabled>
                     </div>
 
-                    <div class="recording-status hidden" id="recordStatus">
-                        <div class="recording-indicator"></div>
-                        <span>Recording...</span> <span id="timer" class="ml-2 font-mono">0:00</span>
+                    <div class="recording-panel hidden" id="recordStatus">
+                        <div class="rec-pulse" title="Recording"></div>
+                        <canvas id="recordingCanvas"></canvas>
+                        <span class="rec-timer" id="timer">0:00</span>
                     </div>
 
-                    <button class="mic-btn hidden" id="cancelRecord" title="Cancel Recording" style="background:#ef4444; border-color:#ef4444; color:#fff;">
-                        <i class="bi bi-trash3-fill"></i>
+                    <div id="voicePreviewArea">
+                        <button type="button" class="play-pause-btn" id="previewPlayBtn" onclick="togglePreviewPlayback()">
+                            <i class="bi bi-play-fill" id="previewPlayIcon"></i>
+                        </button>
+                        <div class="v-waveform-container" id="previewWaveformContainer">
+                            <canvas id="previewWaveformCanvas" class="v-waveform-canvas"></canvas>
+                        </div>
+                        <span class="v-duration" id="previewDuration">0:00</span>
+                    </div>
+
+                    <button class="mic-btn hidden" id="cancelRecord" title="Delete Recording" style="background:#fee2e2; border-color:#fecaca; color:#ef4444;">
+                        <i class="bi bi-trash3"></i>
                     </button>
 
-                    <button class="mic-btn hidden" id="stopRecord" title="Stop & Send" style="background:#10b981; border-color:#10b981; color:#fff;">
-                        <i class="bi bi-stop-fill"></i>
+                    <button class="mic-btn hidden" id="stopRecord" title="Stop Recording" style="background:#dcfce7; border-color:#bbf7d0; color:#16a34a;">
+                        <i class="bi bi-stop-circle-fill"></i>
                     </button>
 
                     <button type="button" class="send-btn" id="sendBtn" title="Send Message">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="3" stroke-linecap="round"/></svg>
+                        <i class="bi bi-send" style="font-size: 1.1rem;"></i>
                     </button>
                 </div>
             </footer>
@@ -356,7 +1111,7 @@ function openChatComponent(id, name, meta, isArchived) {
     const input = document.getElementById('chatInput');
     if (input) {
         input.disabled = false;
-        input.placeholder = 'Aa';
+        input.placeholder = 'Type a message...';
     }
     
     const archiveBtn = document.getElementById('archiveBtn');
@@ -497,13 +1252,17 @@ function appendMessageUI(m) {
         row.classList.add('grouped-msg-next');
     }
     
-    // Setup Avatar (only for non-system messages, self messages do not get an avatar)
+    // Setup Avatar (Both sides now get an avatar in this modern layout)
     let avatarHtml = '';
-    if (!m.is_system && !m.is_self) {
+    if (!m.is_system) {
+        const avSrc = m.sender_avatar ? `${window.baseUrl}/${m.sender_avatar}` : '';
+        const initial = (m.sender_name || (m.is_self ? 'C' : 'S'))[0];
+        
         if (m.sender_avatar) {
-            avatarHtml = `<img src="${window.baseUrl}/${m.sender_avatar}" class="msg-avatar" onerror="this.outerHTML='<div class=\\'msg-avatar\\'>${(m.sender_name||'U')[0]}</div>'">`;
+            avatarHtml = `<img src="${avSrc}" class="msg-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                          <div class="msg-avatar" style="display:none;">${initial}</div>`;
         } else {
-            avatarHtml = `<div class="msg-avatar">${(m.sender_name||'U')[0]}</div>`;
+            avatarHtml = `<div class="msg-avatar">${initial}</div>`;
         }
     }
 
@@ -547,11 +1306,17 @@ function appendMessageUI(m) {
     if (m.message_type === 'voice') {
         const audioSrc = m.message_file || m.file_path || m.image_path;
         colHtml += `
-        <div class="voice-msg">
-            <audio controls style="height: 32px; width: 100%; max-width: 240px; border-radius: 20px;">
-                <source src="${audioSrc}" type="audio/webm">
-            </audio>
+        <div class="voice-bubble-player" id="voice-p-${m.id}">
+            <button class="play-pause-btn" onclick="toggleVoicePlayer(${m.id}, '${audioSrc}')">
+                <i class="bi bi-play-fill" id="v-icon-${m.id}" style="font-size: 1.2rem; margin-left: 2px;"></i>
+            </button>
+            <div class="v-waveform-container" onclick="seekVoice(${m.id}, event)">
+                <canvas class="v-waveform-canvas" id="v-canvas-${m.id}"></canvas>
+            </div>
+            <span class="v-duration" id="v-dur-${m.id}">0:00</span>
+            <audio id="v-audio-${m.id}" src="${audioSrc}" ontimeupdate="updateVoiceProgress(${m.id})" onended="resetVoicePlayer(${m.id})" onloadedmetadata="initVoiceDuration(${m.id})"></audio>
         </div>`;
+        setTimeout(() => drawWaveformFromUrl(audioSrc, `v-canvas-${m.id}`, m.is_self ? 'rgba(255,255,255,0.7)' : '#64748b'), 50);
     } else if (m.image_path) {
         if (m.file_type === 'video') {
             const ss = m.image_path.replace(/'/g, "\\'");
@@ -652,10 +1417,18 @@ function cancelReply() {
     document.getElementById('replyPreviewBox').style.display = 'none';
 }
 
+let pendingVoiceBlob = null;
+
 function sendMessage() {
     const text = document.getElementById('chatInput').value.trim();
-    if (!text && !files.length) return;
+    if (!text && !files.length && !pendingVoiceBlob) return;
     
+    // If voice blob exists, call sendVoice helper instead of normal text send
+    if (pendingVoiceBlob) {
+        sendVoice();
+        return;
+    }
+
     const fd = new FormData();
     fd.append('order_id', activeOrderId);
     if (replyToMessageId) fd.append('reply_id', replyToMessageId);
@@ -692,7 +1465,7 @@ function resetChat() {
     footer.classList.add('disabled');
     const input = document.getElementById('chatInput');
     input.disabled = true;
-    input.placeholder = 'Select a chat to start messaging...';
+    input.placeholder = 'Type a message to start...';
     document.getElementById('activeName').textContent = 'Select a chat';
     document.getElementById('messageBox').innerHTML = '';
 }
@@ -744,6 +1517,141 @@ function escapeHtml(t) {
     const d = document.createElement('div');
     d.textContent = t || '';
     return d.innerHTML;
+}
+
+/* Custom Voice Player Functions */
+function toggleVoicePlayer(id, src) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    const icon = document.getElementById(`v-icon-${id}`);
+    
+    // Pause all other players first
+    document.querySelectorAll('audio').forEach(a => {
+        if (a.id !== `v-audio-${id}`) {
+            a.pause();
+            const sid = a.id.replace('v-audio-', '');
+            const sicon = document.getElementById(`v-icon-${sid}`);
+            if (sicon) {
+                sicon.classList.remove('bi-pause-fill');
+                sicon.classList.add('bi-play-fill');
+            }
+        }
+    });
+
+    if (audio.paused) {
+        audio.play().catch(e => console.error("Play failed:", e));
+        icon.classList.remove('bi-play-fill');
+        icon.classList.add('bi-pause-fill');
+    } else {
+        audio.pause();
+        icon.classList.remove('bi-pause-fill');
+        icon.classList.add('bi-play-fill');
+    }
+}
+
+function updateVoiceProgress(id) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    const canvas = document.getElementById(`v-canvas-${id}`);
+    const dur = document.getElementById(`v-dur-${id}`);
+    if (!audio || !canvas) return;
+
+    const percent = audio.currentTime / audio.duration;
+    dur.textContent = formatAudioTime(audio.currentTime);
+
+    // Redraw with progress highlight
+    drawWaveformWithProgress(canvas, audio, percent);
+}
+
+const waveformCache = {};
+
+async function drawWaveformFromUrl(url, canvasId, color) {
+    if (waveformCache[url]) {
+        drawRawToCanvas(canvasId, waveformCache[url], color);
+        return;
+    }
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const rawData = audioBuffer.getChannelData(0); 
+        const samples = 60; 
+        const blockSize = Math.floor(rawData.length / samples);
+        const filteredData = [];
+        for (let i = 0; i < samples; i++) {
+            let blockStart = blockSize * i;
+            let sum = 0;
+            for (let j = 0; j < blockSize; j++) {
+                sum = sum + Math.abs(rawData[blockStart + j]);
+            }
+            filteredData.push(sum / blockSize);
+        }
+        const multiplier = Math.pow(Math.max(...filteredData), -1);
+        const normalizedData = filteredData.map(n => n * multiplier);
+        waveformCache[url] = normalizedData;
+        drawRawToCanvas(canvasId, normalizedData, color);
+        audioCtx.close();
+    } catch(e) { console.error("Waveform error:", e); }
+}
+
+function drawRawToCanvas(canvasId, data, color, progress = 0) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const samples = data.length;
+    const width = canvas.width / samples;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < samples; i++) {
+        const height = data[i] * canvas.height;
+        const isPlayed = (i / samples) < progress;
+        ctx.fillStyle = isPlayed ? '#0ea5e9' : color;
+        ctx.fillRect(i * width, (canvas.height - height) / 2, width - 1, height);
+    }
+}
+
+function drawWaveformWithProgress(canvas, audio, progress) {
+    const url = audio.src;
+    const data = waveformCache[url];
+    if (!data) return;
+    const isSelf = canvas.closest('.msg-row').classList.contains('self');
+    drawRawToCanvas(canvas.id, data, isSelf ? 'rgba(255,255,255,0.7)' : '#64748b', progress);
+}
+
+function resetVoicePlayer(id) {
+    const icon = document.getElementById(`v-icon-${id}`);
+    const bar = document.getElementById(`v-progress-${id}`);
+    const dur = document.getElementById(`v-dur-${id}`);
+    const audio = document.getElementById(`v-audio-${id}`);
+    
+    if (icon) {
+        icon.classList.remove('bi-pause-fill');
+        icon.classList.add('bi-play-fill');
+    }
+    if (bar) bar.style.width = '0%';
+    if (dur && audio) dur.textContent = formatAudioTime(audio.duration);
+}
+
+function initVoiceDuration(id) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    const dur = document.getElementById(`v-dur-${id}`);
+    if (audio && dur) dur.textContent = formatAudioTime(audio.duration);
+}
+
+function seekVoice(id, event) {
+    const audio = document.getElementById(`v-audio-${id}`);
+    if (!audio || !audio.duration) return;
+    const container = event.currentTarget;
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const percent = x / rect.width;
+    audio.currentTime = percent * audio.duration;
+}
+
+function formatAudioTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
 function renderImgPreviews() {
@@ -955,11 +1863,85 @@ function updateCustomerSeenIndicators(lastSeenId) {
     }
 }
 
-// --- Voice Logic (Customer Updated) ---
+// --- Voice Logic (Customer Updated with Waveform) ---
 let mediaRecorder;
 let audioChunks = [];
 let timerInterval;
 const MAX_DURATION = 180; // 3 mins
+
+let audioCtx;
+let analyser;
+let source;
+let animationId;
+let previewAudio;
+let previewAnimationId;
+
+function startVoiceVisualizer(stream) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const canvas = document.getElementById("recordingCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function draw() {
+        animationId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            x += barWidth + 1;
+        }
+    }
+    draw();
+}
+
+function stopVoiceVisualizer() {
+    if (animationId) cancelAnimationFrame(animationId);
+    if (audioCtx) audioCtx.close();
+}
+
+async function drawStaticWaveform(blob, canvasId, color = '#64748b') {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const rawData = audioBuffer.getChannelData(0); 
+    const samples = 70; 
+    const blockSize = Math.floor(rawData.length / samples);
+    const filteredData = [];
+    for (let i = 0; i < samples; i++) {
+        let blockStart = blockSize * i;
+        let sum = 0;
+        for (let j = 0; j < blockSize; j++) {
+            sum = sum + Math.abs(rawData[blockStart + j]);
+        }
+        filteredData.push(sum / blockSize);
+    }
+    const multiplier = Math.pow(Math.max(...filteredData), -1);
+    const normalizedData = filteredData.map(n => n * multiplier);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const width = canvas.width / samples;
+    for (let i = 0; i < samples; i++) {
+        const height = normalizedData[i] * canvas.height;
+        ctx.fillStyle = color;
+        ctx.fillRect(i * width, (canvas.height - height) / 2, width - 1, height);
+    }
+    audioCtx.close();
+}
 
 const startRec = document.getElementById("startRecord");
 const stopRec = document.getElementById("stopRecord");
@@ -973,6 +1955,7 @@ function stopRecording() {
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
+    stopVoiceVisualizer();
     clearInterval(timerInterval);
     recStatus.classList.add("hidden");
     stopRec.classList.add("hidden");
@@ -981,15 +1964,71 @@ function stopRecording() {
     inpCont.classList.remove("hidden");
 }
 
+function showVoicePreview() {
+    pendingVoiceBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    if (pendingVoiceBlob.size === 0) {
+        pendingVoiceBlob = null;
+        return;
+    }
+    document.getElementById("voicePreviewArea").style.display = 'flex';
+    document.getElementById("inputContainer").classList.add("hidden");
+    document.getElementById("cancelRecord").classList.remove("hidden");
+    
+    // Draw visualizer for preview
+    drawStaticWaveform(pendingVoiceBlob, 'previewWaveformCanvas', '#0a2530');
+    
+    // Get duration
+    const tempAudio = new Audio(URL.createObjectURL(pendingVoiceBlob));
+    tempAudio.onloadedmetadata = () => {
+        const m = Math.floor(tempAudio.duration / 60);
+        const s = Math.floor(tempAudio.duration % 60);
+        document.getElementById("previewDuration").textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    };
+}
+
+function togglePreviewPlayback() {
+    if (!pendingVoiceBlob) return;
+    const icon = document.getElementById("previewPlayIcon");
+    
+    if (!previewAudio) {
+        previewAudio = new Audio(URL.createObjectURL(pendingVoiceBlob));
+        previewAudio.onended = () => {
+            icon.classList.replace('bi-pause-fill', 'bi-play-fill');
+            previewAudio = null;
+        };
+    }
+
+    if (previewAudio.paused) {
+        previewAudio.play();
+        icon.classList.replace('bi-play-fill', 'bi-pause-fill');
+    } else {
+        previewAudio.pause();
+        icon.classList.replace('bi-pause-fill', 'bi-play-fill');
+    }
+}
+
+function clearVoicePreview() {
+    if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+    pendingVoiceBlob = null;
+    audioChunks = [];
+    document.getElementById("voicePreviewArea").style.display = 'none';
+    document.getElementById("inputContainer").classList.remove("hidden");
+    document.getElementById("cancelRecord").classList.add("hidden");
+    document.getElementById("stopRecord").classList.add("hidden");
+    document.getElementById("recordStatus").classList.add("hidden");
+    document.getElementById("startRecord").classList.remove("recording");
+    const icon = document.getElementById("previewPlayIcon");
+    if (icon) icon.classList.replace('bi-pause-fill', 'bi-play-fill');
+}
+
 function sendVoice() {
-    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-    if (blob.size === 0) return;
+    if (!pendingVoiceBlob) return;
 
     const fd = new FormData();
-    fd.append("voice", blob);
+    fd.append("voice", pendingVoiceBlob);
     fd.append("order_id", activeOrderId);
+    if (replyToMessageId) fd.append('reply_id', replyToMessageId);
 
-    // Show indicator on SendBtn
     const btn = document.getElementById('sendBtn');
     const oldIcon = btn.innerHTML;
     btn.disabled = true;
@@ -998,6 +2037,8 @@ function sendVoice() {
     api('/public/api/chat/send_voice.php', 'POST', fd)
         .then(data => {
             if (data.success) {
+                clearVoicePreview();
+                cancelReply();
                 loadMessages();
             } else {
                 alert(data.error || "Voice upload failed");
@@ -1016,6 +2057,8 @@ if (startRec) {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             mediaRecorder.start();
+
+            startVoiceVisualizer(stream);
 
             audioChunks = [];
             let seconds = 0;
@@ -1038,7 +2081,7 @@ if (startRec) {
             }, 1000);
 
             mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
-            mediaRecorder.onstop = sendVoice;
+            mediaRecorder.onstop = showVoicePreview;
         } catch (err) {
             console.error("Mic access denied:", err);
             alert("Microphone access is required for voice recording.");
@@ -1051,17 +2094,11 @@ if (stopRec) stopRec.onclick = () => stopRecording();
 if (cancelRec) {
     cancelRec.onclick = () => {
         if (mediaRecorder && mediaRecorder.state === "recording") {
-            mediaRecorder.onstop = null; // Don't send
+            mediaRecorder.onstop = null; // Don't show preview
             mediaRecorder.stop();
             mediaRecorder.stream.getTracks().forEach(track => track.stop());
         }
-        clearInterval(timerInterval);
-        recStatus.classList.add("hidden");
-        stopRec.classList.add("hidden");
-        cancelRec.classList.add("hidden");
-        startRec.classList.remove("recording");
-        inpCont.classList.remove("hidden");
-        timerDisp.textContent = '0:00';
+        clearVoicePreview();
     };
 }
 

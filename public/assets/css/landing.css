@@ -41,11 +41,11 @@ body.lp-page {
 }
 
 /* ==========================================================
-   NAV — integrated into the dark hero (no white bar)
+   NAV — solid dark background on landing page
    ========================================================== */
 .lp-page #main-header.lp-hero-nav {
-    background: transparent !important;
-    box-shadow: none !important;
+    background: #00232b !important;
+    box-shadow: 0 1px 0 rgba(83, 197, 224, 0.12) !important;
     border-bottom: 1px solid var(--lp-border) !important;
     backdrop-filter: none !important;
     position: relative;
@@ -123,8 +123,8 @@ body.lp-page {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, .08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .08) 1px, transparent 1px);
     background-size: 60px 60px;
     pointer-events: none;
 }

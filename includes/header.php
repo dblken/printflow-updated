@@ -60,6 +60,8 @@ $url_google_auth    = $base_url . '/google-auth/';
     <?php if (!empty($use_customer_css)): ?>
     <link rel="stylesheet" href="<?php echo $asset_base; ?>/assets/css/customer-theme.css?v=<?php echo $ver; ?>">
     <?php endif; ?>
+    <link rel="stylesheet" href="<?php echo $asset_base; ?>/assets/css/theme-modals.css?v=<?php echo $ver; ?>">
+    <script src="<?php echo $asset_base; ?>/assets/js/theme-modals.js?v=<?php echo $ver; ?>"></script>
 
     <!-- Core Libraries (Turbo & Alpine) -->
     <script src="<?php echo $asset_base; ?>/assets/js/turbo.min.js" defer></script>
@@ -74,10 +76,10 @@ $url_google_auth    = $base_url . '/google-auth/';
         /* Internal pages: landing-like transparent header by default */
         body:not(.lp-page) #main-header { box-shadow: none !important; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(255,255,255,0.10); }
         
-        /* Transparent hero nav for landing page only */
-        body.lp-page #main-header.lp-hero-nav:not(.sticky-active) { background: transparent !important; border-bottom-color: rgba(255,255,255,0.1) !important; box-shadow: none !important; }
-        body.lp-page #main-header.sticky-active { background: #0a2530 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-bottom: 1px solid rgba(83,197,224,0.1); }
-        body:not(.lp-page) #main-header.sticky-active { background: rgba(10,37,48,0.92) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.28) !important; border-bottom: 1px solid rgba(83,197,224,0.16) !important; backdrop-filter: blur(6px); }
+        /* Solid nav for landing page — always visible */
+        body.lp-page #main-header.lp-hero-nav { background: #00232b !important; border-bottom: 1px solid rgba(83,197,224,0.15) !important; box-shadow: 0 1px 0 rgba(83,197,224,0.1) !important; }
+        body.lp-page #main-header.lp-hero-nav.sticky-active { background: #00232b !important; box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important; border-bottom: 1px solid rgba(83,197,224,0.18) !important; }
+        body:not(.lp-page) #main-header.sticky-active { background: rgba(10,37,48,0.96) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.28) !important; border-bottom: 1px solid rgba(83,197,224,0.16) !important; backdrop-filter: blur(6px); }
         
         body #main-header nav > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
         body #main-header nav > div > div:last-child { display: flex; align-items: center; gap: 1rem; }

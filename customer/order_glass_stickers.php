@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($width) || empty($height) || $quantity < 1 || empty($needed_date) || empty($surface_type) || empty($lamination) || empty($installation)) {
         $error = 'Please fill in all required fields marked with *.';
-    } elseif ($installation === 'With Installation' && (empty($province) || empty($city) || empty($barangay) || empty($street))) {
+    } elseif ($installation === 'With installation' && (empty($province) || empty($city) || empty($barangay) || empty($street))) {
         $error = 'Please complete the installation address.';
     } elseif (!isset($_FILES['design_file']) || $_FILES['design_file']['error'] !== UPLOAD_ERR_OK) {
         $error = 'Please upload your design.';
@@ -59,15 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $unit_price = 45.00;
                 $base_price = $area * $unit_price * $quantity;
-                $installation_fee = ($installation === 'With Installation') ? (500 + ($area * 15)) : 0;
+                $installation_fee = ($installation === 'With installation') ? (500 + ($area * 15)) : 0;
 
                 $_SESSION['cart'][$item_key] = [
                     'type' => 'Service',
                     'source_page' => 'services',
-                    'name' => 'Glass & Wall Sticker Printing',
+                    'name' => 'Glass & wall sticker printing',
                     'price' => $base_price + $installation_fee,
                     'quantity' => $quantity,
-                    'category' => 'Glass & Wall Sticker Printing',
+                    'category' => 'Glass & wall sticker printing',
                     'branch_id' => $branch_id,
                     'design_tmp_path' => $tmp_dest,
                     'design_name' => $original_name,
@@ -121,7 +121,7 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
         <div class="text-sm text-gray-500 mb-6 flex items-center gap-2">
             <a href="services.php" class="hover:text-blue-600">Services</a>
             <span>/</span>
-            <span class="font-semibold text-gray-900">Glass & Wall Sticker</span>
+            <span class="font-semibold text-gray-900">Glass & wall sticker</span>
         </div>
 
         <?php if ($error): ?>
@@ -132,12 +132,20 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
             <!-- Left: Product Image -->
             <div class="shopee-image-section">
                 <div class="shopee-main-image-wrap">
-                        <img src="<?php echo htmlspecialchars($display_img); ?>" alt="Service Image" class="shopee-main-image" onerror="this.src='/printflow/public/assets/images/services/default.png'">
-                    </div>
+                    <img src="<?php echo htmlspecialchars($display_img); ?>" alt="Service Image" class="shopee-main-image" onerror="this.src='/printflow/public/assets/images/services/default.png'">
                 </div>
+                
+                <div class="mt-6 p-4 bg-blue-50" style="border-radius: 0;">
+                    <h4 class="text-xs font-bold text-blue-800 mb-2">Service note</h4>
+                    <p class="text-xs text-blue-700 leading-relaxed">
+                        Final installation fee will be calculated based on your exact location. For large stickers, our team will provide a layout proof before printing.
+                    </p>
+                </div>
+            </div>
+            
             <!-- Right: Order Details & Form -->
             <div class="shopee-form-section">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Glass & Wall Sticker Printing</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Glass & wall sticker printing</h1>
                 <?php
                 $stats = service_order_get_page_stats('order_glass_stickers');
                 $raw_avg = (float)($stats['avg_rating'] ?? 0);
@@ -169,11 +177,11 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                 <div class="shopee-form-row shopee-form-row-flat">
                     <label class="shopee-form-label">Branch *</label>
                     <div class="shopee-form-field">
-                        <div class="shopee-opt-group">
+                        <div class="shopee-opt-group opt-grid-3">
                             <?php foreach($branches as $b): ?>
                                 <label class="shopee-opt-btn" >
                                     <input type="radio" name="branch_id" value="<?php echo $b['id']; ?>" required style="display:none;" onchange="updateOpt(this)">
-                                    <span><?php echo htmlspecialchars($b['branch_name']); ?></span>
+                                    <span><?php echo htmlspecialchars(to_sentence_case($b['branch_name'])); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -185,9 +193,9 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                     <label class="shopee-form-label">Dimensions *</label>
                     <div class="shopee-form-field">
                         <div class="shopee-opt-group">
-                            <button type="button" class="shopee-opt-btn" data-width="2" data-height="3" onclick="selectDimension(2, 3, event)">2×3 FT</button>
-                            <button type="button" class="shopee-opt-btn" data-width="4" data-height="6" onclick="selectDimension(4, 6, event)">4×6 FT</button>
-                            <button type="button" class="shopee-opt-btn" data-width="6" data-height="8" onclick="selectDimension(6, 8, event)">6×8 FT</button>
+                            <button type="button" class="shopee-opt-btn" data-width="2" data-height="3" onclick="selectDimension(2, 3, event)">2×3 ft</button>
+                            <button type="button" class="shopee-opt-btn" data-width="4" data-height="6" onclick="selectDimension(4, 6, event)">4×6 ft</button>
+                            <button type="button" class="shopee-opt-btn" data-width="6" data-height="8" onclick="selectDimension(6, 8, event)">6×8 ft</button>
                             <button type="button" class="shopee-opt-btn" id="dim-others-btn" onclick="selectDimensionOthers(event)">Others</button>
                         </div>
                         <input type="hidden" name="width" id="width_hidden">
@@ -202,19 +210,12 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                                 </div>
                                 <div style="display:flex;align-items:center;gap:8px">
                                     <div style="flex:1">
-                                        <input type="number" step="0.01" id="custom_width" class="input-field" placeholder="0.0" min="1" max="100">
-                                        <div id="width-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 ft.</div>
+                                        <input type="number" id="custom_width" class="input-field" placeholder="0" min="1" max="100" data-dimension>
                                     </div>
                                     <div style="width:32px;text-align:center;color:#cbd5e1;font-weight:bold;font-size:1.1rem;flex-shrink:0">×</div>
                                     <div style="flex:1">
-                                        <input type="number" step="0.01" id="custom_height" class="input-field" placeholder="0.0" min="1" max="100">
-                                        <div id="height-error" style="display:none;color:#ef4444;font-size:0.75rem;font-weight:700;margin-top:4px">Maximum size is 100 ft.</div>
+                                        <input type="number" id="custom_height" class="input-field" placeholder="0" min="1" max="100" data-dimension>
                                     </div>
-                                </div>
-                                <div style="display:flex;gap:8px;margin-top:6px">
-                                            <div style="flex:1"><span style="font-size:0.75rem;color:var(--lp-muted)">Standard width is up to 6 ft. Larger sizes will be printed in parts and joined.</span></div>
-                                            <div style="width:32px"></div>
-                                            <div style="flex:1"><span style="font-size:0.75rem;color:var(--lp-muted)">Length can be extended. Larger sizes will be printed in parts and joined.</span></div>
                                 </div>
                             </div>
                         </div>
@@ -226,11 +227,11 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                     <label class="shopee-form-label">Surface type *</label>
                     <div class="shopee-form-field">
                         <div class="shopee-opt-group">
-                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Glass (Window/Door/Storefront)" required style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Glass</span></label>
-                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Wall (Painted/Concrete)" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Wall</span></label>
-                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Frosted Glass" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Frosted</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Glass (window/door/storefront)" required style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Glass</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Wall (painted/concrete)" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Wall</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Frosted glass" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Frosted</span></label>
                             <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Mirror" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Mirror</span></label>
-                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Acrylic/Panel" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Acrylic</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Acrylic/panel" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Acrylic</span></label>
                             <label class="shopee-opt-btn" ><input type="radio" name="surface_type" value="Others" style="display:none;" onchange="updateOpt(this); toggleSurfaceOther();"> <span>Others</span></label>
                         </div>
                         
@@ -245,8 +246,8 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                     <label class="shopee-form-label">Laminate *</label>
                     <div class="shopee-form-field">
                         <div class="shopee-opt-group">
-                            <label class="shopee-opt-btn" ><input type="radio" name="lamination" value="With Laminate" required style="display:none;" onchange="updateOpt(this)"> <span>With Laminate</span></label>
-                            <label class="shopee-opt-btn" ><input type="radio" name="lamination" value="Without Laminate" style="display:none;" onchange="updateOpt(this)"> <span>Without Laminate</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="lamination" value="With lamination" required style="display:none;" onchange="updateOpt(this)"> <span>With lamination</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="lamination" value="Without lamination" style="display:none;" onchange="updateOpt(this)"> <span>Without lamination</span></label>
                         </div>
                     </div>
                 </div>
@@ -256,8 +257,8 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                     <label class="shopee-form-label">Installation *</label>
                     <div class="shopee-form-field">
                         <div class="shopee-opt-group">
-                            <label class="shopee-opt-btn" ><input type="radio" name="installation" value="With Installation" required style="display:none;" onchange="updateOpt(this); toggleInstallationAddress(true)"> <span>With Installation</span></label>
-                            <label class="shopee-opt-btn" ><input type="radio" name="installation" value="Without Installation" style="display:none;" onchange="updateOpt(this); toggleInstallationAddress(false)"> <span>No Installation</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="installation" value="With installation" required style="display:none;" onchange="updateOpt(this); toggleInstallationAddress(true)"> <span>With installation</span></label>
+                            <label class="shopee-opt-btn" ><input type="radio" name="installation" value="Without installation" style="display:none;" onchange="updateOpt(this); toggleInstallationAddress(false)"> <span>Without installation</span></label>
                         </div>
                     </div>
                 </div>
@@ -266,25 +267,25 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
                 <div id="install-address-section" style="display: none; margin-bottom: 24px; max-width: 600px;">
                     <div class="bg-blue-50 border border-blue-100 text-blue-700 p-4 rounded-lg mb-6 text-sm flex items-start gap-3">
                         <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                        <span><strong>Fee Adjustment:</strong> Final installation fee will be calculated based on your exact location.</span>
+                        <span><strong>Fee adjustment:</strong> Final installation fee will be calculated based on your exact location.</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border border-dashed border-gray-200 p-6 rounded-xl bg-gray-50/50">
                         <div class="address-field">
                             <label class="dim-label">Province</label>
                             <select name="install_province" id="install_province" class="input-field">
-                                <option value="">Select Province</option>
+                                <option value="">Select province</option>
                             </select>
                         </div>
                         <div class="address-field">
                             <label class="dim-label">City</label>
                             <select name="install_city" id="install_city" class="input-field" disabled>
-                                <option value="">Select City</option>
+                                <option value="">Select city</option>
                             </select>
                         </div>
                         <div class="address-field">
                             <label class="dim-label">Barangay</label>
                             <select name="install_barangay" id="install_barangay" class="input-field" disabled>
-                                <option value="">Select Barangay</option>
+                                <option value="">Select barangay</option>
                             </select>
                         </div>
                         <div class="address-field">
@@ -316,35 +317,37 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
 
                 <!-- File Upload -->
                 <div class="shopee-form-row shopee-form-row-flat">
-                    <label class="shopee-form-label">Upload Design *</label>
+                    <label class="shopee-form-label">Upload design *</label>
                     <div class="shopee-form-field">
                         <input type="file" name="design_file" id="design_file" accept=".jpg,.jpeg,.png,.pdf" class="input-field" required style="max-width: 300px; padding: 0.5rem;">
                     </div>
                 </div>
 
                 <!-- Notes -->
+                
                 <div class="shopee-form-row shopee-form-row-flat" style="align-items: flex-start;">
                     <label class="shopee-form-label" style="padding-top: 0.75rem;">Notes</label>
                     <div class="shopee-form-field">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem; ">
-                            <span id="notes-warn" style="font-size: 0.75rem; color: #ef4444; font-weight: 800; opacity: 0; transform: translateY(5px); transition: all 0.3s ease; pointer-events: none;">Maximum characters reached</span>
-                            <span id="notes-counter" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; transition: color 0.3s ease;">0 / 500</span>
+                        <div style="display:flex; justify-content:flex-end; align-items:center; gap: 10px; margin-bottom: 0.5rem; width: 100%;">
+                            <span class="notes-warn">Max 500 characters</span>
+                            <span class="notes-counter">0 / 500</span>
                         </div>
-                        <textarea name="notes" id="notes-textarea" rows="3" class="input-field" placeholder="Provide extra details for your order..." maxlength="500" oninput="updateNotesCounter(this)" style="min-height: 100px; max-height: 180px; resize: vertical;"></textarea>
-
+                        <textarea id="notes_global" name="notes" rows="3" class="input-field notes-textarea-global" 
+                            placeholder="Any special requests or instructions (e.g., preferred layout, color adjustments, or specific details)." 
+                            maxlength="500" 
+                            oninput="reflUpdateNotesCounter(this)"><?php echo htmlspecialchars($_POST['notes'] ?? ''); ?></textarea>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="shopee-form-row pt-10">
+                <div class="shopee-form-row pt-8">
                     <div style="width: 160px;" class="hidden md:block"></div>
-                    <div class="flex gap-4 flex-1">
-                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 700;">Back</a>
-                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700;" title="Add to Cart">
-                            <svg style="width:1.1rem;height:1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Add To Cart
+                    <div class="flex gap-4 flex-1 justify-end">
+                        <a href="<?php echo BASE_URL; ?>/customer/services.php" class="shopee-btn-outline" style="width: 90px; height: 2.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">Back</a>
+                        <button type="submit" name="action" value="add_to_cart" class="shopee-btn-outline" style="width: 140px; height: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: var(--lp-accent); background: rgba(83, 197, 224, 0.05); color: var(--lp-accent); font-weight: 700; font-size: 0.85rem; white-space: nowrap;" title="Add to Cart">
+                            <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            Add to cart
                         </button>
-                        <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="flex: 1.5; font-weight: 800;">Buy Now</button>
+                        <button type="submit" name="action" value="buy_now" class="shopee-btn-primary" style="width: 160px; height: 2.25rem; font-size: 0.95rem; font-weight: 800; white-space: nowrap;">Buy now</button>
                     </div>
                 </div>
             </form>
@@ -354,152 +357,44 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
 </div>
 
 <style>
-/* Override specifics for this form */
-.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; }
-.dim-sep { height: 44px; display: flex; align-items: center; color: #cbd5e1; font-weight: bold; }
-.dim-helper-text { font-size: 0.75rem; color: #94a3b8; font-weight: 500; margin-top: 6px; display: block; line-height: 1.5; }
-.dim-warning-box { margin-top: 1.5rem; padding: 1.25rem; background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; border-radius: 0.75rem; color: #fbbf24; font-size: 0.85rem; line-height: 1.6; font-weight: 600; display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.dim-warning-box.show { display: block; opacity: 1; transform: translateY(0); }
-.dim-estimation-box { margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.08); border-left: 4px solid #3b82f6; border-radius: 0.75rem; color: #93c5fd; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.dim-estimation-box.show { display: block; opacity: 1; transform: translateY(0); }
-.notes-limit-reached { color: #ef4444 !important; }
-#notes-warn.show { opacity: 1; transform: translateY(0); }
-
-#glassForm .input-field {
-    background-color: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #f1f5f9;
-}
-#glassForm .input-field:focus {
-    border-color: #3b82f6;
-    background-color: rgba(15, 23, 42, 0.8);
-}
-
-/* ── Layout fix: force vertical stacking inside the form section ── */
-.shopee-form-section {
-    display: flex !important;
-    flex-direction: column !important;
-    min-width: 0;
-    overflow: hidden;
-}
-#glassForm {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-}
-#glassForm > .shopee-form-row {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    margin-bottom: 1.75rem;
-}
-@media (min-width: 768px) {
-    #glassForm > .shopee-form-row.shopee-form-row-flat {
-        flex-direction: row !important;
-        align-items: flex-start !important;
-    }
-    #glassForm > .shopee-form-row.shopee-form-row-flat .shopee-form-label {
-        width: 160px !important;
-        flex-shrink: 0 !important;
-        margin-top: 10px !important;
-        margin-bottom: 0 !important;
-    }
-}
-/* ──────────────────────────────────────────────────────────────── */
-
-#install-address-section {
-    background: transparent;
-    padding: 0;
-    margin-bottom: 32px;
-}
-
-#quantity-input::-webkit-outer-spin-button,
-#quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-#quantity-input { -moz-appearance: textfield; appearance: textfield; }
-
-@media (max-width: 640px) {
-    .need-qty-row { flex-direction: column; gap: 16px; }
-}
+.shopee-form-row-flat { margin-bottom: 1.5rem; display: flex; align-items: center; }
+.dim-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block;  }
+.shopee-qty-control { display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); width: fit-content; background: rgba(15, 23, 42, 0.6); }
+.shopee-qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #f1f5f9; cursor: pointer; font-size: 1.25rem; transition: background 0.2s; }
+.shopee-qty-btn:hover { background: rgba(255,255,255,0.05); }
+.shopee-qty-input { width: 50px; height: 32px; border: none; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); background: none; color: #f1f5f9; text-align: center; -moz-appearance: textfield; font-weight: 600; }
 </style>
 
 <script>
-function updateNotesCounter(el) {
-    const count = el.value.length;
-    const counter = document.getElementById('notes-counter');
-    const warn = document.getElementById('notes-warn');
-    counter.textContent = count + ' / 500';
-    if(count >= 500) {
-        counter.classList.add('notes-limit-reached');
-        warn.classList.add('show');
-    } else {
-        counter.classList.remove('notes-limit-reached');
-        warn.classList.remove('show');
-    }
-}
-
 const ADDR_API = '<?php echo $addr_api; ?>';
 let dimensionMode = 'preset';
 
-function updateOpt(input) {
-    const name = input.name;
-    document.querySelectorAll(`input[name="${name}"]`).forEach(function(r) {
-        const wrap = r.closest('.shopee-opt-btn');
-        if (wrap) wrap.classList.toggle('active', r.checked);
-    });
-}
-
 function selectDimension(w, h, e) {
-    e.preventDefault();
     dimensionMode = 'preset';
-    document.querySelectorAll('.shopee-opt-btn').forEach(b => {
-        if(b.hasAttribute('data-width') || b.id === 'dim-others-btn') {
-            b.classList.remove('active');
-        }
-    });
-    const b = e.target.closest('.shopee-opt-btn');
-    if(b) b.classList.add('active');
-    document.getElementById('dim-others-inputs').style.display = 'none';
+    document.querySelectorAll('.shopee-opt-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
     document.getElementById('width_hidden').value = w;
     document.getElementById('height_hidden').value = h;
+    document.getElementById('dim-others-inputs').style.display = 'none';
 }
 
 function selectDimensionOthers(e) {
-    e.preventDefault();
     dimensionMode = 'others';
-    document.querySelectorAll('.shopee-opt-btn').forEach(b => {
-        if(b.hasAttribute('data-width') || b.id === 'dim-others-btn') {
-            b.classList.remove('active');
-        }
-    });
-    document.getElementById('dim-others-btn').classList.add('active');
-    document.getElementById('dim-others-inputs').style.display = 'flex';
+    document.querySelectorAll('.shopee-opt-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('dim-others-inputs').style.display = 'block';
     syncOthersDimensions();
-}
-
-function syncOthersDimensions() {
-    let w = parseFloat(document.getElementById('custom_width').value) || 0;
-    let h = parseFloat(document.getElementById('custom_height').value) || 0;
-    
-    document.getElementById('width_hidden').value = w;
-    document.getElementById('height_hidden').value = h;
-
-    const warn = document.getElementById('dim-warning');
-
-    if(w > 0 && h > 0) {
-        // Show warning if large size detected (Requirement: Width > 6 or Length > 30)
-        if(w > 6 || h > 30) {
-            warn.classList.add('show');
-        } else {
-            warn.classList.remove('show');
-        }
-    } else {
-        warn.classList.remove('show');
-    }
 }
 
 document.getElementById('custom_width').addEventListener('input', syncOthersDimensions);
 document.getElementById('custom_height').addEventListener('input', syncOthersDimensions);
 
+function syncOthersDimensions() {
+    const w = parseFloat(document.getElementById('custom_width').value) || 0;
+    const h = parseFloat(document.getElementById('custom_height').value) || 0;
+    document.getElementById('width_hidden').value = w;
+    document.getElementById('height_hidden').value = h;
+}
 
 function toggleSurfaceOther() {
     const r = document.querySelector('input[name="surface_type"]:checked');
@@ -509,13 +404,7 @@ function toggleSurfaceOther() {
 function toggleInstallationAddress(show) {
     const sec = document.getElementById('install-address-section');
     sec.style.display = show ? 'block' : 'none';
-    const fields = sec.querySelectorAll('.input-field');
-    fields.forEach(f => {
-        if (f.id !== 'install_province') f.disabled = !show;
-        if (show) f.setAttribute('required', '');
-        else f.removeAttribute('required');
-    });
-    if (show && document.getElementById('install_province').options.length <= 1) {
+    if(show && document.getElementById('install_province').options.length <= 1) {
         loadProvinces();
     }
 }
@@ -526,21 +415,21 @@ async function loadProvinces() {
         const r = await fetch(ADDR_API + '?address_action=provinces');
         const d = await r.json();
         if (d.success && d.data) {
-            p.innerHTML = '<option value="">— Select Province —</option>' + d.data.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
+            p.innerHTML = '<option value="">— Select province —</option>' + d.data.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
         }
     } catch(e) { console.error(e); }
 }
 
 document.getElementById('install_province').addEventListener('change', async function() {
     const city = document.getElementById('install_city');
-    city.innerHTML = '<option value="">— Select City / Municipality —</option>';
+    city.innerHTML = '<option value="">— Select city / municipality —</option>';
     city.disabled = true;
     if (!this.value) return;
     try {
         const r = await fetch(ADDR_API + '?address_action=cities&province_code=' + this.value);
         const d = await r.json();
         if (d.success && d.data) {
-            city.innerHTML = '<option value="">— Select City / Municipality —</option>' + d.data.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
+            city.innerHTML = '<option value="">— Select city / municipality —</option>' + d.data.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
             city.disabled = false;
         }
     } catch(e) { console.error(e); }
@@ -548,14 +437,14 @@ document.getElementById('install_province').addEventListener('change', async fun
 
 document.getElementById('install_city').addEventListener('change', async function() {
     const b = document.getElementById('install_barangay');
-    b.innerHTML = '<option value="">— Select Barangay —</option>';
+    b.innerHTML = '<option value="">— Select barangay —</option>';
     b.disabled = true;
     if (!this.value) return;
     try {
         const r = await fetch(ADDR_API + '?address_action=barangays&city_code=' + this.value);
         const d = await r.json();
         if (d.success && d.data) {
-            b.innerHTML = '<option value="">— Select Barangay —</option>' + d.data.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
+            b.innerHTML = '<option value="">— Select barangay —</option>' + d.data.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
             b.disabled = false;
         }
     } catch(e) { console.error(e); }
@@ -565,20 +454,32 @@ function decreaseQty() { const i = document.getElementById('quantity-input'); if
 function increaseQty() { const i = document.getElementById('quantity-input'); i.value = Math.min(999, (parseInt(i.value) || 1) + 1); }
 function clampQty() { const i = document.getElementById('quantity-input'); let v = parseInt(i.value) || 1; i.value = Math.min(999, Math.max(1, v)); }
 
+function reflUpdateNotesCounter(textarea) {
+    const count = textarea.value.length;
+    document.querySelector('.notes-counter').textContent = `${count} / 500`;
+}
+
+function updateOpt(input) {
+    const group = input.closest('.shopee-opt-group');
+    if (group) {
+        group.querySelectorAll('.shopee-opt-btn').forEach(btn => btn.classList.remove('active'));
+    }
+    input.closest('.shopee-opt-btn')?.classList.add('active');
+}
+
 document.getElementById('glassForm').addEventListener('submit', function(e) {
-    let hasError = false;
-    let firstErrorField = null;
-
-    // Reset errors
-    document.getElementById('width-error').style.display = 'none';
-    document.getElementById('height-error').style.display = 'none';
-    document.getElementById('notes-warn').classList.remove('show');
-
+    syncDimensionToHidden();
+    
     if (dimensionMode === 'preset') {
-        const active = document.querySelector('.shopee-opt-btn.active');
+        const active = document.querySelector('.shopee-opt-btn.active[data-width]');
         if (!active) {
-            alert('Please select a dimension.');
             e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                window.showOrderValidationError(document.getElementById('dim-others-btn').closest('.shopee-opt-group'), 'Please select a dimension.');
+            } else {
+                alert('Please select a dimension.');
+            }
             return;
         }
     } else {
@@ -586,40 +487,23 @@ document.getElementById('glassForm').addEventListener('submit', function(e) {
         const h = parseFloat(document.getElementById('custom_height').value) || 0;
 
         if (w <= 0 || h <= 0) {
-            alert('Please enter custom dimensions.');
             e.preventDefault();
+            e.stopImmediatePropagation();
+            if (window.showOrderValidationError) {
+                if (w <= 0) window.showOrderValidationError(document.getElementById('custom_width'), 'Please enter width.');
+                if (h <= 0) window.showOrderValidationError(document.getElementById('custom_height'), 'Please enter height.');
+            } else {
+                alert('Please enter custom dimensions.');
+            }
             return;
         }
-
-        if (w > 100) {
-            document.getElementById('width-error').style.display = 'block';
-            hasError = true;
-            if (!firstErrorField) firstErrorField = document.getElementById('custom_width');
-        }
-
-        if (h > 100) {
-            document.getElementById('height-error').style.display = 'block';
-            hasError = true;
-            if (!firstErrorField) firstErrorField = document.getElementById('custom_height');
-        }
     }
+});
 
-    // Notes limit check (though prevented by maxlength, we check for safety/manual bypass)
-    const notes = document.getElementById('notes-textarea').value;
-    if (notes.length > 500) {
-        document.getElementById('notes-warn').classList.add('show');
-        hasError = true;
-        if (!firstErrorField) firstErrorField = document.getElementById('notes-textarea');
-    }
-
-    if (hasError) {
-        e.preventDefault();
-        if (firstErrorField) {
-            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            firstErrorField.focus();
-        }
-        return;
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#glassForm .shopee-opt-btn input:checked').forEach(inp => {
+        inp.closest('.shopee-opt-btn').classList.add('active');
+    });
 });
 </script>
 

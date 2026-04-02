@@ -140,7 +140,6 @@ require_once __DIR__ . '/../includes/header.php';
         font-size: 0.8rem;
         font-weight: 700;
         color: #9fc4d4;
-        text-transform: uppercase;
         letter-spacing: 0.1em;
         margin-bottom: 0.65rem;
     }
@@ -253,16 +252,16 @@ require_once __DIR__ . '/../includes/header.php';
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
                                         <h3 style="font-size: 1.35rem; font-weight: 800; color: #eaf6fb; margin-bottom: 0.3rem;"><?php echo htmlspecialchars($order['job_title']); ?></h3>
-                                        <div style="display: inline-flex; font-size: 0.72rem; font-weight: 700; color: #53c5e0; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; background: rgba(83, 197, 224, 0.12); border: 1px solid rgba(83, 197, 224, 0.18); margin-bottom: 1.25rem;">
+                                        <div style="display: inline-flex; font-size: 0.72rem; font-weight: 700; color: #53c5e0; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; background: rgba(83, 197, 224, 0.12); border: 1px solid rgba(83, 197, 224, 0.18); margin-bottom: 1.25rem;">
                                             <?php echo htmlspecialchars($order['service_type']); ?>
                                         </div>
                                         <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
                                             <div>
-                                                <div style="font-size: 0.68rem; color: #9fc4d4; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Quantity</div>
+                                                <div style="font-size: 0.68rem; color: #9fc4d4; font-weight: 700; margin-bottom: 2px;">Quantity</div>
                                                 <div style="font-size: 1.1rem; color: #eaf6fb; font-weight: 700;"><?php echo $order['quantity']; ?></div>
                                             </div>
                                             <div>
-                                                <div style="font-size: 0.68rem; color: #53c5e0; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Estimated Total</div>
+                                                <div style="font-size: 0.68rem; color: #53c5e0; font-weight: 700; margin-bottom: 2px;">Estimated Total</div>
                                                 <div style="font-size: 1.1rem; color: #53c5e0; font-weight: 800;"><?php echo format_currency($total_amount); ?></div>
                                             </div>
                                         </div>
@@ -272,12 +271,12 @@ require_once __DIR__ . '/../includes/header.php';
                                     <h4 style="font-size: 0.85rem; font-weight: 800; color: #eaf6fb; margin-bottom: 1rem; border-bottom: 1px solid rgba(83, 197, 224, 0.12); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">Order Specifications</h4>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.85rem;">
                                         <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(83, 197, 224, 0.18); padding: 0.75rem 0.85rem; border-radius: 10px;">
-                                            <div style="font-size: 0.65rem; color: #6b7280; font-weight: 600; text-transform: uppercase; margin-bottom: 2px;">Size</div>
+                                            <div style="font-size: 0.65rem; color: #6b7280; font-weight: 600; margin-bottom: 2px;">Size</div>
                                             <div style="font-size: 0.95rem; font-weight: 700; color: #eaf6fb;"><?php echo htmlspecialchars($order['width_ft'] . ' x ' . $order['height_ft']); ?> ft</div>
                                         </div>
                                         <?php if (!empty($order['notes'])): ?>
                                             <div style="grid-column: 1 / -1; margin-top: 0.75rem; padding: 1.15rem; background: rgba(83, 197, 224, 0.08); border: 1px solid rgba(83, 197, 224, 0.22); border-left: 4px solid #53c5e0; border-radius: 12px;">
-                                                <div style="font-size: 0.75rem; font-weight: 800; color: #53c5e0; text-transform: uppercase; margin-bottom: 6px;">📝 Special Instructions & Notes</div>
+                                                <div style="font-size: 0.75rem; font-weight: 800; color: #53c5e0; margin-bottom: 6px;">📝 Special Instructions & Notes</div>
                                                 <div style="font-size: 0.95rem; color: #eaf6fb; line-height: 1.6; font-weight: 600;"><?php echo nl2br(htmlspecialchars($order['notes'])); ?></div>
                                             </div>
                                         <?php endif; ?>
@@ -380,7 +379,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 </div>
                             </div>
 
-                            <button type="submit" id="submitBtn" class="btn-primary w-full py-4 text-center block font-black uppercase tracking-widest mt-4" <?php echo empty($enabled_methods) ? 'disabled style="opacity:0.5;"' : ''; ?>>
+                            <button type="submit" id="submitBtn" class="btn-primary w-full py-4 text-center block font-black tracking-widest mt-4" <?php echo empty($enabled_methods) ? 'disabled style="opacity:0.5;"' : ''; ?>>
                                 Submit Payment Proof
                             </button>
 

@@ -16,6 +16,17 @@ require_role('Customer');
 $item_key = $_GET['item'] ?? '';
 $cart     = $_SESSION['cart'] ?? [];
 
+// ── Handle Cancellation ──────────────────────────────────────────
+if (isset($_GET['cancel']) && $_GET['cancel'] == '1') {
+    if ($item_key && isset($cart[$item_key])) {
+        $temp_item = $cart[$item_key];
+        if (!empty($temp_item['design_tmp_path']) && file_exists($temp_item['design_tmp_path'])) @unlink($temp_item['design_tmp_path']);
+        if (!empty($temp_item['reference_tmp_path']) && file_exists($temp_item['reference_tmp_path'])) @unlink($temp_item['reference_tmp_path']);
+        unset($_SESSION['cart'][$item_key]);
+    }
+    redirect('services.php');
+}
+
 if (!$item_key || !isset($cart[$item_key])) {
     redirect('products.php');
 }
@@ -207,7 +218,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <style>
-    .order-container { max-width: 650px; margin: 0 auto; }
+    .order-container { max-width: 1140px; margin: 0 auto; padding: 0 1rem; }
     .compact-section { margin-bottom: 1.25rem; }
     .compact-card { padding: 1.25rem !important; }
     .review-title { text-align: center; margin-bottom: 2rem; color: #eaf6fb !important; }
@@ -455,6 +466,10 @@ require_once __DIR__ . '/../includes/header.php';
             grid-template-columns: 1fr !important;
         }
     }
+    @media (max-width: 1023px) {
+        .review-two-col { grid-template-columns: 1fr !important; }
+    }
+
 </style>
 
 <!-- Success Modal -->
@@ -516,85 +531,98 @@ require_once __DIR__ . '/../includes/header.php';
 
         <form method="POST">
             <?php echo csrf_field(); ?>
-            
-            <div style="display:flex; flex-direction:column; gap:1.25rem;">
-                <?php if ($order_error): ?>
-                    <div class="alert-error"><?php echo htmlspecialchars($order_error); ?></div>
-                <?php endif; ?>
 
-                <!-- 1. Order Summary (Prominent, no price) -->
-                <div class="card compact-card review-card">
-                    <h2 class="review-heading" style="font-size:1rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
-                        Order Summary
-                    </h2>
-                    <div class="review-order-item">
-                        <?php render_order_item_clean($item, true, false, false); ?>
-                    </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
 
-                    <!-- Pricing Notice (replaces price display) -->
-                    <div class="review-info-note">
-                        <span style="font-size:1.25rem; flex-shrink:0;">ℹ️</span>
-                        <div>
-                            <div class="review-info-note-title">Price will be confirmed by the shop</div>
-                            <div class="review-info-note-text">Your order will be reviewed and priced by our team. Payment options will be available once your order reaches the <strong>To Pay</strong> stage.</div>
-                        </div>
-                    </div>
-                </div>
+                <!-- LEFT COLUMN: Order Summary -->
+                <div style="display:flex; flex-direction:column; gap:1.25rem;">
+                    <?php if ($order_error): ?>
+                        <div class="alert-error"><?php echo htmlspecialchars($order_error); ?></div>
+                    <?php endif; ?>
 
-                <!-- 2. Contact Information -->
-                <div class="card compact-card review-card">
-                    <h2 class="review-heading" style="font-size:1rem; font-weight:700; margin-bottom:1rem; padding-bottom:0.5rem; display:flex; align-items:center; gap:8px;">
-                        Contact Information
-                    </h2>
-                    <div class="review-contact-grid">
-                        <div>
-                            <label class="review-input-label">First Name</label>
-                            <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['first_name'] ?? ''); ?>" disabled>
+                    <!-- 1. Order Summary (Prominent, no price) -->
+                    <div class="card compact-card review-card">
+                        <h2 class="review-heading" style="font-size:1rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
+                            Order Summary
+                        </h2>
+                        <div class="review-order-item">
+                            <?php render_order_item_clean($item, true, false, false); ?>
                         </div>
-                        <div>
-                            <label class="review-input-label">Last Name</label>
-                            <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['last_name'] ?? ''); ?>" disabled>
-                        </div>
-                        <div>
-                            <label class="review-input-label">Email Address</label>
-                            <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['email']); ?>" disabled>
-                        </div>
-                        <div>
-                            <label class="review-input-label">Phone Number</label>
-                            <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['contact_number'] ?? '—'); ?>" disabled>
-                        </div>
-                        <div class="review-contact-full">
-                            <label class="review-input-label">Address</label>
-                            <textarea class="input-field review-input-disabled review-input-disabled-textarea" rows="2" disabled><?php echo htmlspecialchars($customer_address); ?></textarea>
+
+                        <!-- Pricing Notice (replaces price display) -->
+                        <div class="review-info-note">
+                            <span style="font-size:1.25rem; flex-shrink:0;">ℹ️</span>
+                            <div>
+                                <div class="review-info-note-title">Price will be confirmed by the shop</div>
+                                <div class="review-info-note-text">Your order will be reviewed and priced by our team. Payment options will be available once your order reaches the <strong>To Pay</strong> stage.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- end left column -->
 
-                <!-- 3. Payment Policy Notice (no options shown yet) -->
-                <div class="card compact-card review-policy-card">
-                    <h2 class="review-policy-title" style="font-size:1rem; font-weight:700; margin-bottom:0.75rem; display:flex; align-items:center; gap:8px;">
-                        Payment Policy
-                    </h2>
-                    <p class="review-policy-text">
-                        Payment options (100% Full Payment or 50% Downpayment) will become available once staff reviews your order and sets the price.
-                        You will receive a notification when your order is ready for payment.
-                    </p>
-                </div>
+                <!-- RIGHT COLUMN: Contact + Policy + Actions -->
+                <div style="display:flex; flex-direction:column; gap:1.25rem;">
 
-                <!-- 4. Final Actions -->
-                <div class="review-actions-row">
-                    <a href="?item=<?php echo urlencode($item_key); ?>&cancel=1" 
-                       onclick="return confirm('Cancel this order?');"
-                       class="tshirt-btn tshirt-btn-secondary">
-                        Cancel Order
-                    </a>
-                    
-                    <button type="submit" name="confirm_order" value="1" id="buyNowBtn" class="tshirt-btn tshirt-btn-primary">Buy Now</button>
+                    <!-- 2. Contact Information -->
+                    <div class="card compact-card review-card">
+                        <h2 class="review-heading" style="font-size:1rem; font-weight:700; margin-bottom:1rem; padding-bottom:0.5rem; display:flex; align-items:center; gap:8px;">
+                            Contact Information
+                        </h2>
+                        <div class="review-contact-grid">
+                            <div>
+                                <label class="review-input-label">First Name</label>
+                                <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['first_name'] ?? ''); ?>" disabled>
+                            </div>
+                            <div>
+                                <label class="review-input-label">Last Name</label>
+                                <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['last_name'] ?? ''); ?>" disabled>
+                            </div>
+                            <div>
+                                <label class="review-input-label">Email Address</label>
+                                <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['email']); ?>" disabled>
+                            </div>
+                            <div>
+                                <label class="review-input-label">Phone Number</label>
+                                <input type="text" class="input-field review-input-disabled" value="<?php echo htmlspecialchars($customer['contact_number'] ?? '—'); ?>" disabled>
+                            </div>
+                            <div class="review-contact-full">
+                                <label class="review-input-label">Address</label>
+                                <textarea class="input-field review-input-disabled review-input-disabled-textarea" rows="2" disabled><?php echo htmlspecialchars($customer_address); ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Payment Policy Notice (no options shown yet) -->
+                    <div class="card compact-card review-policy-card">
+                        <h2 class="review-policy-title" style="font-size:1rem; font-weight:700; margin-bottom:0.75rem; display:flex; align-items:center; gap:8px;">
+                            Payment Policy
+                        </h2>
+                        <p class="review-policy-text">
+                            Payment options (100% Full Payment or 50% Downpayment) will become available once staff reviews your order and sets the price.
+                            You will receive a notification when your order is ready for payment.
+                        </p>
+                    </div>
+
+                    <!-- 4. Final Actions -->
+                    <div class="review-actions-row">
+                        <a href="?item=<?php echo urlencode($item_key); ?>&cancel=1" 
+                           onclick="return pfConfirm('Cancel this order?', this);"
+                           class="tshirt-btn tshirt-btn-secondary">
+                            Cancel Order
+                        </a>
+                        
+                        <button type="submit" name="confirm_order" value="1" id="buyNowBtn" class="tshirt-btn tshirt-btn-primary">Buy Now</button>
+                    </div>
                 </div>
+                <!-- end right column -->
+
             </div>
+            <!-- end two-column grid -->
         </form>
     </div>
     <?php endif; ?>
 </div>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+
 

@@ -27,12 +27,6 @@ $customers = [];
 try {
     $customers = db_query("SELECT customer_id, first_name, last_name, email, contact_number FROM customers ORDER BY first_name ASC, last_name ASC");
 } catch (Exception $e) { }
-
-// Fetch Branches (for service modals)
-$branches = [];
-try {
-    $branches = db_query("SELECT id, branch_name FROM branches WHERE status = 'Active' ORDER BY branch_name ASC");
-} catch (Exception $e) { }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -682,8 +676,6 @@ try {
 </div>
 
 <script>
-window.POS_BRANCHES = <?php echo json_encode(array_map(function($b){return ['id'=>(int)$b['id'],'name'=>$b['branch_name']];}, $branches ?: [])); ?>;
-
 let products = [];
 let cart = [];
 let currentTotal = 0;
@@ -748,13 +740,10 @@ async function fetchProducts() {
 
 // POS Dynamic Requirements Config - Synced with customer service forms (excluding Notes)
 function getBranchField() {
-    const branches = (window.POS_BRANCHES || []).map(b => ({ value: b.id, label: b.name }));
-    const hasBranches = branches && branches.length > 0;
-    return { label: 'Branch *', type: 'select', name: 'branch_id', options: branches, required: hasBranches };
+    return null; // Branch is auto-assigned via session in backend
 }
 const serviceRequirements = {
     'Tarpaulin': [
-        getBranchField,
         { label: 'Dimensions (ft)', type: 'dimensions_ft', name: 'dimensions', subNames: ['width', 'height'], placeholders: ['Width', 'Height'], required: true },
         { label: 'Finish Type', type: 'select', name: 'finish', options: ['Matte', 'Glossy'] },
         { label: 'Lamination', type: 'select', name: 'lamination', options: ['With Laminate', 'Without Laminate'] },
@@ -765,7 +754,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'T-Shirt': [
-        getBranchField,
         { label: 'Shirt Source', type: 'select', name: 'shirt_source', options: ['Shop will provide the shirt', 'Customer will provide the shirt'], required: true },
         { label: 'Shirt Type', type: 'select', name: 'shirt_type', options: ['Crew Neck', 'V-Neck', 'Polo', 'Raglan', 'Long Sleeve', 'Others'] },
         { label: 'Shirt Type (if Others)', type: 'text', name: 'shirt_type_other', placeholder: 'Enter custom shirt type', conditionalOn: { field: 'shirt_type', value: 'Others' } },
@@ -778,7 +766,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'Stickers': [
-        getBranchField,
         { label: 'Dimensions (W × H, inches)', type: 'text', name: 'size', placeholder: 'e.g. 2x2', required: true },
         { label: 'Finish', type: 'select', name: 'finish', options: ['Glossy', 'Matte'] },
         { label: 'Laminate', type: 'select', name: 'laminate_option', options: ['With Laminate', 'Without Laminate'] },
@@ -787,7 +774,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'Decals / Stickers': [
-        getBranchField,
         { label: 'Dimensions (W × H, inches)', type: 'text', name: 'size', placeholder: 'e.g. 2x2', required: true },
         { label: 'Finish', type: 'select', name: 'finish', options: ['Glossy', 'Matte'] },
         { label: 'Laminate', type: 'select', name: 'laminate_option', options: ['With Laminate', 'Without Laminate'] },
@@ -796,7 +782,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'Glass/Wall': [
-        getBranchField,
         { label: 'Dimensions (ft)', type: 'dimensions_ft', name: 'dimensions', subNames: ['width', 'height'], placeholders: ['Width', 'Height'], required: true },
         { label: 'Surface Type', type: 'select', name: 'surface_type', options: ['Glass (Window/Door/Storefront)', 'Wall (Painted/Concrete)', 'Frosted Glass', 'Mirror', 'Acrylic/Panel', 'Others'] },
         { label: 'Surface Type (if Others)', type: 'text', name: 'surface_type_other', placeholder: 'Specify surface type', conditionalOn: { field: 'surface_type', value: 'Others' } },
@@ -807,7 +792,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'Transparent Stickers': [
-        getBranchField,
         { label: 'Surface Application', type: 'select', name: 'surface_application', options: ['Glass (Window/Door/Storefront)', 'Plastic / Acrylic', 'Metal', 'Smooth Painted Wall', 'Mirror', 'Others'] },
         { label: 'Surface (if Others)', type: 'text', name: 'surface_other', placeholder: 'Specify surface', conditionalOn: { field: 'surface_application', value: 'Others' } },
         { label: 'Dimensions (e.g. 2x2, 3x4 ft)', type: 'text', name: 'dimensions', placeholder: 'e.g. 2x2', required: true },
@@ -820,7 +804,6 @@ const serviceRequirements = {
     'Reflectorized': {
         isDynamic: true,
         base: [
-            getBranchField,
             { label: 'Product Type *', type: 'select', name: 'product_type', options: ['Subdivision / Gate Pass (Vehicle Sticker)', 'Plate Number / Temporary Plate', 'Custom Reflectorized Sign'], required: true, dynamicTrigger: true }
         ],
         'Subdivision / Gate Pass (Vehicle Sticker)': [
@@ -855,7 +838,6 @@ const serviceRequirements = {
         ]
     },
     'Sintraboard': [
-        getBranchField,
         { label: 'Sintraboard Type', type: 'select', name: 'sintra_type', options: ['Flat Type', '2D Type (with Frame)', 'Standee (Back Stand Support)'], required: true },
         { label: 'Dimensions (e.g. 12 x 18)', type: 'text', name: 'dimensions', placeholder: 'e.g. 12 x 18', required: true },
         { label: 'Unit', type: 'select', name: 'unit', options: ['in', 'ft'] },
@@ -866,7 +848,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'Standees': [
-        getBranchField,
         { label: 'Size', type: 'text', name: 'size', placeholder: 'e.g. 22x28 inches', required: true },
         { label: 'With Stand?', type: 'select', name: 'with_stand', options: ['No', 'Yes'] },
         { label: 'Needed Date', type: 'date', name: 'needed_date', required: true },
@@ -874,7 +855,6 @@ const serviceRequirements = {
         { label: 'Upload Design (JPG, PNG, PDF - max 5MB)', type: 'file', name: 'design_file', accept: '.jpg,.jpeg,.png,.pdf' }
     ],
     'Souvenirs': [
-        getBranchField,
         { label: 'Type', type: 'select', name: 'souvenir_type', options: ['Mug', 'Keychain', 'Tote Bag', 'Pen', 'Tumbler', 'T-Shirt', 'Others'] },
         { label: 'Custom Print?', type: 'select', name: 'custom_print', options: ['No', 'Yes – I have a design'] },
         { label: 'Lamination', type: 'select', name: 'lamination', options: ['With Lamination', 'Without Lamination'] },

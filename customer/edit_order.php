@@ -211,11 +211,11 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
                                     <div>
                                         <label style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">Width (ft)</label>
-                                        <input type="number" name="<?php echo $prefix; ?>width" value="<?php echo htmlspecialchars($custom_data['width'] ?? ''); ?>" required class="input-field">
+                                        <input type="number" name="<?php echo $prefix; ?>width" value="<?php echo htmlspecialchars($custom_data['width'] ?? ''); ?>" required class="input-field" min="1" max="100" data-dimension>
                                     </div>
                                     <div>
                                         <label style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">Height (ft)</label>
-                                        <input type="number" name="<?php echo $prefix; ?>height" value="<?php echo htmlspecialchars($custom_data['height'] ?? ''); ?>" required class="input-field">
+                                        <input type="number" name="<?php echo $prefix; ?>height" value="<?php echo htmlspecialchars($custom_data['height'] ?? ''); ?>" required class="input-field" min="1" max="100" data-dimension>
                                     </div>
                                 </div>
                                 <div style="margin-bottom:1rem;">
