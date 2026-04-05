@@ -450,7 +450,7 @@ body { background: var(--pf-primary); color: var(--pf-text-main); }
                     <div style="margin-top: 1rem;">
                         <div class="profile-info-pill">
                             <span>Since</span>
-                            <span style="font-weight:700;color:#0f172a;"><?php echo isset($customer['created_at']) ? date('M Y', strtotime($customer['created_at'])) : '2026'; ?></span>
+                            <span style="font-weight:700;color:#eaf6fb;"><?php echo isset($customer['created_at']) ? date('M Y', strtotime($customer['created_at'])) : '2026'; ?></span>
                         </div>
                         <div class="profile-info-pill" style="border-bottom: none;">
                             <span>Status</span>

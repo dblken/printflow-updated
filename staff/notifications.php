@@ -441,15 +441,9 @@ $page_title = 'Notifications - Staff';
                                     </div>
                                 </div>
                                 <div class="notif-actions-wrap">
-                                    <?php if ($is_unread): ?>
-                                    <button type="button" onclick="markAsRead(<?php echo (int)$notif['notification_id']; ?>)" class="btn-action btn-action-primary">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                        Read
-                                    </button>
-                                    <?php endif; ?>
-                                    <button type="button" onclick="deleteNotification(<?php echo (int)$notif['notification_id']; ?>)" class="btn-action btn-action-danger">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        Delete
+                                    <button type="button" onclick='handleNotifClick(event, <?php echo (int)$notif['notification_id']; ?>, <?php echo htmlspecialchars(json_encode($target_url), ENT_QUOTES); ?>, <?php echo !(int)$notif['is_read'] ? "true" : "false"; ?>)' class="notif-action-btn" style="background:#06A1A1; color:#fff; border:none; padding:6px 12px; border-radius: 6px; cursor: pointer;">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View
                                     </button>
                                 </div>
                             </div>

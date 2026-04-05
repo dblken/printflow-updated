@@ -20,8 +20,10 @@ if (isset($_GET['mark_read'])) {
 }
 
 // Mark all as read
-if (isset($_GET['mark_all_read'])) {
+if (isset($_GET['mark_all_read']) || (isset($_GET['action']) && $_GET['action'] === 'mark_all_read')) {
     db_execute("UPDATE notifications SET is_read = 1 WHERE customer_id = ? AND is_read = 0", 'i', [$customer_id]);
+    // Also try user_id just in case of inconsistent data
+    db_execute("UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0 AND customer_id IS NULL", 'i', [$customer_id]);
     redirect('/printflow/customer/notifications.php');
 }
 
@@ -63,9 +65,9 @@ $notifications = db_query("
     LEFT JOIN orders o ON n.data_id = o.order_id AND (n.type = 'Order' OR n.type = 'Payment' OR n.type = 'Status')
     LEFT JOIN job_orders jo ON n.data_id = jo.id AND n.type = 'Job Order'
     LEFT JOIN users u ON n.user_id = u.user_id
-    WHERE n.customer_id = ? 
+    WHERE n.customer_id = ? OR (n.user_id = ? AND n.customer_id IS NULL)
     ORDER BY n.created_at DESC LIMIT 100
-", 'i', [$customer_id]);
+", 'ii', [$customer_id, $customer_id]);
 
 // Categorize by read status for display
 $grouped_notifications = [
@@ -92,19 +94,16 @@ require_once __DIR__ . '/../includes/header.php';
 
 <style>
     .notif-wrapper {
-        background: rgba(10, 37, 48, 0.48);
-        backdrop-filter: blur(12px);
+        background: transparent; /* Removed wrapper background for individual cards */
         border-radius: 24px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.25);
         padding: 0;
         min-height: 400px;
         margin-bottom: 3rem;
-        overflow: hidden;
-        border: 1px solid rgba(83, 197, 224, 0.2);
+        overflow: visible; /* Allow drop shadows of cards to show */
+        border: none;
     }
     .notif-header {
-        padding: 24px 32px;
-        border-bottom: 1px solid rgba(83, 197, 224, 0.15);
+        padding: 24px 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -117,35 +116,39 @@ require_once __DIR__ . '/../includes/header.php';
         letter-spacing: 0.05em;
     }
     .notif-group-title {
-        background: rgba(83, 197, 224, 0.06);
-        padding: 12px 24px;
+        padding: 12px 12px;
         font-size: 0.75rem;
         font-weight: 800;
         color: #53c5e0;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        border-bottom: 1px solid rgba(83, 197, 224, 0.1);
+        margin-bottom: 12px;
+        display: block;
     }
     .notif-item {
         display: flex;
         align-items: center;
         gap: 20px;
-        padding: 20px 32px;
+        padding: 24px 32px;
+        margin-bottom: 16px; /* Space between notifications */
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         position: relative;
-        background: transparent;
-        border-bottom: 1px solid rgba(83, 197, 224, 0.08);
+        background: rgba(10, 37, 48, 0.6); /* Card background */
+        border-radius: 20px; /* Card shape */
         text-decoration: none;
-        border-left: 4px solid transparent;
+        border: 1px solid rgba(83, 197, 224, 0.15);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     .notif-item:hover {
-        background: rgba(83, 197, 224, 0.08);
-        transform: translateX(6px);
+        background: rgba(83, 197, 224, 0.1);
+        transform: translateY(-2px);
+        border-color: rgba(83, 197, 224, 0.4);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.25);
     }
     .notif-item.unread {
-        background: rgba(83, 197, 224, 0.04);
-        border-left-color: #53c5e0;
+        background: rgba(83, 197, 224, 0.06);
+        border-left: 5px solid #53c5e0;
     }
     .notif-item.unread .notif-text {
         color: #eaf6fb;
@@ -219,14 +222,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="min-h-screen py-8">
     <div class="container mx-auto px-4" style="max-width: 1100px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <h1 class="ct-page-title" style="margin-bottom: 0;">Notifications</h1>
-                <?php if ($unread_total > 0): ?>
-                    <span class="count-badge" style="background: #53c5e0; color: #030d11; padding: 2px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 900; box-shadow: 0 0 15px rgba(83, 197, 224, 0.4);"><?php echo $unread_total; ?></span>
-                <?php endif; ?>
-            </div>
-            <a href="?mark_all_read=1" class="btn-secondary" style="font-size: 0.75rem; border-radius: 12px; padding: 0.65rem 1.25rem; text-decoration: none; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; background: rgba(83, 197, 224, 0.1); border: 1px solid rgba(83, 197, 224, 0.2); color: #53c5e0; transition: all 0.25s;">Mark all as read</a>
+        <div class="flex justify-end mb-8 mt-4">
+            <a href="?action=mark_all_read" style="font-size: 0.7rem; color: #53c5e0; text-decoration: none; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(83, 197, 224, 0.08); border: 1px solid rgba(83, 197, 224, 0.2); padding: 8px 16px; border-radius: 10px; transition: all 0.2s;" onmouseover="this.style.background='rgba(83, 197, 224, 0.15)'" onmouseout="this.style.background='rgba(83, 197, 224, 0.08)'">Mark all as read</a>
         </div>
 
         <div class="notif-wrapper">
@@ -261,14 +258,26 @@ require_once __DIR__ . '/../includes/header.php';
 
                             // Determine image: design first, then service image from correct service name
                             $final_image_url = "";
+                            $base_dir = __DIR__ . '/../';
+                            
                             if (!empty($notif['design_image'])) {
                                 $final_image_url = "/printflow/staff/get_design_image.php?id=" . $notif['first_item_id'];
                             } elseif (!empty($notif['product_image']) && strtolower(trim($display_name)) === strtolower(trim($notif['service_name'] ?? ''))) {
-                                $final_image_url = $notif['product_image'];
-                                if (strpos($final_image_url, 'uploads/') === 0) {
-                                    $final_image_url = '/printflow/' . $final_image_url;
+                                $p_img = $notif['product_image'];
+                                // Check if it starts with uploads/
+                                if (strpos($p_img, 'uploads/') === 0) {
+                                    if (file_exists($base_dir . $p_img)) {
+                                        $final_image_url = '/printflow/' . $p_img;
+                                    }
+                                } else {
+                                    // Check in uploads/products
+                                    if (file_exists($base_dir . 'uploads/products/' . $p_img)) {
+                                        $final_image_url = '/printflow/uploads/products/' . $p_img;
+                                    }
                                 }
-                            } else {
+                            }
+                            
+                            if (empty($final_image_url)) {
                                 $final_image_url = get_service_image_url($raw_service_name ?: $display_name);
                             }
                             $fallback_img = '/printflow/public/assets/images/services/default.png';
@@ -382,15 +391,32 @@ function time_elapsed_string($datetime, $full = false) {
     $ago = new DateTime($datetime);
     $diff = $now->diff($ago);
 
-    $diff->w = floor($diff->d / 7);
-    $diff->d -= $diff->w * 7;
+    $w = floor($diff->d / 7);
+    $d = $diff->d - ($w * 7);
 
     $string = array(
-        'y' => 'year', 'm' => 'month', 'w' => 'week', 'd' => 'day', 'h' => 'hour', 'i' => 'minute', 's' => 'second',
+        'y' => 'year',
+        'm' => 'month',
+        'w' => 'week',
+        'd' => 'day',
+        'h' => 'hour',
+        'i' => 'minute',
+        's' => 'second',
     );
+    
+    $parts = [
+        'y' => $diff->y,
+        'm' => $diff->m,
+        'w' => $w,
+        'd' => $d,
+        'h' => $diff->h,
+        'i' => $diff->i,
+        's' => $diff->s,
+    ];
+
     foreach ($string as $k => &$v) {
-        if ($diff->$k) {
-            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        if ($parts[$k]) {
+            $v = $parts[$k] . ' ' . $v . ($parts[$k] > 1 ? 's' : '');
         } else {
             unset($string[$k]);
         }

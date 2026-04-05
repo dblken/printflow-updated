@@ -11,7 +11,11 @@ if (!defined('BASE_URL')) define('BASE_URL', '/printflow');
 require_role(['Admin', 'Staff', 'Manager']);
 $page_title = 'Customizations - PrintFlow';
 
-$branchFilter = printflow_branch_filter_for_user();
+$branch_ctx = init_branch_context(false);
+$staffBranchId = (int)$branch_ctx['selected_branch_id'];
+$branchName = $branch_ctx['branch_name'];
+
+$branchFilter = $staffBranchId;
 $joBranchSql = '';
 $joBranchTypes = '';
 $joBranchParams = [];
@@ -173,131 +177,193 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
 
 
 
-        /* Multi-Row Toolbar: Separating Stages from Filters */
-        .pf-custom-toolbar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 20px;
-        }
-        
+        /* ── Status Tabs (Restored) ─── */
         .pf-custom-tabs-row {
             display: flex;
             align-items: center;
             width: 100%;
-            border-bottom: 1px solid #f8fafc;
-            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
         }
-
         .pf-custom-tabs {
             display: flex;
-            flex-wrap: wrap; /* Allow wrapping so all categories are visible */
+            flex-wrap: wrap;
             align-items: center;
             gap: 10px;
             flex: 1;
         }
-
-        .pf-custom-filters-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 12px;
-            width: 100%;
-        }
-
-        .pf-custom-search {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .filter-select {
-            height: 36px;
-            padding: 0 32px 0 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 13px;
-            background-color: white;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            background-size: 16px;
-            appearance: none;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .filter-select:focus { border-color: #06A1A1; ring: 2px; ring-color: #06A1A1; }
-
         .pill-tab { 
             position: relative;
             padding: 8px 14px; 
-            font-weight: 600; 
+            font-weight: 700; 
             font-size: 11px; 
-            font-family: inherit;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #6b7280; 
+            color: #64748b; 
             border-radius: 9999px; 
-            transition: all 0.2s; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
             display: inline-flex; 
             align-items: center; 
-            gap: 6px;
-            background: transparent;
-            border: none;
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             cursor: pointer;
             white-space: nowrap;
-            flex-shrink: 0;
         }
-        .pill-tab:hover { background: #f3f4f6; color: #111827; }
-        .pill-tab.active { background: #eef2ff; color: #4f46e5; border: 1px solid #4f46e5; }
+        .pill-tab:hover { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+        .pill-tab.active { background: #0d9488; color: #ffffff; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2); }
         .tab-count { 
-            background: #4f46e5; 
-            color: white; 
+            background: rgba(0, 0, 0, 0.1);
+            color: inherit; 
             font-size: 10px; 
-            padding: 1px 6px; 
+            padding: 1px 7px; 
             border-radius: 9999px; 
-            font-weight: 600;
+            font-weight: 800;
         }
-        .pill-tab:not(.active) .tab-count { background: #e5e7eb; color: #6b7280; }
+        .pill-tab.active .tab-count { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
 
-
-
-        /* Unified Table Typography */
-        .table-text-main { font-size: 13px; color: #111827; font-weight: 500; }
-        .table-text-sub { font-size: 11px; color: #6b7280; font-weight: 400; }
-        
-        thead th { 
-            font-size: 11px; 
-            font-weight: 600; 
-            text-transform: uppercase; 
-            letter-spacing: 0.05em; 
-            color: #6b7280;
-            background: #f9fafb;
-            border-bottom: 2px solid #f3f4f6;
+        /* ── Toolbar Buttons (Sort / Filter) ─── */
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
         }
+        .toolbar-btn:hover { border-color: #9ca3af; background: #f9fafb; }
+        .toolbar-btn.active { border-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+        .toolbar-btn svg { flex-shrink: 0; }
 
-        .row-indicator {
+        /* ── Filter Panel ─── */
+        .filter-panel {
             position: absolute;
-            left: 0;
-            top: 2px;
-            bottom: 2px;
-            width: 3px;
-            background: #4f46e5;
-            border-radius: 0 4px 4px 0;
-            opacity: 0;
-            transition: opacity 0.2s;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 340px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            z-index: 200;
+            overflow: hidden;
         }
-        tr:hover .row-indicator { opacity: 1; }
+        .filter-panel-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+        }
+        .filter-section {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .filter-section:last-of-type { border-bottom: none; }
+        .filter-section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .filter-section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .filter-reset-link {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0d9488;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .filter-reset-link:hover { text-decoration: underline; }
+        .filter-input {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            font-size: 13px;
+            padding: 0 10px;
+            color: #1f2937;
+            box-sizing: border-box;
+            transition: border-color 0.15s;
+        }
+        .filter-input:focus { outline: none; border-color: #0d9488; }
+        .filter-date-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .filter-date-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+        .filter-select-v2 {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            font-size: 13px;
+            padding: 0 10px;
+            color: #1f2937;
+            background: #fff;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .filter-select-v2:focus { outline: none; border-color: #0d9488; }
 
-        .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999; }
-        .modal-panel { background:#fff; border-radius:12px; box-shadow:0 25px 50px rgba(0,0,0,0.25); width:100%; max-width:560px; max-height:88vh; overflow-y:auto; margin:16px; position:relative; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pf-tab-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+        /* ── Sort Dropdown ─── */
+        .sort-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 200px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            z-index: 200;
+            padding: 6px 0;
+            overflow: hidden;
+        }
+        .sort-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            font-size: 13px;
+            color: #374151;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .sort-option:hover { background: #f9fafb; }
+        .sort-option.selected { color: #0d9488; font-weight: 600; background: #f0fdfa; }
+        .sort-option .check { margin-left: auto; color: #0d9488; }
+
+        /* ── Active filter badge ─── */
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: #0d9488;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
         [x-cloak] { display: none !important; }
-        /* High-Density Layout Overrides for Full-Screen Utility */
         .dashboard-container { min-height: 100vh; background: #f8fafc; }
         .main-content {
             padding: 12px 14px 0 !important;
@@ -308,7 +374,6 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
         header { padding: 12px 0 12px 0 !important; background: transparent !important; margin-bottom: 0 !important; }
         .page-title { margin-bottom: 0 !important; }
         
-        /* High-Density Card Styling */
         .card { 
             padding: 16px !important; 
             border-radius: 12px !important; 
@@ -332,17 +397,8 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
         <div id="staffJoCustomizationsPage" x-data="joManager('ALL')" x-init="init()" class="pf-staff-customizations-root" @keydown.escape.window="onSvcEscape()">
         <header style="display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px;">
             <h1 class="page-title" style="margin:0;">Customizations</h1>
-            <div style="flex: 1; max-width: 480px; position: relative;">
-                <input type="text" x-model="search" placeholder="Search Order # or Customer..." 
-                       style="width: 100%; padding: 12px 16px 12px 42px; border-radius: 14px; border: 1px solid #e2e8f0; background: #fff; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s;"
-                       onfocus="this.style.borderColor='#06A1A1'; this.style.boxShadow='0 0 0 4px rgba(6,161,161,0.1)';"
-                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)';"
-                       @keyup.debounce.300ms="currentPage = 1">
-                <div style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
+            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
+                Branch: <?php echo htmlspecialchars($branchName); ?>
             </div>
         </header>
 
@@ -382,82 +438,120 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
 
             <!-- Jobs List & Filters (matching Enterprise reference) -->
             <div class="card overflow-visible">
-                <div class="pf-custom-toolbar">
-                    <!-- Row 1: Status Stages (Full Visibility) -->
-                    <div class="pf-custom-tabs-row">
-                        <div class="pf-custom-tabs">
-                            <button type="button" @click="activeStatus = 'ALL'" :class="activeStatus === 'ALL' ? 'active' : ''" class="pill-tab">
-                                <span>ALL</span>
-                                <span class="tab-count" x-text="getStatusCount('ALL')"></span>
+                <!-- Restored Status Tabs Row -->
+                <div class="pf-custom-tabs-row">
+                    <div class="pf-custom-tabs">
+                        <template x-for="st in [
+                            {id:'ALL', label:'All'},
+                            {id:'PENDING', label:'Pending'},
+                            {id:'APPROVED', label:'Approved'},
+                            {id:'TO_PAY', label:'To Pay'},
+                            {id:'TO_VERIFY', label:'To Verify'},
+                            {id:'IN_PRODUCTION', label:'In Production'},
+                            {id:'TO_RECEIVE', label:'To Pickup'},
+                            {id:'COMPLETED', label:'Completed'},
+                            {id:'CANCELLED', label:'Cancelled'}
+                        ]" :key="st.id">
+                            <button type="button" @click="activeStatus = st.id" :class="{ 'active': activeStatus === st.id }" class="pill-tab">
+                                <span x-text="st.label"></span>
+                                <span class="tab-count" x-text="getStatusCount(st.id)">0</span>
                             </button>
-                            <button type="button" @click="activeStatus = 'PENDING'" :class="activeStatus === 'PENDING' ? 'active' : ''" class="pill-tab">
-                                <span>PENDING</span>
-                                <span class="tab-count" x-text="getStatusCount('PENDING')"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'APPROVED'" :class="activeStatus === 'APPROVED' ? 'active' : ''" class="pill-tab">
-                                <span>APPROVED</span>
-                                <span class="tab-count" x-text="getStatusCount('APPROVED')"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'TO_PAY'" :class="activeStatus === 'TO_PAY' ? 'active' : ''" class="pill-tab">
-                                <span>TO PAY</span>
-                                <span class="tab-count" x-text="getStatusCount('TO_PAY')"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'TO_VERIFY'" :class="activeStatus === 'TO_VERIFY' ? 'active' : ''" class="pill-tab">
-                                <span>TO VERIFY</span>
-                                <span class="tab-count" x-text="getStatusCount('TO_VERIFY')"></span>
-                                <span x-show="getStatusCount('TO_VERIFY') > 0" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#ef4444;border-radius:9999px;border:2px solid #fff;animation:pf-tab-pulse 2s ease-in-out infinite;"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'IN_PRODUCTION'" :class="activeStatus === 'IN_PRODUCTION' ? 'active' : ''" class="pill-tab">
-                                <span>IN PRODUCTION</span>
-                                <span class="tab-count" x-text="getStatusCount('IN_PRODUCTION')"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'TO_RECEIVE'" :class="activeStatus === 'TO_RECEIVE' ? 'active' : ''" class="pill-tab">
-                                <span>TO PICKUP</span>
-                                <span class="tab-count" x-text="getStatusCount('TO_RECEIVE')"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'COMPLETED'" :class="activeStatus === 'COMPLETED' ? 'active' : ''" class="pill-tab">
-                                <span>COMPLETED</span>
-                                <span class="tab-count" x-text="getStatusCount('COMPLETED')"></span>
-                            </button>
-                            <button type="button" @click="activeStatus = 'CANCELLED'" :class="activeStatus === 'CANCELLED' ? 'active' : ''" class="pill-tab">
-                                <span>CANCELLED</span>
-                                <span class="tab-count" x-text="getStatusCount('CANCELLED')"></span>
-                            </button>
-                        </div>
+                        </template>
                     </div>
+                </div>
 
-                    <!-- Row 2: Secondary Selective Filters -->
-                    <div class="pf-custom-filters-row">
-                        <div class="pf-custom-search flex items-center gap-3 flex-wrap">
-                            <select x-model="serviceFilter" class="filter-select" title="Service Type">
-                                <option value="ALL">All Services</option>
-                                <option value="T-SHIRT PRINTING">T-Shirt Printing</option>
-                                <option value="TARPAULIN PRINTING">Tarpaulin</option>
-                                <option value="DECALS/STICKERS (PRINT/CUT)">Stickers/Decals</option>
-                                <option value="TRANSPARENT STICKER PRINTING">Transparent Stickers</option>
-                                <option value="SINTRA BOARD">Sintraboard</option>
-                                <option value="REFLECTORIZED SIGNAGE">Reflectorized</option>
-                                <option value="SOUVENIRS">Souvenirs</option>
-                            </select>
-
-                            <select x-model="dateFilter" class="filter-select" title="Date Range">
-                                <option value="ALL">All Dates</option>
-                                <option value="TODAY">Today</option>
-                                <option value="WEEK">This Week</option>
-                                <option value="MONTH">This Month</option>
-                                <option value="CUSTOM">Custom Range</option>
-                            </select>
-
-                            <div x-show="dateFilter === 'CUSTOM'" class="flex items-center gap-2">
-                                <input type="date" x-model="customDateFrom" class="filter-select" style="padding-right:12px;">
-                                <span class="text-gray-400">至</span>
-                                <input type="date" x-model="customDateTo" class="filter-select" style="padding-right:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                    <h3 style="font-size:16px; font-weight:700; color:#1f2937; margin:0;">Customizations List</h3>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <!-- Search Field -->
+                        <div style="position: relative; width: 260px;">
+                            <input type="text" x-model="search" placeholder="Search Order # or Customer..." 
+                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
+                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             </div>
+                        </div>
 
-                            <select x-model="sortOrder" class="filter-select" title="Sort By">
-                                <option value="newest">Newest First</option>
-                                <option value="oldest">Oldest First</option>
-                            </select>
+                        <!-- Sort Button -->
+                        <div style="position:relative;">
+                            <button class="toolbar-btn" :class="{ active: sortOpen }" @click="sortOpen = !sortOpen; filterOpen = false" style="height:38px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/>
+                                </svg>
+                                <span x-text="activeSortLabel">Newest First</span>
+                            </button>
+                            <div class="sort-dropdown" x-show="sortOpen" x-cloak @click.outside="sortOpen = false">
+                                <template x-for="s in [
+                                    {id:'newest', label:'Newest First'},
+                                    {id:'oldest', label:'Oldest First'},
+                                    {id:'name_asc', label:'Customer (A-Z)'},
+                                    {id:'name_desc', label:'Customer (Z-A)'}
+                                ]" :key="s.id">
+                                    <div class="sort-option" :class="{ 'selected': activeSort === s.id }" @click="applySort(s.id)">
+                                        <span x-text="s.label"></span>
+                                        <svg x-show="activeSort === s.id" class="check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Filter Button -->
+                        <div style="position:relative;">
+                            <button class="toolbar-btn" :class="{ active: filterOpen || activeFilterCount > 0 }" @click="filterOpen = !filterOpen; sortOpen = false" style="height:38px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                </svg>
+                                Filters
+                                <span class="filter-badge" x-show="activeFilterCount > 0" x-text="activeFilterCount"></span>
+                            </button>
+                            <!-- Filter Panel -->
+                            <div class="filter-panel" x-show="filterOpen" x-cloak @click.outside="filterOpen = false">
+                                <div class="filter-panel-header">Advanced Filters</div>
+                                
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Service Type</span>
+                                        <button class="filter-reset-link" @click="serviceFilter = 'ALL'">Reset</button>
+                                    </div>
+                                    <select class="filter-select-v2" x-model="serviceFilter">
+                                        <option value="ALL">All Services</option>
+                                        <option value="TARPAULIN PRINTING">Tarpaulin</option>
+                                        <option value="T-SHIRT PRINTING">T-Shirt</option>
+                                        <option value="DECALS/STICKERS (PRINT/CUT)">Stickers/Decals</option>
+                                        <option value="SINTRA BOARD">Sintra Board</option>
+                                        <option value="SOUVENIRS">Souvenirs</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Order Date</span>
+                                        <button class="filter-reset-link" @click="dateFilter = 'ALL'">Reset</button>
+                                    </div>
+                                    <select class="filter-select-v2" x-model="dateFilter">
+                                        <option value="ALL">All Time</option>
+                                        <option value="TODAY">Today</option>
+                                        <option value="WEEK">Last 7 Days</option>
+                                        <option value="MONTH">This Month</option>
+                                        <option value="CUSTOM">Custom Range</option>
+                                    </select>
+                                    <div x-show="dateFilter === 'CUSTOM'" style="margin-top:10px;" class="filter-date-row">
+                                        <div>
+                                            <div class="filter-date-label">From</div>
+                                            <input type="date" class="filter-input" x-model="customDateFrom">
+                                        </div>
+                                        <div>
+                                            <div class="filter-date-label">To</div>
+                                            <input type="date" class="filter-input" x-model="customDateTo">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="padding:14px 18px; background:#f9fafb; display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:12px; color:#6b7280;" x-text="filteredOrders.length + ' results found'"></span>
+                                    <button class="filter-reset-link" @click="resetFilters()">Clear All</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -555,12 +649,15 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
     <!-- No more materials modal - integrated into details -->
 
 <!-- Image Preview Lightbox -->
-<div x-show="previewFile" x-cloak style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; display:flex; align-items:center; justify-content:center; padding:40px;">
-    <button @click="previewFile = null" style="position:fixed; top:20px; right:25px; background:rgba(255,255,255,0.1); border:none; color:white; font-size:40px; width:50px; height:50px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">&times;</button>
-    <div style="max-width:100%; max-height:100%; position:relative;">
-        <img :src="previewFile" style="max-width:100%; max-height:85vh; border-radius:12px; box-shadow:0 25px 50px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
-        <div style="margin-top:20px; text-align:center;">
-            <a :href="previewFile" download style="background:white; color:#1f2937; padding:10px 24px; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px;">
+<div x-show="previewFile" x-cloak style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; box-sizing:border-box;">
+    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <img :src="previewFile" style="max-width:100%; max-height:calc(100vh - 160px); border-radius:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); object-fit:contain;">
+        <div style="margin-top:24px; display:flex; justify-content:center; gap:16px;">
+            <button @click="previewFile = null" type="button" style="background:#ef4444; color:white; padding:12px 32px; border-radius:8px; border:none; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                Close Original Image
+            </button>
+            <a :href="previewFile" download style="background:white; color:#1f2937; padding:12px 24px; border-radius:8px; border:none; text-decoration:none; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Download Artwork
             </a>
@@ -634,8 +731,8 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                                                      @click="previewFile = item.design_url"
                                                      style="width:140px; height:auto; border-radius:10px; border:1px solid #e2e8f0; cursor:zoom-in; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);" 
                                                      onerror="this.src='<?php echo htmlspecialchars((defined('BASE_URL') ? BASE_URL : '/printflow') . '/public/assets/images/services/default.png', ENT_QUOTES, 'UTF-8'); ?>'">
-                                                <a :href="item.design_url" target="_blank" rel="noopener" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px; transition:all 0.2s;" onmouseover="this.style.background='#ddd6fe'">
-                                                    Open Original →
+                                                <a href="javascript:void(0)" @click.prevent="previewFile = item.design_url" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px; transition:all 0.2s;" onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#f5f3ff'">
+                                                    Open Original Image
                                                 </a>
                                             </div>
                                         </div>
@@ -648,7 +745,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                                                      @click="previewFile = item.reference_url"
                                                      style="width:140px; height:auto; border-radius:10px; border:1px solid #e2e8f0; cursor:zoom-in; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);"
                                                      onerror="this.style.display='none'">
-                                                <a :href="item.reference_url" target="_blank" rel="noopener" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px;">Open reference →</a>
+                                                <a href="javascript:void(0)" @click.prevent="previewFile = item.reference_url" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px;">Open reference image</a>
                                             </div>
                                         </div>
                                     </template>
@@ -672,8 +769,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                             <div style="display:flex; gap:20px; align-items:flex-start;">
                                 <div style="width:160px; flex-shrink:0;">
                                     <template x-if="currentJo.payment_proof_path">
-                                        <a :href="'/printflow/api_view_proof.php?file=' + encodeURIComponent(currentJo.payment_proof_path)"
-                                           target="_blank" rel="noopener noreferrer"
+                                        <a href="javascript:void(0)" @click.prevent="previewFile = '/printflow/api_view_proof.php?file=' + encodeURIComponent(currentJo.payment_proof_path)"
                                            style="display:block;line-height:0;">
                                             <img :src="'/printflow/api_view_proof.php?file=' + encodeURIComponent(currentJo.payment_proof_path)"
                                                  style="width:100%; height:auto; border-radius:8px; border:1px solid #d1d5db; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.1);"
@@ -1106,6 +1202,17 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             }),
             statuses: ['ALL', 'PENDING', 'APPROVED', 'TO_PAY', 'TO_VERIFY', 'IN_PRODUCTION', 'TO_RECEIVE', 'COMPLETED', 'CANCELLED'],
             activeStatus: defaultStatus || 'ALL',
+            filterOpen: false,
+            sortOpen: false,
+            activeSort: 'newest',
+            serviceFilter: 'ALL',
+            dateFilter: 'ALL',
+            customDateFrom: '',
+            customDateTo: '',
+            minPrice: '',
+            maxPrice: '',
+            customerSearch: '',
+
             currentPage: 1,
             itemsPerPage: 15,
             orders: [],
@@ -1144,11 +1251,8 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             inkBlack: '',
             inkYellow: '',
             useInk: false,
+            sortOrder: 'newest',
             materialSearch: '',
-            dateFilter: 'ALL',
-            serviceFilter: 'ALL',
-            customDateFrom: '',
-            customDateTo: '',
             alertModal: {
                 show: false,
                 title: 'System Message',
@@ -1461,6 +1565,12 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             async init() {
                 this.$watch('search', () => { this.currentPage = 1; });
                 this.$watch('activeStatus', () => { this.currentPage = 1; });
+                this.$watch('serviceFilter', () => { this.currentPage = 1; });
+                this.$watch('dateFilter', () => { this.currentPage = 1; });
+                this.$watch('customDateFrom', () => { this.currentPage = 1; });
+                this.$watch('customDateTo', () => { this.currentPage = 1; });
+                this.$watch('activeSort', () => { this.currentPage = 1; });
+
                 await this.loadOrders();
                 await this.loadMachines();
                 await this.loadAllInventoryItems();
@@ -1634,8 +1744,53 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                 return 'OTHER';
             },
 
+            get activeFilterCount() {
+                let count = 0;
+                if (this.activeStatus !== 'ALL') count++;
+                if (this.serviceFilter !== 'ALL') count++;
+                if (this.dateFilter !== 'ALL') count++;
+                return count;
+            },
+
+            get activeSortLabel() {
+                const labels = {
+                    'newest': 'Newest First',
+                    'oldest': 'Oldest First',
+                    'name_asc': 'Customer (A-Z)',
+                    'name_desc': 'Customer (Z-A)'
+                };
+                return labels[this.activeSort] || 'Sort by';
+            },
+
+            applySort(sort) {
+                this.activeSort = sort;
+                this.sortOpen = false;
+            },
+
+            resetFilters() {
+                this.activeStatus = 'ALL';
+                this.serviceFilter = 'ALL';
+                this.dateFilter = 'ALL';
+                this.customDateFrom = '';
+                this.customDateTo = '';
+                this.filterOpen = false;
+            },
+
             get filteredOrders() {
+                const lowerSearch = this.search.toLowerCase();
                 const filtered = this.orders.filter(jo => {
+                    // Search Bar
+                    if (lowerSearch) {
+                        const idStr = (jo.order_type === 'ORDER' ? '#ORD-' : (jo.order_type === 'SERVICE' ? '#SRV-' : '#JO-')) + jo.id.toString().padStart(5, '0');
+                        const matchSearch = 
+                            idStr.toLowerCase().includes(lowerSearch) ||
+                            (jo.job_title && jo.job_title.toLowerCase().includes(lowerSearch)) ||
+                            (jo.service_type && jo.service_type.toLowerCase().includes(lowerSearch)) ||
+                            (((jo.first_name || '') + ' ' + (jo.last_name || '')).toLowerCase().includes(lowerSearch)) ||
+                            (jo.id && jo.id.toString().includes(lowerSearch));
+                        if (!matchSearch) return false;
+                    }
+
                     // Status Filter
                     let matchStatus = false;
                     if (this.activeStatus === 'ALL') {
@@ -1684,21 +1839,20 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                         }
                     }
                     
-                    // Search Bar
-                    const searchLower = this.search.toLowerCase();
-                    const matchSearch = !this.search || 
-                        (jo.job_title && jo.job_title.toLowerCase().includes(searchLower)) ||
-                        (jo.service_type && jo.service_type.toLowerCase().includes(searchLower)) ||
-                        (((jo.first_name || '') + ' ' + (jo.last_name || '')).toLowerCase().includes(searchLower)) ||
-                        (jo.id && jo.id.toString().includes(searchLower));
-                    
-                    return matchSearch;
+                    return true;
                 });
 
                 // Sorting
                 return filtered.sort((a, b) => {
-                    const diff = (b._ts || 0) - (a._ts || 0);
-                    return this.sortOrder === 'newest' ? diff : -diff;
+                    if (this.activeSort === 'newest') return (b._ts || 0) - (a._ts || 0);
+                    if (this.activeSort === 'oldest') return (a._ts || 0) - (b._ts || 0);
+                    
+                    const nameA = ((a.first_name || '') + ' ' + (a.last_name || '')).toLowerCase();
+                    const nameB = ((b.first_name || '') + ' ' + (b.last_name || '')).toLowerCase();
+                    if (this.activeSort === 'name_asc') return nameA.localeCompare(nameB);
+                    if (this.activeSort === 'name_desc') return nameB.localeCompare(nameA);
+                    
+                    return 0;
                 });
             },
 
@@ -1750,7 +1904,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             async viewDetails(id, orderType = 'JOB') {
                 let order = this.findOrder(id, orderType);
                 if (orderType === 'SERVICE' || order?.order_type === 'SERVICE') {
-                    await this.openSvcModal(id);
+                    window.location.href = `service_orders.php?open_id=${id}`;
                     return;
                 }
 

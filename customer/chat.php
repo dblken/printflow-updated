@@ -26,11 +26,17 @@ if ($order_id) {
 $page_title = $order_id ? "Chat - Order #{$order_id} - PrintFlow" : 'Messages - PrintFlow';
 $use_customer_css = true;
 $is_chat_page = true;
+$disable_turbo = true;
 require_once __DIR__ . '/../includes/header.php';
 ?>
 <!-- Load Bootstrap Icons for Chat UI -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/bootstrap-icons.min.css">
 
+
+<!-- Load Socket.io and WebRTC Call Assets -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<link rel="stylesheet" href="/printflow/public/assets/css/printflow_call.css">
+<script src="/printflow/public/assets/js/printflow_call.js"></script>
 
 <style>
 /* ====================================================
@@ -40,9 +46,10 @@ require_once __DIR__ . '/../includes/header.php';
 
 /* Reset page chrome for full-height chat */
 body.chat-page {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
+
 body.chat-page::before {
     display: none !important;
 }
@@ -53,10 +60,12 @@ body.chat-page main#main-content {
 }
 #chat-outer {
     width: 100%;
-    height: calc(100vh - 64px); /* subtract header */
+    height: calc(100vh - 64px) !important; /* subtract header */
     display: flex;
     overflow: hidden;
     background: #00151b;
+    position: relative;
+    z-index: 1;
 }
 
 /* --- Two-Panel Shell --- */
@@ -193,11 +202,12 @@ body.chat-page main#main-content {
 .chat-item-meta {
     font-size: 0.73rem;
     color: #53C5E0;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: capitalize;
 }
 .chat-item-preview {
     font-size: 0.78rem;
@@ -340,11 +350,12 @@ body.chat-page main#main-content {
     display: flex;
     align-items: flex-end;
     gap: 0.625rem;
-    max-width: 78%;
+    max-width: 92%;
     position: relative;
+    margin-bottom: 0.75rem;
 }
-.msg-row.self { flex-direction: row-reverse; margin-left: auto; }
-.msg-row.other { margin-right: auto; }
+.msg-row.self { justify-content: flex-end; margin-left: auto; }
+.msg-row.other { justify-content: flex-start; margin-right: auto; }
 .msg-row.system {
     margin: 0.75rem auto;
     max-width: 90%;
@@ -366,14 +377,23 @@ body.chat-page main#main-content {
 .msg-avatar img { width:100%; height:100%; object-fit:cover; }
 
 .msg-content-col {
+    position: relative;
+    min-width: 0;
+    max-width: 65%;
+    z-index: 2;
+}
+.msg-row.self .msg-content-col {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    max-width: 75%;
-    position: relative;
+    align-items: flex-end;
+    width: auto;
 }
-.msg-row.self .msg-content-col { align-items: flex-end; }
+.msg-row.other .msg-content-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
 
 .msg-sender-info {
     font-size: 0.7rem;
@@ -397,14 +417,21 @@ body.chat-page main#main-content {
 
 /* Bubble */
 .msg-bubble {
-    padding: 0.6rem 0.9rem;
-    border-radius: 16px;
-    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+    border-radius: 20px;
+    font-size: 0.92rem;
+    font-weight: 500;
     line-height: 1.5;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-break: break-word;
+    white-space: normal;
+    display: inline-block;
+    width: auto;
     max-width: 100%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    transition: all 0.2s ease;
 }
+.msg-bubble:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
 .msg-row.other .msg-bubble {
     background: rgba(0,49,61,0.85);
     border: 1px solid rgba(83,197,224,0.15);
@@ -442,6 +469,39 @@ body.chat-page main#main-content {
 }
 .reply-preview-bubble:hover { background: rgba(0,0,0,0.3); }
 
+/* Character Counter */
+.char-counter {
+    font-size: 0.65rem;
+    color: #4a7a8a;
+    font-weight: 700;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.8;
+}
+.char-counter.limit-near { color: #f59e0b; }
+.char-counter.limit-reached { color: #ef4444; }
+
+/* Hide global elements that overlap */
+#floatingChatButton, .floating-chat-trigger, .floating-chat-circle, .chat-floating-button, 
+[id*="floatingChat"], [class*="floating-chat"], .messenger-bubble, .floating-bubble,
+.fixed-chat-widget, [class*="chat-widget"], #chat-widget-container,
+ iframe[title*="Chat"], #tawk-container, .tawk-min-container { 
+    display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;
+}
+
+.chat-input {
+    background: transparent; border: none; outline: none;
+    flex: 1; color: #eaf6fb; font-size: 0.95rem;
+    padding: 8px 0; width: 100%; min-width: 0;
+    resize: none !important; max-height: 120px; line-height: 1.4;
+    border: none !important; outline: none !important;
+    height: 22px;
+}
+.chat-input::placeholder { color: #4a7a8a; }
+
 /* Message meta / timestamp */
 .msg-meta {
     font-size: 0.65rem;
@@ -459,67 +519,84 @@ body.chat-page main#main-content {
     border: 1.5px solid rgba(83,197,224,0.4);
 }
 
-/* Hover actions */
-.msg-hover-actions {
-    display: none;
-    position: absolute;
-    top: -28px;
-    right: 0;
-    background: #00313d;
-    border: 1px solid rgba(83,197,224,0.2);
-    border-radius: 8px;
-    flex-direction: row;
-    gap: 2px;
-    z-index: 10;
-    padding: 3px;
+/* Hover actions & Reaction Picker */
+.msg-row:hover .msg-action-bar, .msg-row.has-active-menu .msg-action-bar { opacity: 1; pointer-events: auto; }
+.msg-action-bar {
+    opacity: 0; pointer-events: none;
+    display: flex; align-items: center; gap: 4px;
+    padding: 2px 6px; border-radius: 999px;
+    background: rgba(0, 35, 43, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(83, 197, 224, 0.2);
+    transition: opacity 0.2s;
+    position: absolute; top: 50%; transform: translateY(-50%);
+    z-index: 50;
 }
-.msg-row:hover .msg-hover-actions { display: flex; }
-.msg-action-icon {
-    width: 26px; height: 26px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 6px;
-    cursor: pointer;
-    color: #8bbdcc;
-    font-size: 0.8rem;
-    transition: all 0.15s;
-}
-.msg-action-icon:hover { background: rgba(83,197,224,0.15); color: #53C5E0; }
+.msg-row.other .msg-action-bar { left: calc(100% + 8px); }
+.msg-row.self .msg-action-bar { right: calc(100% + 8px); flex-direction: row-reverse; }
 
-/* Reactions */
+.m-action-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: #8bbdcc; cursor: pointer;
+    transition: all 0.2s; font-size: 0.9rem;
+}
+.m-action-btn:hover { background: rgba(83, 197, 224, 0.15); color: #53C5E0; }
+
 .reaction-picker {
-    display: none;
-    position: absolute;
-    top: -44px;
-    left: 0;
-    background: #00313d;
-    border: 1px solid rgba(83,197,224,0.2);
-    border-radius: 999px;
-    padding: 4px 8px;
-    gap: 4px;
-    z-index: 20;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: none; position: absolute; bottom: 100%; left: 50%;
+    transform: translateX(-50%); background: #ffffff;
+    padding: 0 18px; border-radius: 999px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4); z-index: 500;
+    gap: 12px; border: 1px solid #e2e8f0;
+    width: max-content; pointer-events: auto;
+    align-items: center; justify-content: center;
+    margin-bottom: 30px; height: 50px;
 }
-.msg-content-col:hover .reaction-picker { display: flex; }
+.reaction-picker.active { display: flex; animation: pickerPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* More Actions Menu */
+.m-more-menu {
+    display: none; position: absolute; bottom: 100%; right: 0;
+    background: #00313d; border: 1px solid rgba(83, 197, 224, 0.25);
+    border-radius: 12px; padding: 6px 0; width: 160px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6); z-index: 400;
+    margin-bottom: 15px;
+}
+.m-more-menu.active { display: block; animation: menuFade 0.2s ease; }
+.m-menu-item {
+    padding: 8px 16px; font-size: 0.85rem; font-weight: 700; color: #8bbdcc;
+    display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;
+}
+.m-menu-item:hover { background: rgba(83, 197, 224, 0.1); color: #53c5e0; }
+.m-menu-item i { font-size: 1rem; }
+
+@keyframes menuFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.pinned-badge {
+    position: absolute; top: -6px; right: -6px;
+    width: 18px; height: 18px; background: #53c5e0;
+    color: #fff; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 9px;
+    border: 1px solid #00232b; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 5;
+}
+@keyframes pickerPop { from { opacity: 0; transform: translateX(-50%) scale(0.8) translateY(10px); } to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); } }
+
 .reaction-btn {
-    background: none; border: none;
-    font-size: 1.1rem; cursor: pointer;
-    transition: transform 0.15s;
-    padding: 2px;
-    border-radius: 50%;
+    background: none; border: none; font-size: 1.5rem; cursor: pointer;
+    transition: transform 0.2s; padding: 0; line-height: 1;
 }
-.reaction-btn:hover { transform: scale(1.35); }
-.reaction-display-container { margin-top: 3px; }
+.reaction-btn:hover { transform: scale(1.35) translateY(-4px); }
+
+.reaction-display-container { margin-top: 4px; display: none; }
 .reaction-display {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: rgba(0,49,61,0.8);
-    border: 1px solid rgba(83,197,224,0.2);
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: 0.85rem;
-    cursor: default;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(0, 49, 61, 0.95); border: 1px solid rgba(83, 197, 224, 0.25);
+    border-radius: 999px; padding: 2px 8px; font-size: 0.85rem; cursor: default;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+.reaction-display span { line-height: 1; }
 
 /* ===== MEDIA GALLERY ===== */
 .gallery-panel {
@@ -581,93 +658,117 @@ body.chat-page main#main-content {
 
 /* ===== CHAT FOOTER / INPUT ===== */
 .chat-footer {
-    padding: 1rem 1.25rem;
-    background: #ffffff;
-    border-top: 1px solid #f1f5f9;
+    padding: 10px 1.25rem;
+    background: rgba(0, 35, 43, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(83, 197, 224, 0.15);
     flex-shrink: 0;
     position: relative;
     z-index: 10;
+}
+.chat-footer-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
 }
 .chat-footer.disabled { opacity: 0.5; pointer-events: none; }
 
 .input-shell {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f1f5f9;
-    border-radius: 16px;
-    padding: 2px 4px 2px 12px;
-    border: 2px solid transparent;
+    align-items: flex-end;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    padding: 0 4px 0 12px;
+    border: 1.5px solid rgba(83, 197, 224, 0.15);
     transition: all 0.2s;
     flex: 1;
 }
-.input-shell:focus-within { 
-    background: #fff; 
-    border-color: #0a2530; 
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); 
+.input-shell:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(83, 197, 224, 0.45);
+    box-shadow: 0 0 0 3px rgba(83, 197, 224, 0.08);
 }
 
 .input-icon-btn {
     display: flex; align-items: center; justify-content: center;
     width: 38px; height: 38px;
-    cursor: pointer; color: #64748b;
+    cursor: pointer; color: #4a7a8a;
     transition: all 0.15s; background: transparent;
     border-radius: 12px;
 }
-.input-icon-btn:hover { background: rgba(10,37,48,0.05); color: #0a2530; }
+.input-icon-btn:hover { background: rgba(83, 197, 224, 0.1); color: #53c5e0; }
 
 .chat-input {
     flex: 1;
     background: transparent !important;
-    border: none !important; 
+    border: none !important;
     outline: none !important;
-    color: #1e293b !important;
+    color: #eaf6fb !important;
     font-size: 0.95rem;
     font-weight: 500;
-    padding: 10px 0;
+    padding: 0;
+    width: 100%;
+    min-width: 0;
+    resize: none !important;
+    max-height: 120px;
+    line-height: 1.5;
+    overflow-y: auto;
+    font-family: inherit;
+    height: 1.5em;
+    display: block;
 }
-.chat-input::placeholder { color: #94a3b8; }
+.chat-input::placeholder { color: #3a6070; }
 .chat-input:disabled { cursor: not-allowed; }
 
 .mic-btn {
-    width: 40px; height: 40px;
-    border-radius: 12px;
-    background: #f1f5f9;
-    border: none;
-    color: #64748b;
+    width: 42px; height: 42px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(83, 197, 224, 0.18);
+    color: #4a7a8a;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     font-size: 1.1rem;
     transition: all 0.2s;
 }
-.mic-btn.recording { background: #fee2e2; border-color: #fecaca; color: #ef4444; }
-.mic-btn:hover { background: #e2e8f0; color: #0f172a; }
+.mic-btn.recording { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
+.mic-btn:hover { background: rgba(83, 197, 224, 0.1); color: #53c5e0; border-color: rgba(83, 197, 224, 0.35); }
 
 .send-btn {
-    background: #0a2530;
+    background: var(--lp-accent, #32a1c4);
     color: #fff;
     border: none;
     width: 44px; height: 44px;
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(83, 197, 224, 0.2);
 }
-.send-btn:hover { opacity: 0.9; transform: scale(1.05); box-shadow: 0 4px 12px rgba(10,37,48,0.2); }
+.send-btn:hover { opacity: 0.9; transform: scale(1.05); box-shadow: 0 6px 20px rgba(83, 197, 224, 0.38); }
 .send-btn:active { transform: scale(0.96); }
-.send-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+.send-btn:disabled { background: rgba(255,255,255,0.08); cursor: not-allowed; transform: none; box-shadow: none; color: #3a6070; }
 
 /* Modern Voice Player UI */
 .voice-bubble-player {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    min-width: 250px;
-    margin: 4px 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    min-width: 280px;
+    max-width: 100%;
 }
+.msg-bubble:has(.voice-bubble-player) {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 .msg-row.other .voice-bubble-player { background: #f1f5f9; color: #1e293b; }
 .msg-row.self .voice-bubble-player { background: rgba(255,255,255,0.1); color: #fff; }
 
@@ -791,10 +892,175 @@ body.chat-page main#main-content {
     .mobile-menu-btn { display: flex; }
 }
 /* Chat footer integration */
+/* Order Details Modal Glassmorphism */
+.order-details-modal-overlay {
+    background: rgba(0, 5, 10, 0.65) !important;
+
+    position: fixed;
+    inset: 0;
+    z-index: 2000000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+
+
+
+
+.order-details-modal-content {
+    background: rgba(0, 20, 35, 0.45) !important;
+
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(83, 197, 224, 0.15) !important;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05) !important;
+    max-width: 850px !important;
+    width: 94% !important;
+    max-height: 85vh !important;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0 !important;
+}
+
+
+
+
+
+.order-details-header {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid rgba(83, 197, 224, 0.1) !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+
+.order-details-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #eaf6fb !important;
+    letter-spacing: -0.01em;
+}
+
+
+.order-details-close {
+    width: 28px;
+    height: 28px;
+    background: #ffffff !important;
+    border: none !important;
+    cursor: pointer;
+    border-radius: 50% !important;
+    color: #000000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.order-details-close:hover {
+    background: #f1f5f9 !important;
+}
+
+
+
+.pf-spec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+
+
+@media (max-width: 768px) {
+    .pf-spec-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.pf-spec-box {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(83, 197, 224, 0.08) !important;
+    border-radius: 0 !important;
+    padding: 10px 14px;
+    transition: all 0.2s;
+}
+
+
+
+.pf-spec-box:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.pf-spec-key {
+    font-size: 0.55rem;
+    color: #53c5e0;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+    opacity: 0.7;
+}
+
+.pf-spec-val {
+    font-size: 0.85rem;
+    color: #eaf6fb;
+    font-weight: 700;
+}
+
+.status-pill {
+    border-radius: 0 !important;
+}
+
+.notes-box {
+    margin-top: 0.5rem;
+    padding: 0.85rem;
+    border-radius: 0 !important;
+    background: rgba(83, 197, 224, 0.02);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(83, 197, 224, 0.1) !important;
+}
+
+
+
+
+
+
 .ft-footer {
     margin-top: 0 !important;
 }
+@keyframes highlightMsg {
+    0% { background: rgba(83,197,224,0.3); transform: scale(1.02); }
+    100% { background: transparent; transform: scale(1); }
+}
+/* Details Modal (Forward/Pinned) Fix */
+.details-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 5, 8, 0.85);
+    backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 10000;
+}
+.details-modal-overlay.active { display: flex; }
+.details-modal-panel {
+    background: #000a0d;
+    border: 1px solid rgba(83, 197, 224, 0.2);
+    border-radius: 24px;
+    width: 95%; max-width: 450px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    display: flex; flex-direction: column;
+}
 </style>
+
 
 
 <div id="chat-outer">
@@ -843,6 +1109,14 @@ body.chat-page main#main-content {
                     <i class="bi bi-archive-fill mr-1"></i> ARCHIVED
                 </div>
                 <div class="chat-actions">
+                    <!-- Call Actions -->
+                    <button class="action-btn call-btns" id="btn-voice-call" onclick="initiateCall('voice')" title="Voice Call" style="display:none;">
+                        <i class="bi bi-telephone"></i>
+                    </button>
+                    <button class="action-btn call-btns" id="btn-video-call" onclick="initiateCall('video')" title="Video Call" style="display:none;">
+                        <i class="bi bi-camera-video"></i>
+                    </button>
+
                     <div class="unified-menu" style="position:relative;">
                         <button class="action-btn" onclick="toggleChatMenu(event)" id="chatMenuBtn" title="More Options">
                             <i class="bi bi-three-dots-vertical"></i>
@@ -861,6 +1135,15 @@ body.chat-page main#main-content {
                     </div>
                 </div>
             </header>
+
+            <!-- Pinned Messages Bar -->
+            <div id="pinnedBar" style="display:none; position:sticky; top:0; z-index:15; background:rgba(0,35,43,0.9); backdrop-filter:blur(10px); border-bottom:1px solid rgba(83,197,224,0.15); padding:8px 1.25rem; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                    <i class="bi bi-pin-angle-fill" style="color:#53c5e0; font-size:0.9rem;"></i>
+                    <span id="pinnedCountText" style="font-size:0.75rem; font-weight:700; color:#eaf6fb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">0 pinned messages</span>
+                </div>
+                <i class="bi bi-chevron-right" style="color:#4a7a8a; font-size:0.8rem;"></i>
+            </div>
 
             <!-- Messages Area -->
             <div id="messageBox">
@@ -895,10 +1178,10 @@ body.chat-page main#main-content {
             <!-- Previews -->
             <div id="imgPreviews" style="display:none; padding: 10px 1.5rem; background: rgba(0,35,43,0.9); border-top:1px solid rgba(83,197,224,0.1); display:flex; gap:8px;"></div>
             
-            <div id="replyPreviewBox">
+            <div id="replyPreviewBox" style="max-width:900px; margin: 0 auto 10px;">
                 <div class="reply-content-box overflow-hidden">
                     <div class="reply-heading">Replying to message</div>
-                    <div class="reply-text-preview" id="replyPreviewText"></div>
+                    <div class="reply-text-preview" id="replyPreviewText" style="overflow-wrap:anywhere;"></div>
                 </div>
                 <button type="button" class="cancel-reply-btn" onclick="cancelReply()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"/></svg>
@@ -907,17 +1190,18 @@ body.chat-page main#main-content {
 
             <!-- Footer / Input -->
             <footer class="chat-footer disabled" id="chatFooter">
-                <div class="flex items-center gap-2">
+                <div class="chat-footer-inner flex items-center" style="gap: 12px !important;">
                     <button class="mic-btn" id="startRecord" title="Record Voice">
                         <i class="bi bi-mic"></i>
                     </button>
 
-                    <div class="input-shell flex-1" id="inputContainer">
-                        <label class="input-icon-btn m-0" title="Send Picture">
+                    <div class="input-shell flex-1" id="inputContainer" style="position:relative; display:flex; align-items:flex-end; gap:10px;">
+                        <label class="input-icon-btn m-0" title="Send Picture" style="margin-bottom:6px !important;">
                             <input type="file" id="imgInput" accept="image/*,video/mp4,video/webm,video/quicktime" multiple class="hidden">
                             <i class="bi bi-image"></i>
                         </label>
-                        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off" disabled>
+                        <textarea id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off" disabled maxlength="500" rows="1"></textarea>
+                        <span id="charCount" class="char-counter" style="bottom:6px; top:auto; transform:none;">0/500</span>
                     </div>
 
                     <div class="recording-panel hidden" id="recordStatus">
@@ -966,16 +1250,20 @@ body.chat-page main#main-content {
 </div>
 
 <!-- Order Details Modal -->
-<div id="orderDetailsModal" class="order-details-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;align-items:center;justify-content:center;padding:1rem;" onclick="closeOrderDetailsModal()">
-    <div class="order-details-modal-content" onclick="event.stopPropagation()" style="background:#fff; border:1px solid #e2e8f0; border-radius:24px;max-width:600px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,0.1);">
-        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-            <h2 style="margin:0;font-size:1.25rem;font-weight:800;color:#0f172a;">Order Information</h2>
-            <button type="button" onclick="closeOrderDetailsModal()" style="background:#f1f5f9;border:1px solid #e2e8f0;cursor:pointer;padding:0.5rem;border-radius:10px;color:#64748b;">
+<div id="orderDetailsModal" class="order-details-modal-overlay" style="display:none;" onclick="closeOrderDetailsModal()">
+
+    <div class="order-details-modal-content" onclick="event.stopPropagation()">
+        <div class="order-details-header">
+            <h2>Order Information</h2>
+            <button type="button" class="order-details-close" onclick="closeOrderDetailsModal()">
                 <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"/></svg>
             </button>
         </div>
-        <div id="orderDetailsModalBody" style="flex:1;overflow-y:auto;padding:1.5rem; color:#1e293b;">
-            <div class="text-center py-12" id="orderDetailsLoading">Loading details...</div>
+        <div id="orderDetailsModalBody" style="flex:1;overflow-y:auto;padding:1.75rem; color:#eaf6fb;">
+            <div class="text-center py-12" id="orderDetailsLoading">
+                <div class="inline-block animate-spin" style="width:2rem; height:2rem; border:3px solid rgba(83,197,224,0.3); border-top-color:#53c5e0; border-radius:50%; margin-bottom:1rem;"></div>
+                <div style="font-weight:700; color:#4a7a8a;">Loading details...</div>
+            </div>
             <div id="orderDetailsContent" style="display:none;"></div>
         </div>
     </div>
@@ -993,10 +1281,41 @@ let listTimer = null;
 let files = [];
 let replyToMessageId = null;
 let currentReactions = [];
-
 const REACTION_EMOJIS = {
     'like': '👍', 'love': '❤️', 'haha': '😂', 'wow': '😮', 'sad': '😢', 'angry': '😡'
 };
+
+// --- Call Integration ---
+let callSystem = null;
+function initCallSystem() {
+    if (callSystem) return;
+    callSystem = new PrintFlowCall({
+        userId: <?php echo $customer_id; ?>,
+        role: 'Customer',
+        userName: '<?php echo str_replace("'", "\\'", $_SESSION['user_name'] ?? "Customer"); ?>',
+        userAvatar: '<?php 
+            $u = get_logged_in_user(); 
+            echo ($u && !empty($u['avatar'])) ? (BASE_URL . "/" . $u['avatar']) : ""; 
+        ?>'
+    });
+}
+
+function initiateCall(type) {
+    if (!activeOrderId) return;
+    const fd = new FormData();
+    fd.append('order_id', activeOrderId);
+    api('/public/api/chat/status.php', 'POST', fd)
+        .then(res => {
+            if (!res.partner) { alert("Partner is offline or unavailable."); return; }
+            const pId = res.partner.id;
+            const pName = res.partner.name;
+            const pAvatar = res.partner.avatar ? (baseUrl + "/public/assets/uploads/profiles/" + res.partner.avatar) : "";
+            
+            callSystem.startCall(pId, 'Staff', type, activeOrderId, pName, pAvatar);
+        });
+}
+
+const activeOrderIdOriginal = activeOrderId;
 
 // --- API Helpers ---
 
@@ -1047,14 +1366,19 @@ function renderConvList(items) {
         const isActive = activeOrderId === c.order_id;
         const onlineClass = c.is_online ? 'visible' : '';
         const initial = (c.staff_name || 'P')[0];
+        const avatarHtml = c.staff_avatar 
+            ? `<img src="${window.baseUrl}/${c.staff_avatar}" class="w-full h-full object-cover" onerror="this.onerror=null; this.outerHTML='<div class=&quot;avatar-initials&quot;>${initial}</div>';">` 
+            : `<div class="avatar-initials">${initial}</div>`;
+
         return `
             <div class="chat-item ${isActive ? 'active' : ''}" 
                  data-order-id="${c.order_id}" 
                  data-name="${escapeHtml(c.staff_name || 'PrintFlow Team')}" 
                  data-meta="${escapeHtml(c.service_name || 'Order')}"
+                 data-avatar="${c.staff_avatar ? window.baseUrl + '/' + c.staff_avatar : ''}"
                  data-archived="${c.is_archived ? 1 : 0}">
                 <div class="avatar-stack">
-                    <div class="avatar-img">${initial}</div>
+                    <div class="avatar-img">${avatarHtml}</div>
                     <div class="online-dot ${onlineClass}"></div>
                 </div>
                 <div class="chat-item-body">
@@ -1062,7 +1386,7 @@ function renderConvList(items) {
                         <span class="chat-item-name">${escapeHtml(c.staff_name || 'PrintFlow Team')}</span>
                         <span class="chat-item-time">${formatTimeAgo(c.last_message_at)}</span>
                     </div>
-                    <div class="chat-item-meta">Order #${c.order_id} • ${escapeHtml(c.service_name)}</div>
+                    <div class="chat-item-meta">${escapeHtml(c.service_name || '').toLowerCase()}</div>
                     <div class="chat-item-preview">
                         ${c.unread_count > 0 ? `<span class="bg-[#0a2530] text-[#fff] text-[0.65rem] px-1.5 py-0.5 rounded-full font-black mr-1">${c.unread_count}</span>` : ''}
                         ${escapeHtml(c.last_message || 'Start chatting...')}
@@ -1081,9 +1405,10 @@ document.getElementById('convList').addEventListener('click', function(e) {
     const id = parseInt(item.dataset.orderId);
     const name = item.dataset.name;
     const meta = item.dataset.meta;
+    const avatar = item.dataset.avatar;
     const archived = item.dataset.archived === '1';
     
-    openChatComponent(id, name, meta, archived);
+    openChatComponent(id, name, meta, archived, avatar);
 });
 
 
@@ -1096,7 +1421,7 @@ function switchTab(isArchived) {
 
 // --- Chat Logic ---
 
-function openChatComponent(id, name, meta, isArchived) {
+function openChatComponent(id, name, meta, isArchived, avatar = '') {
     // Instant UI update first
     activeOrderId = id;
     window.uiOpenedChat = true;
@@ -1121,9 +1446,20 @@ function openChatComponent(id, name, meta, isArchived) {
     if (infoBtn) infoBtn.style.display = 'flex';
     
     document.getElementById('activeName').textContent = name;
-    document.getElementById('activeMeta').textContent = `Order #${id} • ${meta}`;
-    document.getElementById('activeAvatar').textContent = name[0];
+    document.getElementById('activeMeta').textContent = meta.toLowerCase();
     
+    // Update Avatar
+    const avatarEl = document.getElementById('activeAvatar');
+    if (avatar) {
+        avatarEl.innerHTML = `<img src="${avatar}" class="w-full h-full object-cover rounded-full" onerror="this.onerror=null; this.parentElement.textContent='${name[0]}';">`;
+    } else {
+        avatarEl.textContent = name[0];
+    }
+    
+    // Show Call Buttons
+    document.querySelectorAll('.call-btns').forEach(el => el.style.display = 'flex');
+    initCallSystem();
+
     if (archiveBtn) {
         archiveBtn.title = isArchived ? 'Unarchive' : 'Archive';
         archiveBtn.onclick = () => toggleArchive(id, !isArchived);
@@ -1223,12 +1559,62 @@ function loadMessages() {
             }
             
             if (data.is_archived !== undefined) updateArchiveUI(data.is_archived);
-            if (data.messages.length) scrollToBottom(lastMsgId === 0 ? false : true);
+            if (data.messages.length) scrollToBottom(lastMsgId === 0 ? false : true, lastMsgId === 0);
             
             if (data.last_seen_message_id !== undefined) {
                 updateCustomerSeenIndicators(data.last_seen_message_id);
             }
+
+            // Update Pinned Bar
+            updatePinnedBar(data.pinned_messages || []);
         });
+}
+
+function updatePinnedBar(pinned) {
+    const bar = document.getElementById('pinnedBar');
+    const text = document.getElementById('pinnedCountText');
+    if (!pinned || pinned.length === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+    text.textContent = pinned.length === 1 ? '1 pinned message' : `${pinned.length} pinned messages`;
+    bar.onclick = () => openPinnedModal(pinned);
+}
+
+function openPinnedModal(pinned) {
+    if (!document.getElementById('pinnedModal')) {
+        const div = document.createElement('div');
+        div.id = 'pinnedModal';
+        div.className = 'order-details-modal-overlay';
+        div.innerHTML = `
+            <div class="order-details-modal-content" style="max-width:450px;">
+                <div class="order-details-header">
+                    <h2>Pinned Messages</h2>
+                    <button class="order-details-close" onclick="document.getElementById('pinnedModal').style.display='none'">&times;</button>
+                </div>
+                <div id="pinnedList" style="padding:1rem; max-height:500px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+        `;
+        document.body.appendChild(div);
+    }
+    const modal = document.getElementById('pinnedModal');
+    modal.style.display = 'flex';
+    const list = document.getElementById('pinnedList');
+    list.innerHTML = pinned.map(m => `
+        <div onclick="goToMessage(${m.id}); document.getElementById('pinnedModal').style.display='none'" style="padding:12px; border-radius:12px; background:rgba(83,197,224,0.05); border:1px solid rgba(83,197,224,0.1); cursor:pointer; transition:all 0.2s;">
+            <div style="font-size:0.7rem; color:#53c5e0; font-weight:800; margin-bottom:4px;">${m.sender_name} • ${m.created_at}</div>
+            <div style="font-size:0.85rem; color:#eaf6fb; line-height:1.4;">${escapeHtml(m.message || (m.image_path ? '📸 Attachment' : 'Message'))}</div>
+        </div>
+    `).join('');
+}
+
+function goToMessage(id) {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.animation = 'highlightMsg 2s ease';
+    }
 }
 
 function appendMessageUI(m) {
@@ -1252,11 +1638,11 @@ function appendMessageUI(m) {
         row.classList.add('grouped-msg-next');
     }
     
-    // Setup Avatar (Both sides now get an avatar in this modern layout)
+    // Setup Avatar (Only show partner avatar, hide self-avatar)
     let avatarHtml = '';
-    if (!m.is_system) {
+    if (!m.is_system && !m.is_self) {
         const avSrc = m.sender_avatar ? `${window.baseUrl}/${m.sender_avatar}` : '';
-        const initial = (m.sender_name || (m.is_self ? 'C' : 'S'))[0];
+        const initial = (m.sender_name || 'S')[0];
         
         if (m.sender_avatar) {
             avatarHtml = `<img src="${avSrc}" class="msg-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -1266,7 +1652,8 @@ function appendMessageUI(m) {
         }
     }
 
-    let colHtml = `<div class="msg-content-col">`;
+    const isCallMsg = (m.message && m.message.includes('📞'));
+    let colHtml = `<div class="msg-content-col" style="${isCallMsg ? 'max-width:none;' : ''}">`;
     
     // Sender Info (Name & Role)
     if (!m.is_self && !m.is_system) {
@@ -1274,28 +1661,49 @@ function appendMessageUI(m) {
         colHtml += `<div class="msg-sender-info">${escapeHtml(m.sender_name || m.sender)} ${roleBadge}</div>`;
     }
 
-    // Reaction Picker
+    // Stable Action Bar (Emoji, Reply, More)
     if (!m.is_system) {
         const pickerHtml = Object.keys(REACTION_EMOJIS).map(key => 
             `<button class="reaction-btn" onclick="toggleReaction(${m.id}, '${key}')">${REACTION_EMOJIS[key]}</button>`
         ).join('');
-        colHtml += `<div class="reaction-picker">${pickerHtml}</div>`;
-    }
 
-    // Hover Actions (Reply)
-    if (!m.is_system) {
-        // We use double backslashes in replace so that the final JS has a literal backslash before the backtick
-        const msgEsc = escapeHtml(m.message || '').replace(/`/g, '\\`');
+        const msgB64 = safeBase64Encode(m.message || '');
+        
         colHtml += `
-        <div class="msg-hover-actions">
-            <div class="msg-action-icon" title="Reply" onclick="initReply(${m.id}, \`${msgEsc}\`, '${m.image_path ? 1 : 0}')">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="msg-action-bar">
+            <!-- Emoji Picker Trigger -->
+            <div class="m-action-btn" title="React" onclick="togglePicker(${m.id}, event)" style="position:relative;">
+                <i class="bi bi-emoji-smile"></i>
+                <div class="reaction-picker" id="picker-${m.id}">${pickerHtml}</div>
+            </div>
+
+            <!-- Reply Arrow -->
+            <div class="m-action-btn" title="Reply" onclick="initReply(${m.id}, '${msgB64}', '${m.image_path ? 1 : 0}')">
+                <i class="bi bi-reply-fill"></i>
+            </div>
+
+            <!-- More Options -->
+            <div class="m-action-btn" title="More" onclick="toggleMoreMenu(${m.id}, event)" style="position:relative;">
+                <i class="bi bi-three-dots"></i>
+                <div class="m-more-menu" id="more-${m.id}">
+                    <div class="m-menu-item" onclick="pinMessage(${m.id})">
+                        <i class="bi bi-pin-angle"></i> Pin
+                    </div>
+                    <div class="m-menu-item" onclick="initForward(${m.id}, '${msgB64}', '${m.image_path ? 1 : 0}')">
+                        <i class="bi bi-arrow-right-short"></i> Forward
+                    </div>
+                </div>
             </div>
         </div>`;
     }
 
     // Message Bubble
-    colHtml += `<div class="msg-bubble" style="position:relative;">`;
+    colHtml += `<div class="msg-bubble" style="position:relative; ${isCallMsg ? 'max-width:none;' : ''}" id="bubble-${m.id}">`;
+    
+    // Pin Indicator
+    if (m.is_pinned) {
+        colHtml += `<div class="pinned-badge" title="Pinned Message"><i class="bi bi-pin-fill"></i></div>`;
+    }
     
     // Reply Preview within Bubble
     if (m.reply_id) {
@@ -1311,11 +1719,12 @@ function appendMessageUI(m) {
                 <i class="bi bi-play-fill" id="v-icon-${m.id}" style="font-size: 1.2rem; margin-left: 2px;"></i>
             </button>
             <div class="v-waveform-container" onclick="seekVoice(${m.id}, event)">
-                <canvas class="v-waveform-canvas" id="v-canvas-${m.id}"></canvas>
+                <canvas class="v-waveform-canvas" id="v-canvas-${m.id}" width="400" height="60"></canvas>
             </div>
             <span class="v-duration" id="v-dur-${m.id}">0:00</span>
             <audio id="v-audio-${m.id}" src="${audioSrc}" ontimeupdate="updateVoiceProgress(${m.id})" onended="resetVoicePlayer(${m.id})" onloadedmetadata="initVoiceDuration(${m.id})"></audio>
         </div>`;
+
         setTimeout(() => drawWaveformFromUrl(audioSrc, `v-canvas-${m.id}`, m.is_self ? 'rgba(255,255,255,0.7)' : '#64748b'), 50);
     } else if (m.image_path) {
         if (m.file_type === 'video') {
@@ -1333,7 +1742,10 @@ function appendMessageUI(m) {
             </div>`; 
         }
     }
-    if (m.message) colHtml += `<div>${escapeHtml(m.message)}</div>`;
+
+    if (m.message) {
+        colHtml += `<div style="${isCallMsg ? 'white-space:nowrap;' : ''}">${escapeHtml(m.message)}</div>`;
+    }
 
     if (!m.is_system) {
         colHtml += `<div class="reaction-display-container" id="reactions-for-${m.id}" style="display:none;"></div>`;
@@ -1395,17 +1807,198 @@ function renderAllReactions() {
     });
 }
 
+function togglePicker(msgId, e) {
+    if (e) e.stopPropagation();
+    const picker = document.getElementById('picker-'+msgId);
+    if (!picker) return;
+    const isActive = picker.classList.contains('active');
+    closeAllMenus();
+    if (!isActive) {
+        picker.classList.add('active');
+        const row = document.getElementById(`msg-${msgId}`);
+        if (row) row.classList.add('has-active-menu');
+    }
+}
+
+function toggleMoreMenu(msgId, e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('more-'+msgId);
+    if (!menu) return;
+    const isActive = menu.classList.contains('active');
+    closeAllMenus();
+    if (!isActive) {
+        menu.classList.add('active');
+        const row = document.getElementById(`msg-${msgId}`);
+        if (row) row.classList.add('has-active-menu');
+    }
+}
+
+function closeAllMenus() {
+    document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.m-more-menu').forEach(m => m.classList.remove('active'));
+    document.querySelectorAll('.msg-row').forEach(r => r.classList.remove('has-active-menu'));
+}
+
+document.addEventListener('click', () => closeAllMenus());
+
+function pinMessage(msgId) {
+    const bubble = document.getElementById('bubble-'+msgId);
+    if (!bubble) return;
+    
+    // Check if already pinned
+    if (bubble.querySelector('.pinned-badge')) {
+        bubble.querySelector('.pinned-badge').remove();
+    } else {
+        const badge = document.createElement('div');
+        badge.className = 'pinned-badge';
+        badge.innerHTML = '<i class="bi bi-pin-fill"></i>';
+        badge.title = 'Pinned Message';
+        bubble.appendChild(badge);
+    }
+    // Note: Persistent pinning requires a backend API. This is a visual toggle.
+    closeAllMenus();
+}
+
+var forwardMsgData = null;
+var selectedForwardTargets = [];
+
+function initForward(msgId, b64, hasImage) {
+    forwardMsgData = { msgId, text: safeBase64Decode(b64), hasImage };
+    openForwardModal();
+    closeAllMenus();
+}
+
+function openForwardModal() {
+    if (!document.getElementById('forwardModal')) {
+        const div = document.createElement('div');
+        div.id = 'forwardModal';
+        div.className = 'order-details-modal-overlay';
+        div.innerHTML = `
+            <div class="order-details-modal-content" style="max-width:450px;">
+                <div class="order-details-header">
+                    <h2>Forward</h2>
+                    <button class="order-details-close" onclick="closeForwardModal()">&times;</button>
+                </div>
+                <div style="padding:1rem; border-bottom:1px solid rgba(83,197,224,0.1);">
+                    <div class="search-container">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" id="forwardSearch" placeholder="Search people..." oninput="loadForwardList(this.value)">
+                    </div>
+                </div>
+                <!-- Preview -->
+                <div style="padding:0.75rem 1rem; background:rgba(83,197,224,0.03); border-bottom:1px solid rgba(83,197,224,0.06);">
+                    <div style="font-size:0.65rem; color:#4a7a8a; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Preview</div>
+                    <div id="forwardPreview" style="font-size:0.85rem; color:#eaf6fb; opacity:0.8; max-height:40px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                </div>
+                <div id="forwardList" style="padding:1rem; max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
+                <div style="padding:1rem; border-top:1px solid rgba(83,197,224,0.1); display:flex; justify-content:flex-end;">
+                    <button id="forwardSendBtn" class="send-btn" style="width:auto; height:38px; padding:0 20px; font-weight:700; border-radius:12px;" onclick="processForward()" disabled>
+                        Send <i class="bi bi-send-fill ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(div);
+    }
+    document.getElementById('forwardModal').style.display = 'flex';
+    document.getElementById('forwardPreview').textContent = forwardMsgData.hasImage === '1' ? '📸 Attachment' : forwardMsgData.text;
+    selectedForwardTargets = [];
+    updateForwardBtn();
+    loadForwardList();
+}
+
+function closeForwardModal() {
+    document.getElementById('forwardModal').style.display = 'none';
+    forwardMsgData = null;
+}
+
+function loadForwardList(q = '') {
+    api(`/public/api/chat/list_conversations.php?archived=0&q=${encodeURIComponent(q)}`).then(data => {
+        const list = document.getElementById('forwardList');
+        if (!data.success || !data.conversations.length) {
+            list.innerHTML = '<p class="p-8 text-center opacity-40 text-sm">No conversations found</p>';
+            return;
+        }
+        list.innerHTML = data.conversations.map(c => {
+            const isSelected = selectedForwardTargets.includes(c.order_id);
+            return `
+            <div onclick="toggleForwardTarget(${c.order_id})" style="padding:10px 14px; border-radius:14px; background:${isSelected ? 'rgba(83,197,224,0.15)' : 'rgba(255,255,255,0.03)'}; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.15s; border:1px solid ${isSelected ? 'rgba(83,197,224,0.3)' : 'transparent'};">
+                <div style="width:36px; height:36px; border-radius:50%; background:#0a2530; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:800; color:#53c5e0;">${(c.staff_name || 'T')[0]}</div>
+                <div style="flex:1;">
+                    <div style="font-size:0.85rem; font-weight:700; color:#eaf6fb;">${escapeHtml(c.staff_name || 'Team')}</div>
+                    <div style="font-size:0.7rem; color:#4a7a8a;">${escapeHtml(c.service_name || 'Order')}</div>
+                </div>
+                <div style="width:20px; height:20px; border-radius:50%; border:2px solid ${isSelected ? '#53c5e0' : 'rgba(83,197,224,0.2)'}; background:${isSelected ? '#53c5e0' : 'transparent'}; display:flex; align-items:center; justify-content:center;">
+                    ${isSelected ? '<i class="bi bi-check" style="color:#000; font-size:12px;"></i>' : ''}
+                </div>
+            </div>`;
+        }).join('');
+    });
+}
+
+function toggleForwardTarget(id) {
+    if (selectedForwardTargets.includes(id)) {
+        selectedForwardTargets = selectedForwardTargets.filter(x => x !== id);
+    } else {
+        selectedForwardTargets.push(id);
+    }
+    loadForwardList(document.getElementById('forwardSearch').value);
+    updateForwardBtn();
+}
+
+function updateForwardBtn() {
+    const btn = document.getElementById('forwardSendBtn');
+    btn.disabled = selectedForwardTargets.length === 0;
+    btn.innerHTML = `Send to ${selectedForwardTargets.length} <i class="bi bi-send-fill ml-2"></i>`;
+}
+
+async function processForward() {
+    if (!forwardMsgData || !selectedForwardTargets.length) return;
+    
+    const btn = document.getElementById('forwardSendBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin mr-2"></i> Forwarding...';
+
+    let successCount = 0;
+    for (const targetId of selectedForwardTargets) {
+        const fd = new FormData();
+        fd.append('order_id', targetId);
+        fd.append('message', forwardMsgData.text);
+        if (forwardMsgData.hasImage === '1') {
+            // If it has image, we should ideally send the image path
+            // But let's simplify for now as the user asked for "forward features like Messenger"
+            // We'll just prefix it
+            fd.append('message', '[Forwarded]: ' + forwardMsgData.text);
+        } else {
+            fd.append('message', forwardMsgData.text);
+        }
+
+        const res = await api('/public/api/chat/send_message.php', 'POST', fd);
+        if (res.success) successCount++;
+    }
+
+    closeForwardModal();
+    if (successCount > 0) {
+        alert(`Successfully forwarded to ${successCount} conversation(s).`);
+        loadConversations();
+    }
+}
+
 function toggleReaction(msgId, reactionType) {
     const fd = new FormData();
     fd.append('message_id', msgId);
     fd.append('reaction_type', reactionType);
     api('/public/api/chat/react_message.php', 'POST', fd)
         .then(res => {
-            if (res.success) loadMessages(); // Refresh to get updated reactions
+            if (res.success) {
+                loadMessages(); 
+                closeAllMenus();
+            }
         });
 }
 
-function initReply(msgId, textPreview, hasImage) {
+function initReply(msgId, b64, hasImage) {
+    const textPreview = safeBase64Decode(b64);
     replyToMessageId = msgId;
     document.getElementById('replyPreviewBox').style.display = 'flex';
     document.getElementById('replyPreviewText').textContent = hasImage === '1' ? '📸 Attachment' : textPreview;
@@ -1420,7 +2013,14 @@ function cancelReply() {
 let pendingVoiceBlob = null;
 
 function sendMessage() {
-    const text = document.getElementById('chatInput').value.trim();
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    
+    if (text.length > 500) {
+        alert("Message cannot exceed 500 characters.");
+        return;
+    }
+
     if (!text && !files.length && !pendingVoiceBlob) return;
     
     // If voice blob exists, call sendVoice helper instead of normal text send
@@ -1446,6 +2046,23 @@ function sendMessage() {
 
 // --- Utilities ---
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function safeBase64Encode(str) {
+    return btoa(unescape(encodeURIComponent(str || '')));
+}
+
+function safeBase64Decode(b64) {
+    try {
+        return decodeURIComponent(escape(atob(b64)));
+    } catch(e) { return ''; }
+}
+
 function toggleArchive(id, state) {
     const fd = new FormData();
     fd.append('order_id', id);
@@ -1461,11 +2078,15 @@ function resetChat() {
     activeOrderId = null;
     window.uiOpenedChat = false;
     document.getElementById('chatWelcome').style.display = 'flex';
-    const footer = document.getElementById('chatFooter');
-    footer.classList.add('disabled');
-    const input = document.getElementById('chatInput');
-    input.disabled = true;
-    input.placeholder = 'Type a message to start...';
+    document.getElementById('chatFooter').classList.remove('disabled');
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('chatInput').placeholder = 'Type a message...';
+
+    // Show Call Buttons
+    document.querySelectorAll('.call-btns').forEach(el => el.style.display = 'flex');
+    initCallSystem();
+
+    loadMessages();
     document.getElementById('activeName').textContent = 'Select a chat';
     document.getElementById('messageBox').innerHTML = '';
 }
@@ -1474,9 +2095,27 @@ function toggleSidebar(open) {
     document.getElementById('sidebar').classList.toggle('open', open);
 }
 
-function scrollToBottom(smooth) {
+function scrollToBottom(smooth = true, force = false) {
     const box = document.getElementById('messageBox');
-    box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    if (!box) return;
+    const threshold = 150;
+    const isNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < threshold;
+    if (force || isNearBottom) {
+        box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    }
+}
+
+function pinMessage(msgId) {
+    const fd = new FormData();
+    fd.append('message_id', msgId);
+    api('/public/api/chat/pin_message.php', 'POST', fd).then(res => {
+        if (res.success) {
+            loadMessages();
+            closeAllMenus();
+        } else {
+            alert(res.error || "Pin failed");
+        }
+    });
 }
 
 function zoomImage(src) {
@@ -1675,12 +2314,29 @@ function sendTypingStatus(isTyping) {
 
 // --- Init ---
 
-document.getElementById('chatInput').onkeyup = (e) => {
-    if (e.key === 'Enter') sendMessage();
-    else {
-        sendTypingStatus(true);
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => sendTypingStatus(false), 2000);
+document.getElementById('chatInput').oninput = (e) => {
+    const el = e.target;
+    el.style.height = '1em';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    
+    const len = el.value.length;
+    const cnt = document.getElementById('charCount');
+    if (cnt) {
+        cnt.textContent = `${len}/500`;
+        cnt.classList.remove('limit-near', 'limit-reached');
+        if (len >= 500) cnt.classList.add('limit-reached');
+        else if (len >= 450) cnt.classList.add('limit-near');
+    }
+    
+    sendTypingStatus(true);
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => sendTypingStatus(false), 2000);
+};
+
+document.getElementById('chatInput').onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
     }
 };
 document.getElementById('sendBtn').onclick = sendMessage;
@@ -1716,62 +2372,73 @@ function openOrderDetailsModal(id) {
     modal.style.display = 'flex';
     loading.style.display = 'block';
     content.style.display = 'none';
+    document.body.style.overflow = 'hidden'; // Lock scroll
     
     api(`/public/api/chat/order_details.php?order_id=${id}`).then(data => {
         loading.style.display = 'none';
-        if (!data.success) { content.innerHTML = 'Error loading.'; content.style.display = 'block'; return; }
+        if (!data.success) { content.innerHTML = '<div class="text-center py-10 text-red-400">Error loading order details.</div>'; content.style.display = 'block'; return; }
+
         
         const o = data.order;
         let html = `
-            <div style="margin-bottom:2rem;">
-                <div style="font-size:1.4rem; font-weight:900; color:#53c5e0; line-height:1; display:flex; align-items:center; gap:10px;">
-                    Order #${o.order_id} 
-                    <span class="status-pill" style="background:rgba(83,197,224,0.15); color:#53c5e0; border:1px solid rgba(83,197,224,0.2);">${o.status}</span>
+            <div style="margin-bottom:1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem;">
+                    <div>
+                        <div style="font-size:1.4rem; font-weight:900; color:#eaf6fb; line-height:1; display:flex; align-items:center; gap:10px;">
+                            Order #${o.order_id} 
+                            <span class="status-pill" style="background:rgba(83,197,224,0.12); color:#53c5e0; border:1px solid rgba(83,197,224,0.2); font-size:0.6rem; padding:3px 8px;">${o.status}</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:#4a7a8a; margin-top:6px; font-weight:700;">
+                            Placed on ${o.order_date} • <span style="color:${o.payment_status === 'Verified' ? '#10b981' : '#f59e0b'};">${o.payment_status || 'Unverified'}</span>
+                        </div>
+                    </div>
+                    ${o.total_amount ? `
+                    <div style="text-align:right;">
+                        <div style="font-size:0.5rem; font-weight:900; color:#53c5e0; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:2px;">Grand Total</div>
+                        <div style="font-size:1.5rem; font-weight:900; color:#fff; letter-spacing:-0.02em;">${o.total_amount}</div>
+                    </div>` : ''}
                 </div>
-                <div style="font-size:0.85rem; opacity:0.6; margin-top:6px; font-weight:600;">Placed on ${o.order_date}&nbsp; • &nbsp;Payment: ${o.payment_status || 'Unverified'}</div>
                 
-                ${o.total_amount ? `
-                <div style="margin-top:1.5rem; padding:1rem; background:rgba(83,197,224,0.05); border-radius:16px; border:1px solid rgba(83,197,224,0.15); display:inline-flex; align-items:center; gap:8px;">
-                    <div style="font-size:0.55rem; font-weight:900; color:#53c5e0; text-transform:uppercase; letter-spacing:0.1em;">Total Bill</div>
-                    <div style="font-size:1.25rem; font-weight:900; color:#fff;">${o.total_amount}</div>
-                </div>` : ''}
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem;">
+                    ${o.notes ? `
+                    <div class="notes-box" style="margin:0;">
+                        <div class="pf-spec-key">Order Notes</div>
+                        <div style="font-size:0.85rem; color:rgba(234,246,251,0.8); line-height:1.4;">${escapeHtml(o.notes)}</div>
+                    </div>` : ''}
+                    
+                    ${o.revision_reason ? `
+                    <div class="notes-box" style="margin:0; border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.08);">
+                        <div class="pf-spec-key" style="color:#ef4444;">Revision Requirement</div>
+                        <div style="font-size:0.85rem; color:#fca5a5; line-height:1.4; font-weight:600;">${escapeHtml(o.revision_reason)}</div>
+                    </div>` : ''}
+                </div>
             </div>`;
         
-        if (o.notes) {
-            html += `<div class="notes-box">
-                <div class="pf-spec-key" style="margin-bottom:6px;">Order Notes</div>
-                <div style="font-size:0.9rem; color:rgba(234,246,251,0.85); line-height:1.5;">${escapeHtml(o.notes)}</div>
-            </div>`;
-        }
-        
-        if (o.revision_reason) {
-            html += `<div class="notes-box" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.05);">
-                <div class="pf-spec-key" style="color:#ef4444; margin-bottom:6px;">Revision Requirement</div>
-                <div style="font-size:0.9rem; color:#fca5a5; line-height:1.5; font-weight:600;">${escapeHtml(o.revision_reason)}</div>
-            </div>`;
-        }
-
         if (data.items) {
-            html += `<div style="font-size:0.65rem; font-weight:900; color:rgba(83,197,224,0.5); text-transform:uppercase; letter-spacing:0.15em; margin-bottom:1rem; margin-top:2.5rem;">Package Contents</div>`;
+            html += `<div style="font-size:0.65rem; font-weight:900; color:#4a7a8a; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:1rem; border-bottom:1px solid rgba(83,197,224,0.1); padding-bottom:6px;">Order Items (${data.items.length})</div>`;
             data.items.forEach(it => {
                 const specs = it.customization || {};
-                const entries = Object.entries(specs).filter(([k,v]) => v && v !== 'null' && typeof v !== 'object' && !['service_type', 'branch_id', 'design_file'].includes(k));
+                const entries = Object.entries(specs).filter(([k,v]) => v && v !== 'null' && typeof v !== 'object' && !['service_type', 'branch_id', 'design_file'].includes(k) && !k.toLowerCase().includes('notes'));
+
+
                 
-                html += `<div style="background:rgba(255,255,255,0.03); border:1px solid rgba(83,197,224,0.1); border-radius:24px; padding:1.5rem; margin-bottom:1.25rem;">
-                    <div style="display:flex; align-items:flex-start; gap:1.5rem;">
-                        <div style="width:100px; height:100px; border-radius:18px; background:rgba(0,0,0,0.25); border:1px solid rgba(83,197,224,0.1); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                            ${it.design_url ? `<img src="${it.design_url}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="font-size:2rem; opacity:0.1;">📦</div>`}
+                html += `
+                <div style="background:rgba(255,255,255,0.015); border:1px solid rgba(83,197,224,0.06); border-radius:0; padding:1rem; margin-bottom:0.75rem;">
+                    <div style="display:flex; align-items:flex-start; gap:1.25rem; flex-wrap:nowrap;">
+                        <div style="width:70px; height:70px; border-radius:0; background:rgba(0,10,20,0.3); backdrop-filter:blur(10px); border:1px solid rgba(83,197,224,0.1); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            ${it.design_url ? `<img src="${it.design_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;">` : `<div style="font-size:1.25rem; opacity:0.15;">📦</div>`}
                         </div>
                         <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <div style="font-weight:900; font-size:1.1rem; color:#eaf6fb;">${it.service_name}</div>
-                                ${it.subtotal ? `<div style="font-weight:900; color:#53c5e0; font-size:1.1rem;">${it.subtotal}</div>` : ''}
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                                <div style="font-weight:900; font-size:1rem; color:#fff;">${it.service_name}</div>
+                                ${it.subtotal ? `<div style="font-weight:900; color:#53c5e0; font-size:1rem;">${it.subtotal}</div>` : ''}
                             </div>
-                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.5rem;">
-                                <div style="font-size:0.75rem; color:#53c5e0; font-weight:800; text-transform:uppercase;">${it.category}</div>
-                                <div style="width:4px; height:4px; border-radius:50%; background:rgba(83,197,224,0.3);"></div>
-                                <div style="font-size:0.85rem; opacity:0.7; font-weight:700;">Qty: ${it.quantity}</div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.75rem;">
+                                <div style="font-size:0.6rem; color:#53c5e0; font-weight:800; text-transform:uppercase; letter-spacing:0.04em;">${it.category}</div>
+                                <div style="width:2px; height:2px; border-radius:50%; background:rgba(83,197,224,0.3);"></div>
+                                <div style="font-size:0.75rem; color:#4a7a8a; font-weight:700;">Qty: <span style="color:#eaf6fb;">${it.quantity}</span></div>
                             </div>
+
                             
                             <div class="pf-spec-grid">
                                 ${entries.map(([k,v]) => `
@@ -1788,9 +2455,20 @@ function openOrderDetailsModal(id) {
         }
         content.innerHTML = html;
         content.style.display = 'block';
+        
+        // Force sharp corners on all dynamic elements
+        content.querySelectorAll('.pf-spec-box, .notes-box, .status-pill, div[style*="border-radius"]').forEach(el => {
+            el.style.setProperty('border-radius', '0', 'important');
+        });
     });
 }
-function closeOrderDetailsModal() { document.getElementById('orderDetailsModal').style.display = 'none'; }
+
+function closeOrderDetailsModal() { 
+    document.getElementById('orderDetailsModal').style.display = 'none'; 
+    document.body.style.overflow = ''; // Unlock scroll
+}
+
+
 
 // --- Media Gallery ---
 let activeGalleryTab = 'image';

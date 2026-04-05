@@ -53,7 +53,8 @@ $sql = "SELECT m.*,
             WHEN m.sender = 'Customer' THEN (SELECT profile_picture FROM customers WHERE customer_id = m.sender_id)
             WHEN m.sender = 'Staff' THEN (SELECT profile_picture FROM users WHERE user_id = m.sender_id)
             ELSE NULL 
-        END as sender_avatar
+        END as sender_avatar,
+        m.is_pinned
         FROM order_messages m 
         LEFT JOIN order_messages p ON m.reply_id = p.message_id
         WHERE m.order_id = ? AND m.message_id > ? 
@@ -104,7 +105,8 @@ if ($messages_raw) {
             'reply_sender_id' => $msg['reply_sender_id'] ?? null,
             'sender_name' => $msg['sender_name'],
             'sender_role' => $msg['sender_role'],
-            'sender_avatar' => $sender_avatar
+            'sender_avatar' => $sender_avatar,
+            'is_pinned' => (bool)($msg['is_pinned'] ?? 0)
         ];
     }
 }
@@ -176,6 +178,19 @@ if (!empty($seen_query) && $seen_query[0]['last_seen']) {
     $last_seen_id = (int)$seen_query[0]['last_seen'];
 }
 
+    // 6. Fetch pinned messages for the sticky bar
+    $pinned_sql = "SELECT m.*, 
+                   CASE 
+                       WHEN m.sender = 'Customer' THEN (SELECT CONCAT(first_name, ' ', last_name) FROM customers WHERE customer_id = m.sender_id)
+                       WHEN m.sender = 'Staff' THEN (SELECT CONCAT(first_name, ' ', last_name) FROM users WHERE user_id = m.sender_id)
+                       ELSE 'System' 
+                   END as sender_name
+                   FROM order_messages m 
+                   WHERE m.order_id = ? AND m.is_pinned = 1 
+                   ORDER BY m.message_id DESC";
+    $pinned_raw = db_query($pinned_sql, 'i', [$order_id]);
+    $pinned_messages = $pinned_raw ?: [];
+
     ob_end_clean();
     echo json_encode([
         'success' => true,
@@ -183,7 +198,8 @@ if (!empty($seen_query) && $seen_query[0]['last_seen']) {
         'reactions' => $reactions,
         'partner' => $partner,
         'is_archived' => $is_archived,
-        'last_seen_message_id' => $last_seen_id
+        'last_seen_message_id' => $last_seen_id,
+        'pinned_messages' => $pinned_messages
     ]);
 
 } catch (Exception $e) {

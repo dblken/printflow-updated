@@ -112,15 +112,18 @@
                                 <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:6px;">Design Preview</div>
                                 <div style="display:flex; align-items:flex-end; gap:12px;">
                                     <template x-if="f.is_image && f.preview_url">
-                                        <a :href="f.open_url" target="_blank" rel="noopener">
+                                        <a href="javascript:void(0)" @click.prevent="previewFile = f.open_url">
                                             <img :src="f.preview_url" alt="" style="width:140px; height:auto; border-radius:10px; border:1px solid #e2e8f0; cursor:zoom-in; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);" @error="$el.src = svc.file_icon_fallback">
                                         </a>
                                     </template>
                                     <template x-if="f.is_image && f.preview_url">
-                                        <a :href="f.open_url" target="_blank" rel="noopener" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px; transition:all 0.2s;" onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#f5f3ff'">Open Original →</a>
+                                        <a href="javascript:void(0)" @click.prevent="previewFile = f.open_url" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px; transition:all 0.2s;" onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#f5f3ff'">Open Original Image</a>
                                     </template>
                                     <template x-if="(!f.is_image || !f.preview_url) && f.open_url">
                                         <a :href="f.open_url" target="_blank" rel="noopener" style="display:block;padding:16px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;text-decoration:none;color:#1f2937;">📄 <span x-text="f.name"></span></a>
+                                    </template>
+                                    <template x-if="(!f.is_image || !f.preview_url) && f.open_url">
+                                        <a :href="f.open_url" target="_blank" rel="noopener" style="font-size:11px; color:#4f46e5; text-decoration:none; font-weight:600; padding:6px 10px; background:#f5f3ff; border-radius:6px; transition:all 0.2s;" onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#f5f3ff'">Open Original File ↗</a>
                                     </template>
                                     <template x-if="!f.open_url">
                                         <div style="padding:16px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;color:#9ca3af;font-size:13px;">No file data available</div>

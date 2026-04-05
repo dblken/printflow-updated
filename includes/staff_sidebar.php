@@ -283,6 +283,6 @@ $_pf_uid   = isset($_SESSION['user_id'])   ? (int)$_SESSION['user_id']   : 0;
 $_pf_utype = isset($_SESSION['user_type']) ? $_SESSION['user_type']       : 'Staff';
 ?>
 <script>window.PFConfig = { userId: <?php echo $_pf_uid; ?>, userType: <?php echo json_encode($_pf_utype); ?> };</script>
-<script src="/printflow/public/assets/js/notifications.js" defer></script>
+<script src="/printflow/public/assets/js/notifications.js?v=<?php echo time(); ?>" defer></script>
 <script src="/printflow/public/assets/js/inactivity_logout.js" defer></script>
 </div>

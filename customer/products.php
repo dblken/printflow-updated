@@ -78,159 +78,188 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <style>
-    :root {
-        --shopee-orange: #0a2530;
-        --shopee-bg: #ffffff;
-        --shopee-card-bg: #ffffff;
-        --shopee-text: #212121;
-        --shopee-muted: #757575;
-        --shopee-border: rgba(0,0,0,0.09);
-    }
-
-    .shopee-grid {
+    .ct-product-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.5rem;
     }
-
-    @media (max-width: 640px) {
-        .shopee-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-    }
-
-    .shopee-card {
-        background: var(--shopee-card-bg);
-        border: 1px solid var(--shopee-border);
-        border-radius: 4px;
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
+    
+    .ct-product-card {
+        background: rgba(10, 37, 48, 0.48);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(83, 197, 224, 0.16);
+        border-radius: 1.25rem;
         overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .ct-product-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(83, 197, 224, 0.5);
+        background: rgba(10, 37, 48, 0.7);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
 
-    .shopee-card:hover {
-        transform: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border-color: var(--shopee-orange);
-    }
-
-    .shopee-img {
+    .ct-product-img-wrapper {
         width: 100%;
         aspect-ratio: 1;
-        object-fit: cover;
+        overflow: hidden;
+        position: relative;
     }
 
-    .shopee-body {
-        padding: 10px;
+    .ct-product-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .ct-product-card:hover .ct-product-img {
+        transform: scale(1.1);
+    }
+
+    .ct-product-body {
+        padding: 1.25rem 1.1rem;
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        text-align: left;
     }
 
-    .shopee-name {
-        font-size: 0.875rem;
-        line-height: 1.25rem;
-        height: 2.5rem;
+    .ct-product-category {
+        font-size: 0.65rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #53c5e0;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    .ct-product-name {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #eaf6fb;
+        line-height: 1.3;
+        margin-bottom: 0.4rem;
+        height: 2.8rem;
         overflow: hidden;
-        text-overflow: ellipsis;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
-        color: var(--shopee-text);
-        margin-bottom: 8px;
     }
 
-    .shopee-category {
-        font-size: 0.75rem;
-        color: var(--shopee-muted);
-        margin-bottom: 5px;
-    }
-
-    .shopee-price-row {
-        margin-top: auto;
+    .ct-product-footer {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: auto;
     }
 
-    .shopee-price {
-        color: var(--shopee-orange);
-        font-weight: 600;
-        font-size: 1.1rem;
+    .ct-price-tag {
+        font-size: 1.15rem;
+        font-weight: 900;
+        color: #53c5e0;
+        letter-spacing: -0.02em;
     }
 
-    .shopee-sold {
-        font-size: 0.75rem;
-        color: var(--shopee-muted);
-    }
-
-    .shopee-footer {
-        padding: 10px;
-        border-top: 1px solid var(--shopee-border);
-        display: flex;
-        gap: 8px;
-    }
-
-    .shopee-btn {
+    .ct-btn-primary {
         flex: 1;
-        padding: 8px 0;
-        border-radius: 3px;
+        background: #0a2530;
+        border: 1px solid rgba(83, 197, 224, 0.32);
+        color: #fff;
         font-size: 0.8rem;
-        font-weight: 600;
-        text-align: center;
+        font-weight: 800;
         text-transform: uppercase;
-        transition: all 0.2s;
-        border: 1px solid var(--shopee-orange);
+        letter-spacing: 0.04em;
+        padding: 0.8rem 0;
+        border-radius: 0.75rem;
+        transition: all 0.25s;
         display: flex;
         align-items: center;
         justify-content: center;
         text-decoration: none;
     }
 
-    .shopee-btn-cart {
-        background: rgba(10, 37, 48, 0.08);
-        color: var(--shopee-orange);
+    .ct-product-card:hover .ct-btn-primary {
+        background: #53C5E0;
+        border-color: #53C5E0;
+        color: #030d11;
+        box-shadow: 0 4px 15px rgba(83, 197, 224, 0.35);
     }
-
-    .shopee-btn-buy {
-        background: var(--shopee-orange);
-        color: #fff;
-    }
-
-    .shopee-btn:hover {
-        opacity: 0.9;
-    }
-
-    .rating-stars {
-        color: #ffca11;
-        font-size: 0.8rem;
+    
+    .ct-btn-cart {
+        width: 46px;
+        height: 46px;
+        flex-shrink: 0;
+        background: rgba(83, 197, 224, 0.1);
+        border: 1px solid rgba(83, 197, 224, 0.2);
+        border-radius: 0.75rem;
+        color: #53c5e0;
         display: flex;
         align-items: center;
-        gap: 2px;
-        margin-bottom: 5px;
+        justify-content: center;
+        transition: all 0.25s;
     }
 
-    .rating-text {
-        font-size: 0.75rem;
-        color: var(--shopee-muted);
-        margin-left: 5px;
+    .ct-btn-cart:hover {
+        background: #53c5e0;
+        color: #030d11;
+        border-color: #53c5e0;
+        transform: translateY(-2px);
+    }
+
+    .ct-search-box {
+        background: rgba(10, 37, 48, 0.6);
+        border: 1px solid rgba(83, 197, 224, 0.2);
+        border-radius: 1rem;
+        padding: 0.4rem;
+        display: flex;
+        gap: 0.4rem;
+        backdrop-filter: blur(8px);
+        width: 100%;
+        max-width: 460px;
+    }
+
+    .ct-search-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #fff;
+        padding: 0 1rem;
+        font-size: 0.9rem;
+    }
+
+    .ct-search-input::placeholder {
+        color: rgba(164, 216, 235, 0.4);
+    }
+
+    .ct-search-btn {
+        background: #53c5e0;
+        color: #0a2530;
+        font-weight: 800;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .ct-search-btn:hover {
+        opacity: 0.9;
+        transform: scale(0.98);
     }
 </style>
 
-<div class="min-h-screen py-8 bg-white">
+<div class="min-h-screen py-8">
     <div class="container mx-auto px-4" style="max-width:1100px;">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-bold text-gray-800">Fixed Products</h1>
-            <div class="w-full md:w-auto">
-                <form action="" method="GET" class="flex gap-2">
-                    <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search products..." class="flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-shopee-orange">
-                    <button type="submit" style="background-color: var(--shopee-orange);" class="text-white px-6 py-2 rounded-lg hover:opacity-90 font-semibold transition-all">Search</button>
-                </form>
-            </div>
-        </div>
+        <div class="mb-8 mt-4"></div>
 
         <!-- Products Grid -->
         <?php if (empty($products)): ?>
@@ -240,46 +269,65 @@ require_once __DIR__ . '/../includes/header.php';
                 <a href="products.php" class="text-shopee-orange mt-4 inline-block hover:underline font-semibold">Browse all products</a>
             </div>
         <?php else: ?>
-            <div class="shopee-grid">
-                <?php foreach ($products as $product): 
-                    $display_img = $product['photo_path'] ?: $product['product_image'] ?: "/printflow/public/assets/images/services/default.png";
-                    if ($display_img[0] !== '/' && strpos($display_img, 'http') === false) $display_img = '/' . $display_img;
+        <div class="ct-product-grid">
+            <?php foreach ($products as $product): 
+                $photo = trim($product['photo_path'] ?? '');
+                $prod_img = trim($product['product_image'] ?? '');
+                $path_to_try = ($photo !== '') ? $photo : $prod_img;
+                
+                $display_img = "/printflow/public/assets/images/services/default.png";
+                if ($path_to_try !== '') {
+                    if ($path_to_try[0] === '/' || strpos($path_to_try, 'http') !== false) {
+                        $display_img = $path_to_try;
+                    } else {
+                        // Check if file exists in uploads/products
+                        if (file_exists(__DIR__ . '/../uploads/products/' . $path_to_try)) {
+                            $display_img = '/printflow/uploads/products/' . $path_to_try;
+                        }
+                    }
+                }
+                
+                $sold_count = (int)$product['sold_count'];
+                $review_count = (int)$product['review_count'];
+                if ($sold_count < $review_count) $sold_count = $review_count;
+                
+                $avg_rating = (float)$product['avg_rating'];
+            ?>
+                <div class="ct-product-card group" onclick="window.location.href='order_create.php?product_id=<?php echo $product['product_id']; ?>'">
+                    <div class="ct-product-img-wrapper">
+                        <img src="<?php echo htmlspecialchars($display_img); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="ct-product-img">
+                    </div>
                     
-                    $sold_count = (int)$product['sold_count'];
-                    $review_count = (int)$product['review_count'];
-                    if ($sold_count < $review_count) $sold_count = $review_count; // Review count independent but sold count should show at least review count
-                    
-                    $avg_rating = (float)$product['avg_rating'];
-                ?>
-                    <div class="shopee-card" onclick="window.location.href='order_create.php?product_id=<?php echo $product['product_id']; ?>'">
-                        <img src="<?php echo htmlspecialchars($display_img); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="shopee-img">
-                        <div class="shopee-body">
-                            <span class="shopee-category"><?php echo htmlspecialchars($product['category']); ?></span>
-                            <h3 class="shopee-name"><?php echo htmlspecialchars($product['name']); ?></h3>
-                            
-                            <div class="rating-stars">
+                    <div class="ct-product-body">
+                        <span class="ct-product-category"><?php echo htmlspecialchars($product['category']); ?></span>
+                        <h3 class="ct-product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
+                        
+                        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 1.5rem;">
+                            <!-- Stars -->
+                            <div style="display: flex; gap: 1px;">
                                 <?php for($i=1; $i<=5; $i++): ?>
-                                    <svg style="width: 14px; height: 14px;" fill="<?php echo ($i <= round($avg_rating)) ? '#ffca11' : '#e5e7eb'; ?>" viewBox="0 0 20 20">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                    </svg>
+                                    <svg width="13" height="13" fill="<?php echo ($i <= round($avg_rating)) ? '#FBBF24' : '#374151'; ?>" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                                 <?php endfor; ?>
-                                <a href="reviews.php?product_id=<?php echo $product['product_id']; ?>" onclick="event.stopPropagation();" class="rating-text hover:underline hover:text-shopee-orange"><?php echo $review_count > 0 ? "($review_count)" : ''; ?></a>
-                                <span style="margin-left: auto; font-size: 0.75rem; color: var(--shopee-muted);"><?php echo $sold_count; ?> sold</span>
                             </div>
-
-                            <div class="shopee-price-row mt-2">
-                                <span class="shopee-price"><?php echo format_currency($product['price']); ?></span>
-                            </div>
+                            <?php if ($review_count > 0): ?>
+                                <span style="font-size: 0.72rem; color: #9ca3af; margin-left: 2px;">(<?php echo $review_count; ?>) Reviews</span>
+                            <?php endif; ?>
+                            <span style="font-size: 0.72rem; color: #64748b; margin-left: auto;"><?php echo $sold_count; ?> sold</span>
                         </div>
-                        <div class="shopee-footer" onclick="event.stopPropagation()">
-                            <button onclick="addToCartDirect(<?php echo $product['product_id']; ?>)" class="shopee-btn shopee-btn-cart" title="Add to Cart">
-                                <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            </button>
-                            <a href="order_create.php?product_id=<?php echo $product['product_id']; ?>&buy_now=1" class="shopee-btn shopee-btn-buy">Buy Now</a>
+
+                        <div class="ct-product-footer">
+                            <div class="ct-price-tag"><?php echo format_currency($product['price']); ?></div>
+                            <div style="flex: 1; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <button type="button" onclick="event.stopPropagation(); addToCartDirect(<?php echo $product['product_id']; ?>)" class="ct-btn-cart" title="Add to Cart">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                </button>
+                                <a href="order_create.php?product_id=<?php echo $product['product_id']; ?>&buy_now=1" class="ct-btn-primary" style="flex: 0 0 100px;">Buy Now</a>
+                            </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
 
             <!-- Pagination -->
             <div class="mt-12 flex justify-center">
@@ -330,24 +378,32 @@ function showToast(msg) {
     toast.textContent = msg;
     toast.style.cssText = `
         position: fixed;
-        bottom: 5rem;
+        bottom: 2rem;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(0,0,0,0.85);
+        background: #0a2530;
+        border: 1px solid rgba(83, 197, 224, 0.3);
         color: white;
-        padding: 12px 24px;
-        border-radius: 4px;
+        padding: 12px 28px;
+        border-radius: 1rem;
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 700;
         z-index: 10000;
-        transition: opacity 0.3s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         pointer-events: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        gap: 10px;
     `;
     
+    toast.innerHTML = `<svg style="width:1.2rem;height:1.2rem;color:#53c5e0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg> ${msg}`;
+    
     toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
     setTimeout(() => {
         toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(10px)';
     }, 2500);
 }
 </script>

@@ -155,7 +155,7 @@ $url_google_auth    = $base_url . '/google-auth/';
         input:invalid, select:invalid, textarea:invalid { box-shadow: none !important; outline-color: initial !important; }
     </style>
 </head>
-<body class="bg-gray-50<?php echo !empty($use_landing_css) ? ' lp-page' : ''; ?><?php echo !empty($use_customer_css) ? ' customer-theme' : ''; ?><?php echo !empty($is_chat_page) ? ' chat-page' : ''; ?>">
+<body class="bg-gray-50<?php echo !empty($use_landing_css) ? ' lp-page' : ''; ?><?php echo !empty($use_customer_css) ? ' customer-theme' : ''; ?><?php echo !empty($is_chat_page) ? ' chat-page' : ''; ?>" <?php echo !empty($disable_turbo) ? 'data-turbo="false"' : ''; ?>>
     <!-- Skip to main content (accessibility) - hidden until focused -->
     <a href="#main-content" style="position:absolute;left:-9999px;z-index:9999;padding:0.5rem 1rem;background:#4F46E5;color:#fff;font-weight:500;" id="skip-link">Skip to main content</a>
     <script>document.getElementById('skip-link').addEventListener('focus',function(){ this.style.left='0'; }); document.getElementById('skip-link').addEventListener('blur',function(){ this.style.left='-9999px'; });</script>

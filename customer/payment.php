@@ -356,8 +356,8 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="input-group">
                                 <label class="input-label">Amount to Pay (PHP)</label>
                                 <select name="amount" id="paymentAmountInput" class="custom-input" required onchange="document.getElementById('pchoice').value = this.options[this.selectedIndex].dataset.choice;">
-                                    <option value="<?php echo number_format($order['total_amount'], 2, '.', ''); ?>" data-choice="full">Full Payment (<?php echo format_currency($order['total_amount']); ?>)</option>
-                                    <option value="<?php echo number_format($order['total_amount'] * 0.5, 2, '.', ''); ?>" data-choice="half">50% Downpayment (<?php echo format_currency($order['total_amount'] * 0.5); ?>)</option>
+                                    <option value="<?php echo number_format($total_amount, 2, '.', ''); ?>" data-choice="full">Full Payment (<?php echo format_currency($total_amount); ?>)</option>
+                                    <option value="<?php echo number_format($total_amount * 0.5, 2, '.', ''); ?>" data-choice="half">50% Downpayment (<?php echo format_currency($total_amount * 0.5); ?>)</option>
                                 </select>
                                 <input type="hidden" name="payment_choice" id="pchoice" value="full">
                                 <p style="font-size: 0.75rem; color: #64748b; margin-top: 6px; font-weight: 600;">Select whether you want to pay in full or the minimum 50% downpayment required to start production.</p>

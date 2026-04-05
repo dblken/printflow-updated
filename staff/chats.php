@@ -21,7 +21,13 @@ $current_user = get_logged_in_user();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?></title>
     <link rel="stylesheet" href="/printflow/public/assets/css/output.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/printflow/public/assets/css/bootstrap-icons.min.css">
+    
+    <!-- Load Socket.io and WebRTC Call Assets -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="/printflow/public/assets/css/printflow_call.css">
+    <script src="/printflow/public/assets/js/printflow_call.js"></script>
+
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
     <style>
         /* Full View Chat App - No White Spaces */
@@ -84,7 +90,7 @@ $current_user = get_logged_in_user();
         .conv-name-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
         .conv-name { font-weight: 700; font-size: 0.95rem; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .conv-time { font-size: 0.7rem; color: #94a3b8; font-weight: 600; }
-        .conv-sub { font-size: 0.75rem; color: #0ea5e9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; margin-top: 2px; }
+        .conv-sub { font-size: 0.75rem; color: #1e293b; font-weight: 700; text-transform: capitalize; letter-spacing: 0.02em; margin-top: 2px; }
         .conv-preview { font-size: 0.8rem; color: #64748b; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
 
         /* Main Window */
@@ -95,7 +101,7 @@ $current_user = get_logged_in_user();
         }
         .window-title-area { flex: 1; min-width: 0; }
         .window-title { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
-        .window-meta { font-size: 0.85rem; color: #64748b; margin: 0; }
+        .window-meta { font-size: 0.85rem; color: #1e293b; margin: 0; text-transform: capitalize; }
         
         .header-actions { display: flex; gap: 8px; }
         .h-btn { 
@@ -115,10 +121,11 @@ $current_user = get_logged_in_user();
         .bubble-row.system { justify-content: center; }
 
         .bubble { 
-            padding: 0.75rem 1rem; border-radius: 16px; font-size: 0.925rem; font-weight: 500; line-height: 1.5; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-wrap: anywhere; word-break: break-word;
-            max-width: 100%;
+            padding: 0.75rem 1.15rem; border-radius: 18px; font-size: 0.92rem; font-weight: 500; line-height: 1.5; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-wrap: break-word; word-break: break-word;
+            max-width: 100%; width: fit-content; transition: all 0.2s ease;
         }
+        .bubble:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
         .bubble-row.self .bubble { background: #0a2530; color: #fff; border-radius: 18px 18px 4px 18px; }
         .bubble-row.other .bubble { background: #fff; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 18px 18px 18px 4px; }
         .bubble-row.system .bubble { background: #f1f5f9; color: #475569; border: none; font-size: 0.8rem; text-align: center; border-radius: 10px; padding: 0.5rem; }
@@ -131,17 +138,12 @@ $current_user = get_logged_in_user();
         
         /* msg-content-col: use GRID for self (right-aligns to max-content, not min-content)
            This prevents the letter-stacking bug that flex align-items:flex-end causes */
-        .msg-content-col { position: relative; min-width: 0; max-width: 80%; }
-        .bubble-row.self .msg-content-col { display: grid; justify-items: end; width: auto; max-width: 80%; }
+        .msg-content-col { position: relative; min-width: 0; max-width: 70%; }
+        .bubble-row.self .msg-content-col { display: grid; justify-items: end; width: auto; max-width: 70%; }
         .bubble-row.other .msg-content-col { display: flex; flex-direction: column; align-items: flex-start; }
         
         .msg-sender-info { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; padding: 0 4px; font-weight: 600; }
         .role-badge { display: inline-block; padding: 1px 5px; border-radius: 4px; background: #f1f5f9; color: #64748b; font-size: 0.6rem; font-weight: 700; margin-left: 4px; text-transform: uppercase; }
-        
-        .reaction-picker { 
-            position: absolute; display: none; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
-            border: 1px solid #e2e8f0; border-radius: 20px; padding: 4px 6px; gap: 4px; top: -38px; z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-        }
         
         /* Message Grouping */
         .bubble-row.grouped-msg-next { margin-bottom: 2px; }
@@ -154,15 +156,12 @@ $current_user = get_logged_in_user();
         .bubble-row.grouped-msg.other .bubble { border-radius: 18px 18px 4px 4px; }
         .bubble-row.grouped-msg-next.self .bubble { border-radius: 18px 4px 4px 18px; }
         .bubble-row.grouped-msg.self .bubble { border-radius: 18px 18px 4px 18px; }
-        .bubble-row.self .reaction-picker { right: 0; }
-        .bubble-row.other .reaction-picker { left: 0; }
-        .msg-content-col:hover .reaction-picker { display: flex; animation: slideUp 0.2s ease-out; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .reaction-btn { 
             width: 28px; height: 28px; font-size: 1.1rem; border: none; background: transparent; 
-            cursor: pointer; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             display: flex; align-items: center; justify-content: center;
         }
         .reaction-btn:hover { transform: scale(1.4); }
@@ -202,12 +201,113 @@ $current_user = get_logged_in_user();
         }
         .reply-preview-bubble:hover { opacity: 1; }
         
-        .msg-hover-actions { opacity: 0; transition: opacity 0.2s; display: flex; gap: 6px; position: absolute; top: 50%; transform: translateY(-50%); }
-        .bubble-row.self .msg-hover-actions { left: -35px; }
-        .bubble-row.other .msg-hover-actions { right: -35px; }
-        .msg-content-col:hover .msg-hover-actions { opacity: 1; }
-        .msg-action-icon { cursor: pointer; color: #94a3b8; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #f1f5f9; transition: all 0.2s; }
-        .msg-action-icon:hover { color: #0f172a; background: #e2e8f0; }
+        /* Messenger Style Action Bar & Reaction Picker */
+        .bubble-row:hover .msg-action-bar, .bubble-row.has-active-menu .msg-action-bar { opacity: 1; pointer-events: auto; }
+        .msg-action-bar {
+            opacity: 0; pointer-events: none;
+            display: flex; align-items: center; gap: 4px;
+            padding: 2px 6px; border-radius: 999px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: opacity 0.2s;
+            position: absolute; top: 50%; transform: translateY(-50%);
+            z-index: 50;
+        }
+        .bubble-row.other .msg-action-bar { left: calc(100% + 12px); }
+        .bubble-row.self .msg-action-bar { right: calc(100% + 12px); flex-direction: row-reverse; }
+
+        .m-action-btn {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; color: #94a3b8; cursor: pointer;
+            transition: all 0.2s; font-size: 1rem;
+        }
+        .m-action-btn:hover { background: #f1f5f9; color: #0a2530; }
+
+        .reaction-picker {
+            display: none; position: absolute; bottom: 100%; left: 50%;
+            transform: translateX(-50%); background: #ffffff;
+            padding: 0 18px; border-radius: 999px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1); z-index: 500;
+            gap: 12px; border: 1px solid #e2e8f0;
+            width: max-content; pointer-events: auto;
+            align-items: center; justify-content: center;
+            margin-bottom: 48px; height: 50px;
+        }
+        .reaction-picker.active { display: flex; animation: pickerPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* More Actions Menu - Open Downward to avoid overlap */
+        .m-more-menu {
+            display: none; position: absolute; top: 100%; right: 0;
+            background: #ffffff; border: 1px solid #e2e8f0;
+            border-radius: 12px; padding: 6px 0; width: 160px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08); z-index: 400;
+            margin-top: 10px;
+        }
+        .m-more-menu.active { display: block; animation: menuFade 0.2s ease; }
+        .m-menu-item {
+            padding: 8px 16px; font-size: 0.85rem; font-weight: 700; color: #475569;
+            display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .m-menu-item:hover { background: #f1f5f9; color: #0a2530; }
+        .m-menu-item i { font-size: 1rem; opacity: 0.7; }
+
+        /* Character Counter */
+        .char-counter {
+            font-size: 0.65rem;
+            color: #64748b;
+            font-weight: 700;
+            position: absolute;
+            right: 12px;
+            bottom: 6px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        .char-counter.limit-near { color: #f59e0b; }
+        .char-counter.limit-reached { color: #ef4444; }
+
+        /* Hide global elements that overlap */
+        #floatingChatButton, .floating-chat-trigger, .floating-chat-circle, .chat-floating-button, 
+        [id*="floatingChat"], [class*="floating-chat"], .messenger-bubble, .floating-bubble { 
+            display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;
+        }
+
+        .chat-input {
+            background: transparent; border: none; outline: none;
+            flex: 1; color: #1e293b; font-size: 0.95rem;
+            padding: 10px 0; width: 100%; min-width: 0;
+            resize: none; max-height: 120px; line-height: 1.5;
+            overflow-y: auto; font-family: inherit;
+        }
+
+        @keyframes menuFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .pinned-badge {
+            position: absolute; top: -6px; right: -6px;
+            width: 18px; height: 18px; background: #53c5e0;
+            color: #fff; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 9px;
+            border: 1px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+        @keyframes pickerPop { from { opacity: 0; transform: translateX(-50%) scale(0.8) translateY(10px); } to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); } }
+
+        .reaction-btn {
+            background: none; border: none; font-size: 1.6rem; cursor: pointer;
+            transition: transform 0.2s; padding: 0; line-height: 1;
+        }
+        .reaction-btn:hover { transform: scale(1.35) translateY(-4px); }
+
+        .reaction-display-container { margin-top: 6px; display: none; }
+        .reaction-display {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; cursor: default;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); color: #334155;
+        }
+        .reaction-display span { line-height: 1; }
 
         /* Seen Indicators */
         .seen-indicator { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #fff; background-size: cover; background-position: center; margin-top: 2px; }
@@ -228,6 +328,7 @@ $current_user = get_logged_in_user();
         .window-footer { 
             padding: 1rem 1.25rem; border-top: 1px solid #f1f5f9; background: #fff; 
             flex-shrink: 0; position: relative; z-index: 10; margin-top: auto;
+            width: 100%; max-width: 900px; margin-left: auto; margin-right: auto;
         }
         .chat-input-area { 
             display: flex; align-items: center; gap: 12px;
@@ -435,6 +536,10 @@ $current_user = get_logged_in_user();
         .hidden { display: none !important; }
         #msgInput { border: none !important; background: transparent !important; }
         .bi { font-size: 1.1rem; }
+        @keyframes highlightStaffMsg {
+            0% { background: rgba(0, 35, 43, 0.1); transform: scale(1.02); }
+            100% { background: transparent; transform: scale(1); }
+        }
     </style>
 </head>
 <body class="bg-slate-50" data-turbo="false">
@@ -488,6 +593,14 @@ $current_user = get_logged_in_user();
                             <p class="window-meta" id="activeMeta">—</p>
                         </div>
                         <div class="header-actions">
+                             <!-- Call Actions -->
+                             <button class="h-btn call-btns" onclick="initiateCall('voice')" title="Voice Call" style="display:none;">
+                                 <i class="bi bi-telephone"></i>
+                             </button>
+                             <button class="h-btn call-btns" onclick="initiateCall('video')" title="Video Call" style="display:none;">
+                                 <i class="bi bi-camera-video"></i>
+                             </button>
+
                              <div class="unified-menu">
                                  <button class="h-btn" onclick="toggleMenu(event)" id="threeDots" title="More Options">
                                      <i class="bi bi-three-dots-vertical"></i>
@@ -511,6 +624,16 @@ $current_user = get_logged_in_user();
                     <div id="archivedNotice" style="display:none; padding:8px; background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:center; font-size:0.75rem; font-weight:700; color:#64748b;">
                         <i class="bi bi-archive-fill mr-1"></i> This conversation is archived
                     </div>
+
+                    <!-- Pinned Messages Bar -->
+                    <div id="pinnedBar" style="display:none; position:sticky; top:0; z-index:15; background:rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-bottom:1px solid #f1f5f9; padding:8px 1.5rem; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+                        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                            <i class="bi bi-pin-angle-fill" style="color:#0a2530; font-size:0.9rem;"></i>
+                            <span id="pinnedCountText" style="font-size:0.75rem; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">0 pinned messages</span>
+                        </div>
+                        <i class="bi bi-chevron-right" style="color:#94a3b8; font-size:0.8rem;"></i>
+                    </div>
+
                     <!-- Messages -->
                     <div id="messagesArea"></div>
 
@@ -534,7 +657,7 @@ $current_user = get_logged_in_user();
                     </div>
 
                     <!-- Previews -->
-                    <div id="imgPreviewArea" style="display:none; padding: 10px 1.5rem; border-top:1px solid #f1f5f9; display:flex; gap:10px; background: #fff;"></div>
+                    <div id="imgPreviewArea" style="display:none; padding: 10px 1.5rem; border-top:1px solid #f1f5f9; gap:10px; background: #fff;"></div>
 
                     <div id="replyPreviewBox">
                         <div class="reply-content-box overflow-hidden">
@@ -553,12 +676,13 @@ $current_user = get_logged_in_user();
                                  <i class="bi bi-mic"></i>
                              </button>
 
-                             <div class="input-bar" id="inputContainer">
-                                 <label class="footer-action-btn" title="Send Image or Video">
+                             <div class="input-bar flex-1" id="inputContainer" style="position:relative; display:flex; align-items:flex-end; gap:10px;">
+                                 <label class="footer-action-btn" title="Send Image or Video" style="margin-bottom:6px !important;">
                                       <input type="file" id="mediaInput" accept="image/*,video/mp4,video/webm,video/quicktime" multiple class="hidden">
                                       <i class="bi bi-image"></i>
                                  </label>
-                                 <input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off">
+                                 <textarea id="msgInput" class="chat-input" placeholder="Type a message..." autocomplete="off" maxlength="500" rows="1"></textarea>
+                                 <span id="charCount" class="char-counter">0/500</span>
                              </div>
 
                              <div class="recording-panel hidden" id="recordStatus">
@@ -594,8 +718,8 @@ $current_user = get_logged_in_user();
         <img id="staffLightboxImg" src="" style="max-width:100%;max-height:80vh;border-radius:1rem;box-shadow:0 0 60px rgba(0,0,0,0.6);display:none;object-fit:contain;">
         <video id="staffLightboxVideo" controls style="max-width:100%;max-height:80vh;border-radius:1rem;box-shadow:0 0 60px rgba(0,0,0,0.6);display:none;background:#000;outline:none;" preload="metadata"></video>
         <div style="display:flex; justify-content:center; gap:1.5rem; margin-top:1.5rem;">
-            <a id="staffLightboxDownload" href="" download class="h-btn bg-white" style="width:auto; padding:0 20px; font-weight:700;">⬇ Download</a>
-            <button onclick="closeLightbox()" class="h-btn bg-white" style="width:auto; padding:0 20px; font-weight:700;">✕ Close</button>
+            <a id="staffLightboxDownload" href="" download class="h-btn bg-white" style="width:auto; padding:0 20px; font-weight:700;">&#x2B07; Download</a>
+            <button onclick="closeLightbox()" class="h-btn bg-white" style="width:auto; padding:0 20px; font-weight:700;">&#x2715; Close</button>
         </div>
     </div>
 </div>
@@ -634,6 +758,36 @@ let currentReactions = [];
 const REACTION_EMOJIS = {
     'like': '👍', 'love': '❤️', 'haha': '😂', 'wow': '😮', 'sad': '😢', 'angry': '😡'
 };
+
+// --- Call Integration ---
+let callSystem = null;
+function initCallSystem() {
+    if (callSystem) return;
+    callSystem = new PrintFlowCall({
+        userId: <?php echo get_user_id(); ?>,
+        role: 'Staff',
+        userName: '<?php echo str_replace("'", "\\'", $_SESSION['user_name'] ?? "Staff"); ?>',
+        userAvatar: '<?php 
+            $u = get_logged_in_user(); 
+            echo ($u && !empty($u['avatar'])) ? (BASE_URL . "/" . $u['avatar']) : ""; 
+        ?>'
+    });
+}
+
+function initiateCall(type) {
+    if (!activeId) return;
+    const fd = new FormData();
+    fd.append('order_id', activeId);
+    api('/public/api/chat/status.php', 'POST', fd)
+        .then(res => {
+            if (!res.partner) { alert("Customer is unavailable."); return; }
+            const pId = res.partner.id;
+            const pName = res.partner.name;
+            const pAvatar = res.partner.avatar ? (window.baseUrl + "/public/assets/uploads/profiles/" + res.partner.avatar) : "";
+            
+            callSystem.startCall(pId, 'Customer', type, activeId, pName, pAvatar);
+        });
+}
 
 // --- API Logic ---
 async function api(url, method = 'GET', body = null) {
@@ -677,7 +831,7 @@ function loadConvs() {
                             <span class="conv-name">${escapeHtml(c.customer_name)}</span>
                             <span class="conv-time">${formatTime(c.last_message_at)}</span>
                         </div>
-                        <div class="conv-sub">Order #${c.order_id} • ${escapeHtml(c.service_name)}</div>
+                        <div class="conv-sub">${escapeHtml(c.service_name || '').toLowerCase()}</div>
                         <div class="conv-preview">
                             ${c.unread_count > 0 ? `<span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">${c.unread_count}</span>` : ''}
                             ${escapeHtml(c.last_message || 'No messages yet')}
@@ -723,7 +877,7 @@ function openChat(id, name, meta, archived, avatar = '') {
     document.getElementById('welcomeScreen').style.display = 'none';
     document.getElementById('chatInterface').style.display = 'flex';
     document.getElementById('activeName').textContent = name;
-    document.getElementById('activeMeta').textContent = `Order #${id} • ${meta}`;
+    document.getElementById('activeMeta').textContent = meta.toLowerCase();
     
     const avatarEl = document.getElementById('activeAvatar');
     avatarEl.style.overflow = 'hidden';
@@ -737,6 +891,10 @@ function openChat(id, name, meta, archived, avatar = '') {
     
     // Set initial archive UI
     updateArchiveUI(!!archived);
+
+    // Show Call Buttons
+    document.querySelectorAll('.call-btns').forEach(el => el.style.display = 'flex');
+    initCallSystem();
 
     // Close gallery and dropdown on chat switch
     toggleMediaGallery(false);
@@ -797,12 +955,64 @@ function loadMsgs() {
             document.getElementById('partnerStatus').style.display = data.partner.is_online ? 'inline-block' : 'none';
             if (data.partner && data.partner.avatar) partnerAvatarUrl = window.baseUrl + '/' + data.partner.avatar;
             if (data.is_archived !== undefined) updateArchiveUI(data.is_archived);
-            if (data.messages.length) scrollToBottom(lastId === 0 ? false : true);
+            if (data.messages.length) scrollToBottom(lastId === 0 ? false : true, lastId === 0);
             
             if (data.last_seen_message_id !== undefined) {
                 updateStaffSeenIndicators(data.last_seen_message_id);
             }
+
+            // Update Pinned Bar
+            updatePinnedBar(data.pinned_messages || []);
         });
+}
+
+function updatePinnedBar(pinned) {
+    const bar = document.getElementById('pinnedBar');
+    const text = document.getElementById('pinnedCountText');
+    if (!pinned || pinned.length === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+    text.textContent = pinned.length === 1 ? '1 pinned message' : `${pinned.length} pinned messages`;
+    bar.onclick = () => openPinnedModal(pinned);
+}
+
+function openPinnedModal(pinned) {
+    if (!document.getElementById('pinnedModal')) {
+        const div = document.createElement('div');
+        div.id = 'pinnedModal';
+        div.className = 'details-modal-overlay';
+        div.innerHTML = `
+            <div class="details-modal-panel" style="max-width:450px;">
+                <div class="details-modal-header">
+                    <h2 style="font-size:1.1rem; font-weight:900; color:#1e293b; margin:0;">Pinned Messages</h2>
+                    <button type="button" onclick="document.getElementById('pinnedModal').classList.remove('active')" class="h-btn" style="border:none; background:transparent;">
+                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"/></svg>
+                    </button>
+                </div>
+                <div id="pinnedList" style="padding:1.5rem; max-height:500px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+        `;
+        document.body.appendChild(div);
+    }
+    const modal = document.getElementById('pinnedModal');
+    modal.classList.add('active');
+    const list = document.getElementById('pinnedList');
+    list.innerHTML = pinned.map(m => `
+        <div onclick="goToMessage(${m.id}); document.getElementById('pinnedModal').classList.remove('active')" style="padding:12px; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; cursor:pointer; transition:all 0.2s;">
+            <div style="font-size:0.7rem; color:#53c5e0; font-weight:800; margin-bottom:4px;">${m.sender_name} • ${m.created_at}</div>
+            <div style="font-size:0.85rem; color:#1e293b; line-height:1.4;">${escapeHtml(m.message || (m.image_path ? '📸 Attachment' : 'Message'))}</div>
+        </div>
+    `).join('');
+}
+
+function goToMessage(id) {
+    const el = document.getElementById(`ms-${id}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.animation = 'highlightStaffMsg 2s ease';
+    }
 }
 
 function appendMsgUI(m) {
@@ -840,7 +1050,8 @@ function appendMsgUI(m) {
         }
     }
 
-    let colHtml = `<div class="msg-content-col">`;
+    const isCallMsg = (m.message && m.message.includes('📞'));
+    let colHtml = `<div class="msg-content-col" style="${isCallMsg ? 'max-width:none;' : ''}">`;
     
     // Sender Info
     if (!m.is_self && !m.is_system) {
@@ -848,26 +1059,42 @@ function appendMsgUI(m) {
         colHtml += `<div class="msg-sender-info">${escapeHtml(m.sender_name || m.sender)} ${roleBadge}</div>`;
     }
 
-    // Reaction Picker
+    // Stable Action Bar
     if (!m.is_system) {
-        const pickerHtml = Object.keys(REACTION_EMOJIS).map(key => 
-            `<button class="reaction-btn" onclick="toggleReaction(${m.id}, '${key}')">${REACTION_EMOJIS[key]}</button>`
-        ).join('');
-        colHtml += `<div class="reaction-picker">${pickerHtml}</div>`;
-    }
-
-    // Hover Actions
-    if (!m.is_system) {
-        const msgEsc = escapeHtml(m.message || '').replace(/`/g, '\\`');
+        const msgB64 = safeBase64Encode(m.message || '');
+        const pickerHtml = Object.entries(REACTION_EMOJIS).map(([type, emoji]) => `
+            <button class="reaction-btn" onclick="toggleReaction(${m.id}, '${type}')">${emoji}</button>
+        `).join('');
+        
         colHtml += `
-        <div class="msg-hover-actions">
-            <div class="msg-action-icon" title="Reply" onclick="initReply(${m.id}, \`${msgEsc}\`, '${m.image_path ? 1 : 0}')">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="msg-action-bar">
+            <div class="m-action-btn" title="React" onclick="togglePicker(${m.id}, event)" style="position:relative;">
+                <i class="bi bi-emoji-smile"></i>
+                <div class="reaction-picker" id="picker-${m.id}" style="transform: translateX(-50%);">${pickerHtml}</div>
+            </div>
+            <div class="m-action-btn" title="Reply" onclick="initReply(${m.id}, '${msgB64}', '${m.image_path ? 1 : 0}')">
+                <i class="bi bi-reply-fill"></i>
+            </div>
+            <div class="m-action-btn" title="More" onclick="toggleMoreMenu(${m.id}, event)" style="position:relative;">
+                <i class="bi bi-three-dots"></i>
+                <div class="m-more-menu" id="more-${m.id}">
+                    <div class="m-menu-item" onclick="pinMessage(${m.id})">
+                        <i class="bi bi-pin-angle"></i> Pin
+                    </div>
+                    <div class="m-menu-item" onclick="initForward(${m.id}, '${msgB64}', '${m.image_path ? 1 : 0}')">
+                        <i class="bi bi-arrow-right-short"></i> Forward
+                    </div>
+                </div>
             </div>
         </div>`;
     }
     
-    colHtml += `<div class="bubble" style="position:relative;">`;
+    colHtml += `<div class="bubble" style="position:relative; ${isCallMsg ? 'max-width:none;' : ''}" id="bubble-${m.id}">`;
+    
+    // Pin Indicator
+    if (m.is_pinned) {
+        colHtml += `<div class="pinned-badge" title="Pinned Message"><i class="bi bi-pin-fill"></i></div>`;
+    }
     
     // Reply Preview
     if (m.reply_id) {
@@ -906,7 +1133,9 @@ function appendMsgUI(m) {
             </div>`; 
         }
     }
-    if (m.message) colHtml += '<div>' + escapeHtml(m.message) + '</div>';
+    if (m.message) {
+        colHtml += `<div style="${isCallMsg ? 'white-space:nowrap;' : ''}">${escapeHtml(m.message)}</div>`;
+    }
     if (!m.is_system) {
         colHtml += `<div class="reaction-display-container" id="reactions-for-${m.id}" style="display:none;"></div>`;
     }
@@ -963,126 +1192,200 @@ function renderAllReactions() {
     });
 }
 
+function togglePicker(msgId, e) {
+    if (e) e.stopPropagation();
+    const picker = document.getElementById('picker-'+msgId);
+    if (!picker) return;
+    const isActive = picker.classList.contains('active');
+    closeAllMenus();
+    if (!isActive) {
+        picker.classList.add('active');
+        const row = document.getElementById(`ms-${msgId}`);
+        if (row) row.classList.add('has-active-menu');
+    }
+}
+
+function toggleMoreMenu(msgId, e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('more-'+msgId);
+    if (!menu) return;
+    const isActive = menu.classList.contains('active');
+    closeAllMenus();
+    if (!isActive) {
+        menu.classList.add('active');
+        const row = document.getElementById(`ms-${msgId}`);
+        if (row) row.classList.add('has-active-menu');
+    }
+}
+
+function closeAllMenus() {
+    document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.m-more-menu').forEach(m => m.classList.remove('active'));
+    document.querySelectorAll('.bubble-row').forEach(r => r.classList.remove('has-active-menu'));
+}
+
+document.addEventListener('click', () => closeAllMenus());
+
+async function pinMessage(msgId) {
+    const fd = new FormData();
+    fd.append('message_id', msgId);
+    api('/public/api/chat/pin_message.php', 'POST', fd).then(res => {
+        if (res.success) {
+            loadMsgs();
+            closeAllMenus();
+        } else {
+            alert(res.error || "Pin failed");
+        }
+    });
+}
+
 function toggleReaction(msgId, reactionType) {
     const fd = new FormData();
     fd.append('message_id', msgId);
     fd.append('reaction_type', reactionType);
     api('/public/api/chat/react_message.php', 'POST', fd)
-        .then(res => { if (res.success) loadMsgs(); });
-}
-
-function initReply(msgId, textPreview, hasImage) {
-    replyToMessageId = msgId;
-    document.getElementById('replyPreviewBox').style.display = 'flex';
-    document.getElementById('replyPreviewText').textContent = hasImage === '1' ? '📸 Attachment' : textPreview;
-    document.getElementById('msgInput').focus();
-}
-
-function cancelReply() {
-    replyToMessageId = null;
-    document.getElementById('replyPreviewBox').style.display = 'none';
-}
-
-function sendMsg() {
-    const btn = document.getElementById('btnSend');
-    const input = document.getElementById('msgInput');
-    const txt = input.value.trim();
-    
-    // Validate: Not empty and not already sending
-    if ((!txt && !uploadFiles.length) || btn.disabled) return;
-    
-    // Visual feedback
-    btn.disabled = true;
-    const originalContent = btn.innerHTML;
-    btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
-    const fd = new FormData();
-    fd.append('order_id', activeId);
-    if (replyToMessageId) fd.append('reply_id', replyToMessageId);
-    if (txt) fd.append('message', txt);
-    uploadFiles.forEach(f => fd.append('image[]', f));
-    
-    api('/public/api/chat/send_message.php', 'POST', fd)
-        .then(r => {
-            if (r.success) {
-                input.value = '';
-                uploadFiles = [];
-                renderPreviews();
-                cancelReply();
-                loadMsgs();
-            } else {
-                alert(r.error || 'Failed to send message');
+        .then(res => {
+            if (res.success) {
+                loadMsgs(); 
+                closeAllMenus();
             }
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = originalContent;
-            input.focus();
         });
 }
-function updateStaffSeenIndicators(lastSeenId) {
-    document.querySelectorAll('.seen-indicator').forEach(el => el.remove());
-    if (!partnerAvatarUrl || lastSeenId === -1) return;
+
+var forwardMsgData = null;
+var selectedForwardTargets = [];
+
+function initForward(msgId, b64, hasImage) {
+    forwardMsgData = { msgId, text: safeBase64Decode(b64), hasImage };
+    openForwardModal();
+    closeAllMenus();
+}
+
+
+
+function openForwardModal() {
+    if (!document.getElementById('forwardModal')) {
+        const div = document.createElement('div');
+        div.id = 'forwardModal';
+        div.className = 'details-modal-overlay';
+        div.innerHTML = `
+            <div class="details-modal-panel" style="max-width:450px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 20px 50px rgba(0,0,0,0.1);">
+                <div class="details-modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="font-size:1.1rem; font-weight:900; color:#0f172a; margin:0;">Forward Message</h2>
+                    <button type="button" onclick="closeForwardModal()" class="h-btn" style="border:none; background:transparent; color:#64748b;">
+                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"/></svg>
+                    </button>
+                </div>
+                <div style="padding:1rem; border-bottom: 1px solid #f1f5f9;">
+                    <div style="position:relative;">
+                        <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
+                        <input type="text" id="forwardSearch" placeholder="Search customer..." oninput="loadForwardList(this.value)" style="width:100%; padding-left:36px; border-radius:12px; border:1px solid #e2e8f0; background:#f8fafc; height:40px; font-size:0.85rem; color:#1e293b;">
+                    </div>
+                </div>
+                <div style="padding:0.75rem 1rem; background:#f8fafc; border-bottom: 1px solid #f1f5f9;">
+                    <div style="font-size:0.65rem; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Preview</div>
+                    <div id="forwardPreview" style="font-size:0.85rem; color:#1e293b; opacity:0.8; max-height:40px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                </div>
+                <div id="forwardList" style="padding:1rem; max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+                <div style="padding:1rem; border-top: 1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:10px;">
+                    <button onclick="closeForwardModal()" style="padding: 0 16px; height: 40px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.85rem; font-weight: 700; color: #64748b; cursor: pointer;">Cancel</button>
+                    <button id="forwardSendBtn" class="btn-send" style="width:auto; height:40px; padding:0 24px; font-weight:700; border-radius:12px; background:#0a2530; color: #fff;" onclick="processForward()" disabled>
+                        Send <i class="bi bi-send-fill ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(div);
+    }
+    const modal = document.getElementById('forwardModal');
+    modal.classList.add('active');
+    document.getElementById('forwardPreview').textContent = forwardMsgData.hasImage === '1' ? '📸 Attachment' : forwardMsgData.text;
+    selectedForwardTargets = [];
+    updateForwardBtn();
+    loadForwardList();
+}
+
+function closeForwardModal() {
+    const modal = document.getElementById('forwardModal');
+    if (modal) modal.classList.remove('active');
+    forwardMsgData = null;
+}
+
+function loadForwardList(q = '') {
+    api(`/public/api/chat/list_conversations.php?archived=0&q=${encodeURIComponent(q)}`).then(data => {
+        const list = document.getElementById('forwardList');
+        if (!list) return;
+        if (!data.success || !data.conversations.length) {
+            list.innerHTML = '<p class="p-8 text-center opacity-40 text-sm">No conversations found</p>';
+            return;
+        }
+        list.innerHTML = data.conversations.map(c => {
+            const isSelected = selectedForwardTargets.includes(c.order_id);
+            return `
+            <div onclick="toggleForwardTarget(${c.order_id})" style="padding:10px 14px; border-radius:14px; background:${isSelected ? '#f1f5f9' : '#fff'}; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.15s; border:1px solid ${isSelected ? '#e2e8f0' : 'transparent'};">
+                <div class="conv-avatar" style="width:36px; height:36px; background:#f1f5f9; color:#475569;">${(c.customer_name || 'C')[0].toUpperCase()}</div>
+                <div style="flex:1;">
+                    <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${escapeHtml(c.customer_name)}</div>
+                    <div style="font-size:0.7rem; color:#64748b;">${escapeHtml(c.service_name || 'Order')}</div>
+                </div>
+                <div style="width:20px; height:20px; border-radius:50%; border:2px solid ${isSelected ? '#0a2530' : '#e2e8f0'}; background:${isSelected ? '#0a2530' : 'transparent'}; display:flex; align-items:center; justify-content:center;">
+                    ${isSelected ? '<i class="bi bi-check" style="color:#fff; font-size:12px;"></i>' : ''}
+                </div>
+            </div>`;
+        }).join('');
+    });
+}
+
+function toggleForwardTarget(id) {
+    if (selectedForwardTargets.includes(id)) {
+        selectedForwardTargets = selectedForwardTargets.filter(x => x !== id);
+    } else {
+        selectedForwardTargets.push(id);
+    }
+    loadForwardList(document.getElementById('forwardSearch').value);
+    updateForwardBtn();
+}
+
+function updateForwardBtn() {
+    const btn = document.getElementById('forwardSendBtn');
+    btn.disabled = selectedForwardTargets.length === 0;
+    btn.innerHTML = `Send to ${selectedForwardTargets.length} <i class="bi bi-send-fill ml-2"></i>`;
+}
+
+async function processForward() {
+    if (!forwardMsgData || !selectedForwardTargets.length) return;
     
-    const container = document.getElementById(`seen-container-${lastSeenId}`);
-    if (container) {
-        container.innerHTML = `<div class="seen-indicator" style="background-image: url('${partnerAvatarUrl}')" title="Seen"></div>`;
+    const btn = document.getElementById('forwardSendBtn');
+    btn.disabled = true;
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin mr-2"></i> Sending...';
+
+    let successCount = 0;
+    for (const targetId of selectedForwardTargets) {
+        const fd = new FormData();
+        fd.append('order_id', targetId);
+        
+        let msgText = forwardMsgData.text;
+        if (forwardMsgData.hasImage === '1') {
+             msgText = '[Forwarded]: ' + (msgText || 'Attachment');
+        }
+        
+        fd.append('message', msgText);
+
+        const res = await api('/public/api/chat/send_message.php', 'POST', fd);
+        if (res.success) successCount++;
+    }
+
+    closeForwardModal();
+    if (successCount > 0) {
+        alert(`Successfully forwarded to ${successCount} conversation(s).`);
+        loadConvs();
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
     }
 }
 
-// --- UI Utils ---
-function toggleArchStatus(id, st) {
-    const fd = new FormData();
-    fd.append('order_id', id);
-    fd.append('archive', st?1:0);
-    api('/public/api/chat/set_archived.php', 'POST', fd).then(() => {
-        if (!isArchivedView) { 
-            activeId = null; 
-            window.staffUiOpened = false;
-            document.getElementById('welcomeScreen').style.display = 'flex'; 
-            document.getElementById('chatInterface').style.display = 'none'; 
-        }
-        loadConvs();
-    });
-}
-function toggleSidebar(st) { document.getElementById('sidebar').classList.toggle('active', st); }
-function scrollToBottom(sm) { const b = document.getElementById('messagesArea'); b.scrollTo({top: b.scrollHeight, behavior: sm?'smooth':'auto'}); }
-function zoomImg(s) {
-    const lb = document.getElementById('staffLightbox');
-    document.getElementById('staffLightboxImg').src = s;
-    document.getElementById('staffLightboxImg').style.display = 'block';
-    const vid = document.getElementById('staffLightboxVideo');
-    vid.pause(); vid.src = ''; vid.style.display = 'none';
-    document.getElementById('staffLightboxDownload').href = s;
-    lb.style.display = 'flex';
-}
-function zoomVideo(s) {
-    const lb = document.getElementById('staffLightbox');
-    document.getElementById('staffLightboxImg').style.display = 'none';
-    document.getElementById('staffLightboxImg').src = '';
-    const vid = document.getElementById('staffLightboxVideo');
-    vid.src = s; vid.style.display = 'block';
-    document.getElementById('staffLightboxDownload').href = s;
-    lb.style.display = 'flex';
-    vid.play().catch(()=>{});
-}
-function closeLightbox() {
-    const lb = document.getElementById('staffLightbox');
-    lb.style.display = 'none';
-    const vid = document.getElementById('staffLightboxVideo');
-    vid.pause(); vid.src = '';
-}
-function formatTime(d) {
-    if (!d) return '...';
-    try {
-        const diff = (Date.now() - new Date(d.replace(/-/g,'/'))) / 1000;
-        if (diff < 60) return 'now';
-        if (diff < 3600) return Math.floor(diff/60)+'m';
-        if (diff < 86400) return Math.floor(diff/3600)+'h';
-        return Math.floor(diff/86400)+'d';
-    } catch(e) { return '...'; }
-}
-function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t||''; return d.innerHTML; }
 function renderPreviews() {
     const a = document.getElementById('imgPreviewArea');
     a.style.display = uploadFiles.length ? 'flex' : 'none';
@@ -1107,10 +1410,29 @@ function renderPreviews() {
 }
 
 // --- Init Event Listeners ---
-document.getElementById('msgInput').onkeyup = (e) => { 
-    if (e.key === 'Enter') sendMsg(); 
+document.getElementById('msgInput').oninput = (e) => {
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight) + 'px';
+    
+    const len = el.value.length;
+    const cnt = document.getElementById('charCount');
+    if (cnt) {
+        cnt.textContent = `${len}/500`;
+        cnt.classList.remove('limit-near', 'limit-reached');
+        if (len >= 500) cnt.classList.add('limit-reached');
+        else if (len >= 450) cnt.classList.add('limit-near');
+    }
+};
+
+document.getElementById('msgInput').onkeydown = (e) => { 
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMsg();
+    }
 };
 document.getElementById('btnSend').onclick = sendMsg;
+
 document.getElementById('mediaInput').onchange = function() {
     for (let f of this.files) {
         const isVideo = f.type.startsWith('video/');
@@ -1120,8 +1442,6 @@ document.getElementById('mediaInput').onchange = function() {
     }
     renderPreviews(); this.value='';
 };
-
-// --- Details Modal ---
 function openDetails(id) {
     const modal = document.getElementById('detailsModal');
     const body = document.getElementById('detailsBody');
@@ -1608,27 +1928,53 @@ function formatAudioTime(seconds) {
 let pendingVoiceBlob = null;
 
 function sendMsg() {
-    const text = document.getElementById('msgInput').value.trim();
-    if (!text && !uploadFiles.length && !pendingVoiceBlob) return;
+    const btn = document.getElementById('btnSend');
+    const input = document.getElementById('msgInput');
+    const txt = input.value.trim();
+    
+    if (txt.length > 500) {
+        alert("Message cannot exceed 500 characters.");
+        return;
+    }
+
+    if ((!txt && !uploadFiles.length && !pendingVoiceBlob) || (btn && btn.disabled)) return;
     
     if (pendingVoiceBlob) {
         sendAudio();
         return;
     }
 
+    // Visual feedback
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+    }
+
     const fd = new FormData();
     fd.append('order_id', activeId);
     if (replyToMessageId) fd.append('reply_id', replyToMessageId);
-    if (text) fd.append('message', text);
+    if (txt) fd.append('message', txt);
     uploadFiles.forEach(f => fd.append('image[]', f));
     
-    document.getElementById('msgInput').value = '';
-    uploadFiles = [];
-    document.getElementById('imgPreviewArea').style.display = 'none';
-    cancelReply();
-    
     api('/public/api/chat/send_message.php', 'POST', fd)
-        .then(data => { if (data.success) { loadMsgs(); } });
+        .then(r => {
+            if (r.success) {
+                input.value = '';
+                uploadFiles = [];
+                if (document.getElementById('imgPreviewArea')) document.getElementById('imgPreviewArea').style.display = 'none';
+                cancelReply();
+                loadMsgs();
+            } else {
+                alert(r.error || 'Failed to send message');
+            }
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill text-lg pointer-events-none"></i>';
+            }
+            input.focus();
+        });
 }
 
 function showVoicePreview() {
@@ -1722,6 +2068,105 @@ function sendAudio() {
         btn.innerHTML = originalContent;
         timerDisplay.textContent = '0:00';
     });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function safeBase64Encode(str) {
+    return btoa(unescape(encodeURIComponent(str || '')));
+}
+
+function safeBase64Decode(b64) {
+    try {
+        return decodeURIComponent(escape(atob(b64)));
+    } catch(e) { return ''; }
+}
+
+function formatTime(d) {
+    if (!d) return '...';
+    try {
+        const diff = (Date.now() - new Date(d.replace(/-/g,'/'))) / 1000;
+        if (diff < 60) return 'now';
+        if (diff < 3600) return Math.floor(diff/60) + 'm';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h';
+        return Math.floor(diff/86400) + 'd';
+    } catch(e) { return '...'; }
+}
+
+function zoomImg(src) {
+    const lb = document.getElementById('staffLightbox');
+    const img = document.getElementById('staffLightboxImg');
+    const video = document.getElementById('staffLightboxVideo');
+    const down = document.getElementById('staffLightboxDownload');
+    
+    if (lb && img && video) {
+        lb.style.display = 'flex';
+        img.style.display = 'block';
+        img.src = src;
+        video.style.display = 'none';
+        video.pause();
+        if (down) down.href = src;
+    }
+}
+
+function zoomVideo(src) {
+    const lb = document.getElementById('staffLightbox');
+    const img = document.getElementById('staffLightboxImg');
+    const video = document.getElementById('staffLightboxVideo');
+    const down = document.getElementById('staffLightboxDownload');
+    
+    if (lb && img && video) {
+        lb.style.display = 'flex';
+        img.style.display = 'none';
+        video.style.display = 'block';
+        video.src = src;
+        video.play();
+        if (down) down.href = src;
+    }
+}
+
+function closeLightbox() {
+    const lb = document.getElementById('staffLightbox');
+    const video = document.getElementById('staffLightboxVideo');
+    if (lb) lb.style.display = 'none';
+    if (video) { video.pause(); video.src = ''; }
+}
+
+function scrollToBottom(smooth = true, force = false) {
+    const box = document.getElementById('messagesArea');
+    if (!box) return;
+    const threshold = 150;
+    const isNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < threshold;
+    if (force || isNearBottom) {
+        box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    }
+}
+
+function updateStaffSeenIndicators(lastSeenId) {
+    if (!lastSeenId) return;
+    // Remove all existing seen indicators first
+    document.querySelectorAll('.seen-wrapper').forEach(el => el.innerHTML = '');
+    // Find the self-sent bubble at or before lastSeenId and show "Seen"
+    const allSelfRows = [...document.querySelectorAll('.bubble-row.self')];
+    // Find the last self message whose id <= lastSeenId
+    let lastSeenRow = null;
+    allSelfRows.forEach(row => {
+        const id = parseInt(row.id.replace('ms-', ''));
+        if (!isNaN(id) && id <= lastSeenId) {
+            lastSeenRow = row;
+        }
+    });
+    if (lastSeenRow) {
+        const wrapper = lastSeenRow.querySelector('.seen-wrapper');
+        if (wrapper) {
+            wrapper.innerHTML = '<span style="font-size:10px; color:#94a3b8; font-weight:700;">✓ Seen</span>';
+        }
+    }
 }
 
 loadConvs();

@@ -343,12 +343,15 @@ $completed_jobs = db_query("SELECT COUNT(*) as count FROM job_orders jo WHERE st
     <!-- No more materials modal - integrated into details -->
 
 <!-- Image Preview Lightbox -->
-<div x-show="previewFile" x-cloak style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; display:flex; align-items:center; justify-content:center; padding:40px;">
-    <button @click="previewFile = null" style="position:fixed; top:20px; right:25px; background:rgba(255,255,255,0.1); border:none; color:white; font-size:40px; width:50px; height:50px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">&times;</button>
-    <div style="max-width:100%; max-height:100%; position:relative;">
-        <img :src="previewFile" style="max-width:100%; max-height:85vh; border-radius:12px; box-shadow:0 25px 50px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
-        <div style="margin-top:20px; text-align:center;">
-            <a :href="previewFile" download style="background:white; color:#1f2937; padding:10px 24px; border-radius:8px; text-decoration:none; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px;">
+<div x-show="previewFile" x-cloak style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; box-sizing:border-box;">
+    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <img :src="previewFile" style="max-width:100%; max-height:calc(100vh - 160px); border-radius:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); object-fit:contain;">
+        <div style="margin-top:24px; display:flex; justify-content:center; gap:16px;">
+            <button @click="previewFile = null" type="button" style="background:#ef4444; color:white; padding:12px 32px; border-radius:8px; border:none; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                Close Original Image
+            </button>
+            <a :href="previewFile" download style="background:white; color:#1f2937; padding:12px 24px; border-radius:8px; border:none; text-decoration:none; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Download Artwork
             </a>

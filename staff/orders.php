@@ -11,7 +11,9 @@ require_once __DIR__ . '/../includes/branch_context.php';
 require_role('Staff');
 require_once __DIR__ . '/../includes/staff_pending_check.php';
 
-$staffBranchId = printflow_branch_filter_for_user() ?? (int)($_SESSION['branch_id'] ?? 1);
+$branch_ctx    = init_branch_context(false);
+$staffBranchId = (int)$branch_ctx['selected_branch_id'];
+$branchName    = $branch_ctx['branch_name'];
 
 // Handle status update via AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
@@ -88,22 +90,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
 // Get filter parameters
 $status_filter = $_GET['status'] ?? '';
 $date_from_filter = $_GET['date_from'] ?? '';
-$date_to_filter = $_GET['date_to'] ?? '';
-$customer_filter = $_GET['customer'] ?? '';
-$product_type_filter = $_GET['product_type'] ?? '';
+$date_to_filter        = $_GET['date_to']   ?? '';
+$customer_filter       = $_GET['customer']  ?? '';
+$product_type_filter   = $_GET['product_type']   ?? '';
 $payment_status_filter = $_GET['payment_status'] ?? '';
-$min_price_filter = $_GET['min_price'] ?? '';
-$max_price_filter = $_GET['max_price'] ?? '';
+$min_price_filter      = $_GET['min_price']      ?? '';
+$max_price_filter      = $_GET['max_price']      ?? '';
+$sort_by               = $_GET['sort']           ?? 'newest';
 
 $active_filters = [];
-if ($status_filter !== '') $active_filters['status'] = $status_filter;
-if ($date_from_filter !== '') $active_filters['date_from'] = $date_from_filter;
-if ($date_to_filter !== '') $active_filters['date_to'] = $date_to_filter;
-if ($customer_filter !== '') $active_filters['customer'] = $customer_filter;
-if ($product_type_filter !== '') $active_filters['product_type'] = $product_type_filter;
+if ($status_filter !== '')         $active_filters['status']         = $status_filter;
+if ($date_from_filter !== '')      $active_filters['date_from']      = $date_from_filter;
+if ($date_to_filter !== '')        $active_filters['date_to']        = $date_to_filter;
+if ($customer_filter !== '')       $active_filters['customer']       = $customer_filter;
+if ($product_type_filter !== '')   $active_filters['product_type']   = $product_type_filter;
 if ($payment_status_filter !== '') $active_filters['payment_status'] = $payment_status_filter;
-if ($min_price_filter !== '') $active_filters['min_price'] = $min_price_filter;
-if ($max_price_filter !== '') $active_filters['max_price'] = $max_price_filter;
+if ($min_price_filter !== '')      $active_filters['min_price']      = $min_price_filter;
+if ($max_price_filter !== '')      $active_filters['max_price']      = $max_price_filter;
+if ($sort_by !== 'newest')         $active_filters['sort']           = $sort_by;
 
 $sql_conditions = " AND o.order_type = 'product'";
 $params = [];
@@ -177,12 +181,33 @@ $total_result = db_query($count_sql, $types, $params);
 $total_items = $total_result[0]['total'] ?? 0;
 $total_pages = ceil($total_items / $items_per_page);
 
-$sql .= " ORDER BY o.order_date DESC LIMIT ? OFFSET ?";
+$sort_clause = match($sort_by) {
+    'oldest' => " ORDER BY o.order_date ASC",
+    'az'     => " ORDER BY customer_name ASC",
+    'za'     => " ORDER BY customer_name DESC",
+    default  => " ORDER BY o.order_date DESC"
+};
+
+$sql .= $sort_clause . " LIMIT ? OFFSET ?";
 $params[] = $items_per_page;
 $params[] = $offset;
 $types .= 'ii';
 
 $orders = db_query($sql, $types, $params);
+
+// Get KPI statistics (branch-specific)
+// Note: o.order_type = 'product' filter from line 108 is preserved in $sql_conditions
+$kpi_conditions = " AND o.order_type = 'product'";
+$kpi_types = '';
+$kpi_params = [];
+$kpi_conditions .= branch_where('o', $staffBranchId, $kpi_types, $kpi_params);
+
+$total_count      = db_query("SELECT COUNT(*) as count FROM orders o WHERE 1=1 {$kpi_conditions}", $kpi_types ?: null, $kpi_params ?: null)[0]['count'] ?? 0;
+// Pending include 'Pending' and 'Pending Review' as per line 116-117 logic
+$pending_count    = db_query("SELECT COUNT(*) as count FROM orders o WHERE (o.status = 'Pending' OR o.status = 'Pending Review') {$kpi_conditions}", $kpi_types ?: null, $kpi_params ?: null)[0]['count'] ?? 0;
+$processing_count = db_query("SELECT COUNT(*) as count FROM orders o WHERE (o.status = 'Processing' OR o.status = 'In Production' OR o.status = 'Printing') {$kpi_conditions}", $kpi_types ?: null, $kpi_params ?: null)[0]['count'] ?? 0;
+$ready_count      = db_query("SELECT COUNT(*) as count FROM orders o WHERE o.status = 'Ready for Pickup' {$kpi_conditions}", $kpi_types ?: null, $kpi_params ?: null)[0]['count'] ?? 0;
+$completed_count  = db_query("SELECT COUNT(*) as count FROM orders o WHERE o.status = 'Completed' {$kpi_conditions}", $kpi_types ?: null, $kpi_params ?: null)[0]['count'] ?? 0;
 
 // Handle specific AJAX request for drawing the table
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
@@ -192,40 +217,41 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     } else {
         foreach ($orders as $order) {
             ?>
-            <tr class="staff-order-row" onclick="openOrderModal(<?php echo $order['order_id']; ?>)" style="border-bottom: 1px solid #f1f5f9; cursor: pointer;">
-                <td style="padding: 16px 12px; vertical-align: middle;">
-                    <div style="font-weight: 700; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                        #<?php echo $order['order_id']; ?>
-                        <?php 
-                        $unread = get_unread_chat_count($order['order_id'], 'User');
-                        if ($unread > 0): 
-                        ?>
-                            <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; animation: pulse 2s infinite;" title="<?php echo $unread; ?> new messages from customer">
-                                <?php echo $unread; ?>
-                            </span>
+            <tr class="staff-order-row" onclick="openOrderModal(<?php echo $order['order_id']; ?>)">
+                <td>
+                    <div class="order-info-cell">
+                        <div class="order-id-wrap">
+                            #<?php echo $order['order_id']; ?>
+                            <?php 
+                            $unread = get_unread_chat_count($order['order_id'], 'User');
+                            if ($unread > 0): 
+                            ?>
+                                <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; animation: pulse 2s infinite;" title="<?php echo $unread; ?> new messages from customer">
+                                    <?php echo $unread; ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($order['item_names'])): ?>
+                            <div class="order-items-sub">
+                                <?php 
+                                    $display_items = $order['item_names'];
+                                    if ($display_items === 'Custom Product' || $display_items === 'Custom Order') {
+                                        $display_items = get_service_name_from_customization($order['first_item_customization'] ?? '{}', $display_items);
+                                        $c_json = json_decode($order['first_item_customization'] ?? '{}', true);
+                                        if (!empty($c_json['product_type']) && $c_json['product_type'] !== $display_items) {
+                                            $display_items .= " (" . $c_json['product_type'] . ")";
+                                        }
+                                    }
+                                    echo htmlspecialchars(strlen($display_items) > 100 ? substr($display_items, 0, 100) . '...' : $display_items); 
+                                ?>
+                            </div>
                         <?php endif; ?>
                     </div>
-                    <?php if (!empty($order['item_names'])): ?>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
-                            <?php 
-                                $display_items = $order['item_names'];
-                                if ($display_items === 'Custom Product' || $display_items === 'Custom Order') {
-                                    $display_items = get_service_name_from_customization($order['first_item_customization'] ?? '{}', $display_items);
-                                    
-                                    $c_json = json_decode($order['first_item_customization'] ?? '{}', true);
-                                    if (!empty($c_json['product_type']) && $c_json['product_type'] !== $display_items) {
-                                        $display_items .= " (" . $c_json['product_type'] . ")";
-                                    }
-                                }
-                                echo htmlspecialchars(strlen($display_items) > 100 ? substr($display_items, 0, 100) . '...' : $display_items); 
-                            ?>
-                        </div>
-                    <?php endif; ?>
                 </td>
-                <td style="padding: 16px 12px; vertical-align: middle; color: #334155; font-weight: 500;"><?php echo htmlspecialchars($order['customer_name']); ?></td>
-                <td style="padding: 16px 12px; vertical-align: middle; color: #64748b; font-size: 13px;"><?php echo format_date($order['order_date']); ?></td>
-                <td style="padding: 16px 12px; vertical-align: middle; font-weight: 700; color: #1e293b;"><?php echo format_currency($order['total_amount']); ?></td>
-                <td style="padding: 16px 12px; vertical-align: middle;">
+                <td style="color: #334155; font-weight: 500;"><?php echo htmlspecialchars($order['customer_name']); ?></td>
+                <td style="color: #64748b; font-size: 13px;"><?php echo format_date($order['order_date']); ?></td>
+                <td style="font-weight: 700; color: #1e293b;"><?php echo format_currency($order['total_amount']); ?></td>
+                <td>
                     <?php echo status_badge($order['status'], 'order'); ?>
                     <?php if (($order['design_status'] ?? '') === 'Revision Submitted'): ?>
                         <div style="margin-top: 6px;">
@@ -236,8 +262,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <div style="margin-top:6px;"><?php echo status_badge($order['payment_status'], 'payment'); ?></div>
                     <?php endif; ?>
                 </td>
-                <td style="padding: 16px 12px; vertical-align: middle; text-align: right;">
-                    <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                <td>
+                    <div class="action-cell">
                         <button
                             onclick="event.stopPropagation(); window.openStaffOrderManage(<?php echo $order['order_id']; ?>, '<?php echo addslashes($order['status']); ?>');"
                             class="btn-staff-action btn-staff-action-emerald"
@@ -260,7 +286,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $pagination = get_pagination_links($current_page, $total_pages, $active_filters);
     
     header('Content-Type: application/json');
-    echo json_encode(['tbody' => $tbody, 'pagination' => $pagination, 'total' => $total_items]);
+    echo json_encode([
+        'tbody'      => $tbody, 
+        'pagination' => $pagination, 
+        'total'      => number_format($total_items),
+        'badge'      => count(array_filter([$status_filter, $customer_filter, $date_from_filter, $date_to_filter, $product_type_filter, $payment_status_filter, $min_price_filter, $max_price_filter], function($v) { return $v !== null && $v !== ''; }))
+    ]);
     exit;
 }
 
@@ -277,6 +308,186 @@ $page_title = 'Orders - Staff';
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
     <link rel="stylesheet" href="/printflow/public/assets/css/chat.css">
     <style>
+        /* KPI Row - matches reports page */
+        .kpi-row { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:24px; }
+        @media (max-width:768px) { .kpi-row { grid-template-columns:repeat(2, 1fr); } }
+        .kpi-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; }
+        .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+        .kpi-card.amber::before { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+        .kpi-card.blue::before { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+        .kpi-card.emerald::before { background:linear-gradient(90deg,#059669,#34d399); }
+        .kpi-card.indigo::before { background:linear-gradient(90deg,#6366f1,#818cf8); }
+        .kpi-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#9ca3af; margin-bottom:6px; }
+        .kpi-sub { font-size:12px; color:#6b7280; margin-top:4px; }
+
+        /* ── Toolbar Buttons (Sort / Filter) ─── */
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .toolbar-btn:hover { border-color: #9ca3af; background: #f9fafb; }
+        .toolbar-btn.active { border-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+        .toolbar-btn svg { flex-shrink: 0; }
+
+        /* ── Filter Panel ─── */
+        .filter-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 340px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            z-index: 200;
+            overflow: hidden;
+        }
+        .filter-panel-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+        }
+        .filter-section {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .filter-section:last-of-type { border-bottom: none; }
+        .filter-section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .filter-section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .filter-reset-link {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0d9488;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .filter-reset-link:hover { text-decoration: underline; }
+        .filter-input {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            font-size: 13px;
+            padding: 0 10px;
+            color: #1f2937;
+            box-sizing: border-box;
+            transition: border-color 0.15s;
+        }
+        .filter-input:focus { outline: none; border-color: #0d9488; }
+        .filter-date-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .filter-date-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+        .filter-select {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            font-size: 13px;
+            padding: 0 10px;
+            color: #1f2937;
+            background: #fff;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .filter-select:focus { outline: none; border-color: #0d9488; }
+
+        /* ── Sort Dropdown ─── */
+        .sort-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 200px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            z-index: 200;
+            padding: 6px 0;
+            overflow: hidden;
+        }
+        .sort-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            font-size: 13px;
+            color: #374151;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .sort-option:hover { background: #f9fafb; }
+        .sort-option.selected { color: #0d9488; font-weight: 600; background: #f0fdfa; }
+        .sort-option .check { margin-left: auto; color: #0d9488; }
+
+        /* ── Active filter badge ─── */
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: #0d9488;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        /* ── Table improvements ─── */
+        .staff-orders-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: auto; }
+        .staff-orders-table th {
+            padding: 12px 16px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #6b7280;
+            text-align: left;
+            border-bottom: 2px solid #e5e7eb !important;
+            background: #f8fafc !important;
+            white-space: nowrap;
+        }
+        .staff-orders-table td {
+            padding: 16px 12px !important;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .staff-orders-table tbody tr {
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .staff-orders-table tbody tr:hover td { background: #f9fafb !important; }
+
+        .action-cell { display: flex; justify-content: flex-end; gap: 4px; }
+        .order-info-cell { display: flex; flex-direction: column; gap: 4px; }
+        .order-id-wrap { font-weight: 700; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .order-items-sub { font-size: 12px; color: #64748b; font-weight: 600; }
+
         /* ── Order Detail Modal ─────────────────────────────────── */
         #orderModal {
             position: fixed; inset: 0; z-index: 9999;
@@ -515,36 +726,110 @@ $page_title = 'Orders - Staff';
     }
 
     // ── AJAX Table Updates ───────────────────────────────
-    function updateTable() {
-        var form = document.getElementById('filterForm');
-        var container = document.querySelector('.staff-orders-table tbody');
-        if (!form || !container) return;
+    var searchDebounceTimer = null;
 
-        var params = new URLSearchParams(new FormData(form));
-        params.set('ajax', '1');
-        
+    function buildFilterURL(overrides = {}, isAjax = false) {
+        const params = new URLSearchParams(window.location.search);
+        const fields = {
+            status:         () => document.getElementById('fp_status')?.value         || '',
+            customer:       () => document.getElementById('fp_customer')?.value       || '',
+            date_from:      () => document.getElementById('fp_date_from')?.value      || '',
+            date_to:        () => document.getElementById('fp_date_to')?.value        || '',
+            product_type:   () => document.getElementById('fp_product_type')?.value   || '',
+            payment_status: () => document.getElementById('fp_payment_status')?.value || '',
+            min_price:      () => document.getElementById('fp_min_price')?.value      || '',
+            max_price:      () => document.getElementById('fp_max_price')?.value      || '',
+        };
+        for (const [key, getter] of Object.entries(fields)) {
+            let val = (overrides[key] !== undefined) ? overrides[key] : getter();
+            if (val) params.set(key, val);
+            else params.delete(key);
+        }
+        if (overrides.sort !== undefined) {
+            if (overrides.sort && overrides.sort !== 'newest') params.set('sort', overrides.sort);
+            else params.delete('sort');
+        }
+        if (isAjax) params.set('ajax', '1');
+        else params.delete('ajax');
+        params.delete('page');
+        return window.location.pathname + '?' + params.toString();
+    }
+
+    async function fetchUpdatedTable(overrides = {}) {
+        const url = buildFilterURL(overrides, true);
+        const container = document.querySelector('.staff-orders-table tbody');
+        if (!container) return;
+
         container.style.opacity = '0.5';
         container.style.pointerEvents = 'none';
 
-        fetch('orders.php?' + params.toString())
-            .then(r => r.json())
-            .then(data => {
-                container.innerHTML = data.tbody;
-                var pag = document.querySelector('.pagination-container');
-                if (pag && data.pagination) {
-                    pag.outerHTML = data.pagination;
-                }
-                container.style.opacity = '1';
-                container.style.pointerEvents = 'all';
-                // Update URL without reload
-                window.history.pushState({}, '', 'orders.php?' + params.toString().replace('&ajax=1', ''));
-            })
-            .catch(err => {
-                console.error('AJAX Error:', err);
-                container.style.opacity = '1';
-                container.style.pointerEvents = 'all';
-            });
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            
+            container.innerHTML = data.tbody;
+            
+            const pag = document.querySelector('.pagination-container');
+            if (pag && data.pagination) pag.outerHTML = data.pagination;
+            
+            const bc = document.getElementById('filterBadgeContainer');
+            if (bc) bc.innerHTML = data.badge > 0 ? `<span class="filter-badge">${data.badge}</span>` : '';
+            
+            const countEl = document.getElementById('totalOrdersCount');
+            if (countEl) countEl.textContent = data.total;
+
+            window.dispatchEvent(new CustomEvent('filter-badge-update', { detail: { badge: data.badge } }));
+            
+            const displayUrl = buildFilterURL(overrides, false);
+            window.history.replaceState({ path: displayUrl }, '', displayUrl);
+        } catch (e) { console.error('Error updating table:', e); }
+        
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'all';
     }
+
+    function applyFilters(resetAll = false) {
+        if (resetAll) {
+            window.location.href = window.location.pathname;
+        } else { fetchUpdatedTable(); }
+    }
+
+    function applySortFilter(sortKey) {
+        window.dispatchEvent(new CustomEvent('sort-changed', { detail: { sortKey } }));
+        fetchUpdatedTable({ sort: sortKey });
+    }
+
+    function resetFilterField(fields) {
+        fields.forEach(f => {
+            const el = document.getElementById('fp_' + f);
+            if (el) el.value = '';
+        });
+        fetchUpdatedTable();
+    }
+
+    function ordersPage() {
+        return {
+            filterOpen: false,
+            sortOpen:   false,
+            activeSort: '<?php echo $sort_by; ?>',
+            hasActiveFilters: <?php echo count($active_filters) > 0 ? 'true' : 'false'; ?>,
+            
+            init() {
+                window.addEventListener('filter-badge-update', e => { this.hasActiveFilters = (e.detail.badge > 0); });
+                window.addEventListener('sort-changed', e => { this.activeSort = e.detail.sortKey; this.sortOpen = false; });
+                
+                // Add debounced search
+                const searchEl = document.getElementById('fp_customer');
+                if (searchEl) {
+                    searchEl.addEventListener('input', () => {
+                        clearTimeout(searchDebounceTimer);
+                        searchDebounceTimer = setTimeout(() => { applyFilters(); }, 500);
+                    });
+                }
+            }
+        };
+    }
+    window.ordersPage = ordersPage;
 
     // ── Open / close order modal ─────────────────────────
     var currentOrderId = null;
@@ -789,37 +1074,6 @@ $page_title = 'Orders - Staff';
             if (e.key === 'Escape') closeOrderModal();
         });
 
-        // Filter form auto-submit via AJAX
-        var filterForm = document.getElementById('filterForm');
-        if (filterForm) {
-            filterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                updateTable();
-            });
-
-            // Auto-submit on select or typing (debounce optional)
-            var inputs = Array.from(filterForm.querySelectorAll('select, input:not([type="date"])'));
-            // Also include the header search bar which is outside the form
-            var headerSearch = document.querySelector('input[name="customer"][form="filterForm"]');
-            if (headerSearch && !inputs.includes(headerSearch)) inputs.push(headerSearch);
-
-            inputs.forEach(input => {
-                input.addEventListener('change', updateTable);
-                if (input.tagName === 'INPUT' && (input.type === 'text' || input.type === 'search')) {
-                    // Quick input delay
-                    var timeout;
-                    input.addEventListener('input', function() {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(updateTable, 300);
-                    });
-                }
-            });
-            // Date inputs should usually just use change
-            filterForm.querySelectorAll('input[type="date"]').forEach(input => {
-                input.addEventListener('change', updateTable);
-            });
-        }
-
         // Revision form: combine reason fields
         var revForm = document.getElementById('revForm');
         if (revForm) {
@@ -862,193 +1116,250 @@ $page_title = 'Orders - Staff';
 
     <!-- Main Content -->
     <div class="main-content">
-        <header style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+        <header>
             <h1 class="page-title">Orders Management</h1>
-            <div style="flex: 1; max-width: 400px; position: relative;">
-                <input type="text" form="filterForm" name="customer" value="<?php echo htmlspecialchars($customer_filter); ?>" placeholder="Search Order # or Customer..." 
-                       style="width: 100%; padding: 10px 16px 10px 40px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;"
-                       onfocus="this.style.borderColor='#06A1A1'; this.style.boxShadow='0 0 0 3px rgba(6,161,161,0.1)';"
-                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';">
-                <div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
+            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
+                Branch: <?php echo htmlspecialchars($branchName); ?>
             </div>
         </header>
 
-        <main>
+        <main x-data="ordersPage()" x-init="init()">
             <?php if (isset($_GET['success'])): ?>
                 <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px;">
                     Order status updated successfully!
                 </div>
             <?php endif; ?>
 
-            <!-- Search and Filter Bar -->
-            <div class="card mb-6 overflow-visible" style="margin-bottom: 24px; position: relative; z-index: 20;">
-                <form method="GET" id="filterForm" class="filter-form">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                        <!-- Date Range -->
-                        <div class="form-group">
-                            <label class="form-label" style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">Date Range</label>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="date" name="date_from" value="<?php echo htmlspecialchars($date_from_filter); ?>" class="input-field" style="font-size: 12px;">
-                                <span style="color: #94a3b8;">-</span>
-                                <input type="date" name="date_to" value="<?php echo htmlspecialchars($date_to_filter); ?>" class="input-field" style="font-size: 12px;">
+            <!-- KPI Summary Row -->
+            <div class="kpi-row">
+                <div class="kpi-card indigo">
+                    <div class="kpi-label">Total Orders</div>
+                    <div class="kpi-value" id="totalOrdersCount"><?php echo number_format($total_count); ?></div>
+                    <div class="kpi-sub"><?php echo $completed_count; ?> completed</div>
+                </div>
+                <div class="kpi-card amber">
+                    <div class="kpi-label">Pending Orders</div>
+                    <div class="kpi-value"><?php echo $pending_count; ?></div>
+                    <div class="kpi-sub">Awaiting action</div>
+                </div>
+                <div class="kpi-card blue">
+                    <div class="kpi-label">Processing</div>
+                    <div class="kpi-value"><?php echo $processing_count; ?></div>
+                    <div class="kpi-sub">In progress</div>
+                </div>
+                <div class="kpi-card emerald">
+                    <div class="kpi-label">Ready for Pickup</div>
+                    <div class="kpi-value"><?php echo $ready_count; ?></div>
+                    <div class="kpi-sub">Awaiting customer</div>
+                </div>
+            </div>
+
+            <!-- Orders List & Filters -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+                    <h3 style="font-size:16px;font-weight:700;color:#1f2937;margin:0;">
+                        Orders List
+                    </h3>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <!-- Search Input -->
+                        <div style="position: relative; width: 260px;">
+                            <input type="text" id="fp_customer" placeholder="Search Order # or Customer..." value="<?php echo htmlspecialchars($customer_filter); ?>"
+                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
+                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             </div>
                         </div>
 
-                        <!-- Status Filter -->
-                        <div class="form-group">
-                            <label class="form-label" style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">Status</label>
-                            <select name="status" class="input-field">
-                                <option value="">All Statuses</option>
-                                <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending (New)</option>
-                                <option value="Approved" <?php echo $status_filter === 'Approved' ? 'selected' : ''; ?>>Approved</option>
-                                <option value="To Pay" <?php echo $status_filter === 'To Pay' ? 'selected' : ''; ?>>To Pay</option>
-                                <option value="Downpayment Submitted" <?php echo $status_filter === 'Downpayment Submitted' ? 'selected' : ''; ?>>Downpayment Submitted</option>
-                                <option value="Pending Verification" <?php echo $status_filter === 'Pending Verification' ? 'selected' : ''; ?>>Pending Verification</option>
-                                <option value="Processing" <?php echo $status_filter === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                                <option value="Printing" <?php echo $status_filter === 'Printing' ? 'selected' : ''; ?>>Printing</option>
-                                <option value="In Production" <?php echo $status_filter === 'In Production' ? 'selected' : ''; ?>>In Production</option>
-                                <option value="For Revision" <?php echo $status_filter === 'For Revision' ? 'selected' : ''; ?>>For Revision</option>
-                                <option value="Ready for Pickup" <?php echo $status_filter === 'Ready for Pickup' ? 'selected' : ''; ?>>Ready for Pickup</option>
-                                <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                                <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                            </select>
-                        </div>
-
-                        <!-- More Filters Toggle -->
-                        <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
-                            <button type="button" onclick="toggleAdvancedFilters()" class="btn-secondary" style="padding: 10px; min-width: 44px; flex: 1; gap: 8px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        <!-- Sort Button -->
+                        <div style="position:relative;">
+                            <button class="toolbar-btn" :class="{ active: sortOpen }" @click="sortOpen = !sortOpen; filterOpen = false" style="height:38px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/>
                                 </svg>
-                                Advanced Filters
+                                Sort by
                             </button>
-                            <a href="orders.php" class="btn-secondary" title="Clear Filters" style="padding: 10px; min-width: 44px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </a>
+                            <div class="sort-dropdown" x-show="sortOpen" x-cloak @click.outside="sortOpen = false">
+                                <?php
+                                $sorts = [
+                                    'newest' => 'Newest to Oldest',
+                                    'oldest' => 'Oldest to Newest',
+                                    'az'     => 'A → Z',
+                                    'za'     => 'Z → A',
+                                ];
+                                foreach ($sorts as $key => $label): ?>
+                                <div class="sort-option" 
+                                     :class="{ 'selected': activeSort === '<?php echo $key; ?>' }"
+                                     @click="applySortFilter('<?php echo $key; ?>')">
+                                    <?php echo htmlspecialchars($label); ?>
+                                    <svg x-show="activeSort === '<?php echo $key; ?>'" class="check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Advanced Filters (Hidden by default) -->
-                    <div id="advancedFilters" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #e2e8f0; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                        <div class="form-group">
-                            <label class="form-label" style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">Product/Service Type</label>
-                            <input type="text" name="product_type" value="<?php echo htmlspecialchars($product_type_filter); ?>" placeholder="e.g. Stickers, T-Shirt..." class="input-field">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">Payment Status</label>
-                            <select name="payment_status" class="input-field">
-                                <option value="">Any Payment Status</option>
-                                <option value="Unpaid" <?php echo $payment_status_filter === 'Unpaid' ? 'selected' : ''; ?>>Unpaid</option>
-                                <option value="Partial" <?php echo $payment_status_filter === 'Partial' ? 'selected' : ''; ?>>Partial</option>
-                                <option value="Paid" <?php echo $payment_status_filter === 'Paid' ? 'selected' : ''; ?>>Paid</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">Price Range</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="number" name="min_price" value="<?php echo htmlspecialchars($min_price_filter); ?>" placeholder="Min" class="input-field">
-                                <input type="number" name="max_price" value="<?php echo htmlspecialchars($max_price_filter); ?>" placeholder="Max" class="input-field">
+                        <!-- Filter Button -->
+                        <div style="position:relative;">
+                            <button class="toolbar-btn" :class="{ active: filterOpen || hasActiveFilters }" @click="filterOpen = !filterOpen; sortOpen = false" style="height:38px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                                </svg>
+                                Filter
+                                <span id="filterBadgeContainer">
+                                    <?php if (count($active_filters) > 0): ?>
+                                    <span class="filter-badge"><?php echo count($active_filters); ?></span>
+                                    <?php endif; ?>
+                                </span>
+                            </button>
+
+                            <!-- Filter Panel -->
+                            <div class="filter-panel" x-show="filterOpen" x-cloak @click.outside="filterOpen = false">
+                                <div class="filter-panel-header">Filter</div>
+
+                                <!-- Date Range -->
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Date range</span>
+                                        <button class="filter-reset-link" @click="resetFilterField(['date_from','date_to'])">Reset</button>
+                                    </div>
+                                    <div class="filter-date-row">
+                                        <div>
+                                            <div class="filter-date-label">From:</div>
+                                            <input type="date" id="fp_date_from" class="filter-input" value="<?php echo htmlspecialchars($date_from_filter); ?>" @change="applyFilters()">
+                                        </div>
+                                        <div>
+                                            <div class="filter-date-label">To:</div>
+                                            <input type="date" id="fp_date_to" class="filter-input" value="<?php echo htmlspecialchars($date_to_filter); ?>" @change="applyFilters()">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Status</span>
+                                        <button class="filter-reset-link" @click="resetFilterField(['status'])">Reset</button>
+                                    </div>
+                                    <select id="fp_status" class="filter-select" @change="applyFilters()">
+                                        <option value="">All statuses</option>
+                                        <option value="Pending"               <?php echo $status_filter === 'Pending'               ? 'selected' : ''; ?>>Pending (New)</option>
+                                        <option value="Approved"              <?php echo $status_filter === 'Approved'              ? 'selected' : ''; ?>>Approved</option>
+                                        <option value="To Pay"                <?php echo $status_filter === 'To Pay'                ? 'selected' : ''; ?>>To Pay</option>
+                                        <option value="Downpayment Submitted" <?php echo $status_filter === 'Downpayment Submitted' ? 'selected' : ''; ?>>ToCheck</option>
+                                        <option value="Pending Verification"  <?php echo $status_filter === 'Pending Verification'  ? 'selected' : ''; ?>>Pending Verification</option>
+                                        <option value="Processing"            <?php echo $status_filter === 'Processing'            ? 'selected' : ''; ?>>Processing</option>
+                                        <option value="Printing"              <?php echo $status_filter === 'Printing'              ? 'selected' : ''; ?>>Printing</option>
+                                        <option value="In Production"         <?php echo $status_filter === 'In Production'         ? 'selected' : ''; ?>>In Production</option>
+                                        <option value="For Revision"          <?php echo $status_filter === 'For Revision'          ? 'selected' : ''; ?>>For Revision</option>
+                                        <option value="Ready for Pickup"      <?php echo $status_filter === 'Ready for Pickup'      ? 'selected' : ''; ?>>Ready for Pickup</option>
+                                        <option value="Completed"             <?php echo $status_filter === 'Completed'             ? 'selected' : ''; ?>>Completed</option>
+                                        <option value="Cancelled"             <?php echo $status_filter === 'Cancelled'             ? 'selected' : ''; ?>>Cancelled</option>
+                                    </select>
+                                </div>
+
+                                <!-- Payment Status -->
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Payment Status</span>
+                                        <button class="filter-reset-link" @click="resetFilterField(['payment_status'])">Reset</button>
+                                    </div>
+                                    <select id="fp_payment_status" class="filter-select" @change="applyFilters()">
+                                        <option value="">Any Payment Status</option>
+                                        <option value="Unpaid"  <?php echo $payment_status_filter === 'Unpaid'  ? 'selected' : ''; ?>>Unpaid</option>
+                                        <option value="Partial" <?php echo $payment_status_filter === 'Partial' ? 'selected' : ''; ?>>Partial</option>
+                                        <option value="Paid"    <?php echo $payment_status_filter === 'Paid'    ? 'selected' : ''; ?>>Paid</option>
+                                    </select>
+                                </div>
+
+                                <!-- Price Range -->
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Price Range</span>
+                                        <button class="filter-reset-link" @click="resetFilterField(['min_price','max_price'])">Reset</button>
+                                    </div>
+                                    <div class="filter-date-row">
+                                        <input type="number" id="fp_min_price" class="filter-input" placeholder="Min" value="<?php echo htmlspecialchars($min_price_filter); ?>" @change="applyFilters()">
+                                        <input type="number" id="fp_max_price" class="filter-input" placeholder="Max" value="<?php echo htmlspecialchars($max_price_filter); ?>" @change="applyFilters()">
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="filter-actions">
+                                    <button class="filter-btn-reset" style="width: 100%;" @click="applyFilters(true)">Reset all filters</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </form>
-            </div>
-
-            <!-- Quick Filter Buttons -->
-            <style>
-                .pf-quick-filters::-webkit-scrollbar { display: none; }
-            </style>
-            <div class="pf-quick-filters" style="display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px; -ms-overflow-style: none; scrollbar-width: none;">
-                <?php
-                $quick_statuses = [
-                    ['val' => '', 'label' => 'All Orders', 'icon' => '📦'],
-                    ['val' => 'Pending', 'label' => 'New / Pending', 'icon' => '⏳'],
-                    ['val' => 'Approved', 'label' => 'Approved', 'icon' => '✅'],
-                    ['val' => 'Processing', 'label' => 'Processing', 'icon' => '⚙️'],
-                    ['val' => 'Ready for Pickup', 'label' => 'Ready', 'icon' => '🏁'],
-                    ['val' => 'Downpayment Submitted', 'label' => 'ToCheck', 'icon' => '💰'],
-                ];
-                foreach ($quick_statuses as $qs):
-                    $is_active = $status_filter === $qs['val'];
-                ?>
-                <a href="?status=<?php echo urlencode($qs['val']); ?>" 
-                   style="text-decoration: none; display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 99px; font-size: 13px; font-weight: 700; transition: all 0.2s; 
-                          <?php echo $is_active ? 'background: #06A1A1; color: white; box-shadow: 0 4px 12px rgba(6,161,161,0.3);' : 'background: white; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
-                    <?php echo $qs['label']; ?>
-                </a>
-                <?php endforeach; ?>
-            </div>
+                </div>
 
             <!-- Orders Table -->
             <div class="card">
                 <div class="overflow-x-auto">
                     <table class="staff-orders-table">
                         <thead>
-                            <tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc;">
-                                <th style="padding: 14px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; font-weight: 800;">Order #</th>
-                                <th style="padding: 14px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; font-weight: 800;">Customer</th>
-                                <th style="padding: 14px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; font-weight: 800;">Date</th>
-                                <th style="padding: 14px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; font-weight: 800;">Total</th>
-                                <th style="padding: 14px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; font-weight: 800;">Status</th>
-                                <th style="padding: 14px 12px; text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; font-weight: 800;">Actions</th>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($orders as $order): ?>
                                 <tr class="staff-order-row" onclick="openOrderModal(<?php echo $order['order_id']; ?>)" style="border-bottom: 1px solid #f1f5f9; cursor: pointer;">
-                                    <td style="padding: 16px 12px; vertical-align: middle;">
-                                        <div style="font-weight: 700; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                                            #<?php echo $order['order_id']; ?>
-                                            <?php 
-                                            $unread = get_unread_chat_count($order['order_id'], 'User');
-                                            if ($unread > 0): 
-                                            ?>
-                                                <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; animation: pulse 2s infinite;" title="<?php echo $unread; ?> new messages from customer">
-                                                    <?php echo $unread; ?>
-                                                </span>
+                                    <td>
+                                        <div class="order-info-cell">
+                                            <div class="order-id-wrap">
+                                                #<?php echo $order['order_id']; ?>
+                                                <?php 
+                                                $unread = get_unread_chat_count($order['order_id'], 'User');
+                                                if ($unread > 0): 
+                                                ?>
+                                                    <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; animation: pulse 2s infinite;" title="<?php echo $unread; ?> new messages from customer">
+                                                        <?php echo $unread; ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($order['item_names'])): ?>
+                                                <div class="order-items-sub">
+                                                    <?php 
+                                                        $display_items = $order['item_names'];
+                                                        if ($display_items === 'Custom Product' || $display_items === 'Custom Order') {
+                                                            $display_items = get_service_name_from_customization($order['first_item_customization'] ?? '{}', $display_items);
+                                                            $c_json = json_decode($order['first_item_customization'] ?? '{}', true);
+                                                            if (!empty($c_json['product_type']) && $c_json['product_type'] !== $display_items) {
+                                                                $display_items .= " (" . $c_json['product_type'] . ")";
+                                                            }
+                                                        }
+                                                        echo htmlspecialchars(strlen($display_items) > 100 ? substr($display_items, 0, 100) . '...' : $display_items); 
+                                                    ?>
+                                                </div>
                                             <?php endif; ?>
                                         </div>
-                                        <?php if (!empty($order['item_names'])): ?>
-                                            <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
-                                                <?php 
-                                                    $display_items = $order['item_names'];
-                                                    if ($display_items === 'Custom Product' || $display_items === 'Custom Order') {
-                                                        $display_items = get_service_name_from_customization($order['first_item_customization'] ?? '{}', $display_items);
-                                                        
-                                                        $c_json = json_decode($order['first_item_customization'] ?? '{}', true);
-                                                        if (!empty($c_json['product_type']) && $c_json['product_type'] !== $display_items) {
-                                                            $display_items .= " (" . $c_json['product_type'] . ")";
-                                                        }
-                                                    }
-                                                    echo htmlspecialchars(strlen($display_items) > 100 ? substr($display_items, 0, 100) . '...' : $display_items); 
-                                                ?>
-                                            </div>
-                                        <?php endif; ?>
                                     </td>
-                                    <td style="padding: 16px 12px; vertical-align: middle; color: #334155; font-weight: 500;"><?php echo htmlspecialchars($order['customer_name']); ?></td>
-                                    <td style="padding: 16px 12px; vertical-align: middle; color: #64748b; font-size: 13px;"><?php echo format_date($order['order_date']); ?></td>
-                                    <td style="padding: 16px 12px; vertical-align: middle; font-weight: 700; color: #1e293b;"><?php echo format_currency($order['total_amount']); ?></td>
-                                    <td style="padding: 16px 12px; vertical-align: middle;">
+                                    <td style="color: #334155; font-weight: 500;"><?php echo htmlspecialchars($order['customer_name']); ?></td>
+                                    <td style="color: #64748b; font-size: 13px;"><?php echo format_date($order['order_date']); ?></td>
+                                    <td style="font-weight: 700; color: #1e293b;"><?php echo format_currency($order['total_amount']); ?></td>
+                                    <td>
                                         <?php echo status_badge($order['status'], 'order'); ?>
                                         <?php if (($order['design_status'] ?? '') === 'Revision Submitted'): ?>
                                             <div style="margin-top: 6px;">
                                                 <?php echo status_badge('Revision Submitted', 'order'); ?>
                                             </div>
                                         <?php endif; ?>
+                                        <?php if (isset($order['payment_status'])): ?>
+                                            <div style="margin-top:6px;"><?php echo status_badge($order['payment_status'], 'payment'); ?></div>
+                                        <?php endif; ?>
                                     </td>
-                                    <td style="padding: 16px 12px; vertical-align: middle; text-align: right;">
-                                        <div style="display: flex; justify-content: flex-end; gap: 4px;">
-                                            <button onclick="openStaffOrderManage(<?php echo $order['order_id']; ?>, '<?php echo addslashes($order['status']); ?>')" 
+                                    <td>
+                                        <div class="action-cell">
+                                            <button onclick="event.stopPropagation(); openStaffOrderManage(<?php echo $order['order_id']; ?>, '<?php echo addslashes($order['status']); ?>')" 
                                                     class="btn-staff-action btn-staff-action-emerald">
                                                 Manage
                                             </button>
-                                            <a href="/printflow/staff/chats.php?order_id=<?php echo $order['order_id']; ?>" 
+                                            <a href="/printflow/staff/chats.php?order_id=<?php echo $order['order_id']; ?>"
+                                               onclick="event.stopPropagation();"
                                                class="btn-staff-action btn-staff-action-indigo">
                                                 Message
                                             </a>

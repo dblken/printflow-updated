@@ -63,17 +63,18 @@ if ($initials === '') {
         #main-header .pf-notif-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 320px; max-height: 480px; background: #0a2530; border: 1px solid rgba(83,197,224,0.3); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden; z-index: 100; }
         #main-header .pf-notif-dropdown.open { display: flex; }
         #main-header .pf-notif-header { padding: 12px 16px; border-bottom: 1px solid rgba(83,197,224,0.1); display: flex; align-items: center; justify-content: space-between; background: rgba(83,197,224,0.05); }
-        #main-header .pf-notif-header span { font-size: 0.8rem; font-weight: 800; color: #53c5e0; text-transform: uppercase; letter-spacing: 0.05em; }
+        #main-header .pf-notif-header span { font-size: 0.85rem; font-weight: 800; color: #53c5e0; letter-spacing: 0.02em; }
         #main-header .pf-notif-list { overflow-y: auto; flex: 1; }
         #main-header .pf-notif-item { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(83,197,224,0.05); transition: background 0.2s; text-decoration: none; align-items: flex-start; }
         #main-header .pf-notif-item:hover { background: rgba(83,197,224,0.08); }
         #main-header .pf-notif-item.unread { background: rgba(83,197,224,0.04); }
         #main-header .pf-notif-item-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(83,197,224,0.1); display: flex; align-items: center; justify-content: center; color: #53c5e0; flex-shrink: 0; }
         #main-header .pf-notif-item-content { flex: 1; min-width: 0; }
-        #main-header .pf-notif-item-text { font-size: 0.8rem; color: #eaf6fb; line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        #main-header .pf-notif-item-time { font-size: 0.7rem; color: rgba(83,197,224,0.6); font-weight: 600; }
+        #main-header .pf-notif-item-text { font-size: 0.85rem; font-weight: 400; color: #9fc4d4; line-height: 1.5; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        #main-header .pf-notif-item.unread .pf-notif-item-text { color: #eaf6fb; font-weight: 600; }
+        #main-header .pf-notif-item-time { font-size: 0.7rem; color: rgba(83,197,224,0.6); font-weight: 700; }
         #main-header .pf-notif-footer { padding: 10px; border-top: 1px solid rgba(83,197,224,0.1); text-align: center; }
-        #main-header .pf-notif-footer a { font-size: 0.75rem; color: #53c5e0; font-weight: 700; text-decoration: none; text-transform: uppercase; }
+        #main-header .pf-notif-footer a { font-size: 0.75rem; color: #53c5e0; font-weight: 700; text-decoration: none; }
         #main-header .pf-notif-empty { padding: 32px 16px; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; }
         #main-header .pf-avatar { width: 2.55rem; height: 2.55rem; border-radius: 9999px; overflow: hidden; border: 1px solid rgba(83,197,224,.45); background: linear-gradient(135deg, rgba(83,197,224,.24), rgba(50,161,196,.4)); display: inline-flex; align-items: center; justify-content: center; color: #e6f7fc; font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
         #main-header .pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -267,10 +268,7 @@ if ($initials === '') {
                             Products
                             <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-600 to-accent-purple group-hover:w-full transition-all duration-300"></span>
                         </a>
-                        <a href="<?php echo $base_url; ?>/customer/reviews.php" class="nav-link font-medium transition-colors duration-200 relative group" style="color:inherit;">
-                            Reviews
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-600 to-accent-purple group-hover:w-full transition-all duration-300"></span>
-                        </a>
+
                     <?php endif; ?>
                 <?php else: ?>
 <a href="<?php echo $url_index; ?>" class="nav-link font-medium transition-colors duration-200 relative group" style="color:inherit;">
@@ -354,13 +352,13 @@ if ($initials === '') {
                         <div data-pf-notif-menu class="pf-notif-dropdown">
                             <div class="pf-notif-header">
                                 <span>Notifications</span>
-                                <a href="?mark_all_read=1" style="font-size:0.65rem; color:#53c5e0; text-decoration:none;">Mark all read</a>
+                                <a href="<?php echo $base_url; ?>/<?php echo strtolower($user_type); ?>/notifications.php?action=mark_all_read" style="font-size:0.65rem; color:#53c5e0; text-decoration:none;">Mark all read</a>
                             </div>
                             <div class="pf-notif-list" data-pf-notif-list>
                                 <div class="pf-notif-empty">Loading notifications...</div>
                             </div>
                             <div class="pf-notif-footer">
-                                <a href="<?php echo $base_url; ?>/<?php echo strtolower($user_type); ?>/notifications.php">View All Notifications</a>
+                                <a href="<?php echo $base_url; ?>/<?php echo strtolower($user_type); ?>/notifications.php">View all notifications</a>
                             </div>
                         </div>
                     </div>
@@ -399,13 +397,7 @@ if ($initials === '') {
                                 </svg>
                                 Messages
                             </a>
-                            <a href="<?php echo $base_url; ?>/customer/reviews.php"
-                               class="pf-dropdown-link">
-                                <svg class="pf-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                </svg>
-                                Reviews
-                            </a>
+
                             <?php endif; ?>
                             <a href="<?php echo $base_url; ?>/<?php echo strtolower($user_type); ?>/profile.php"
                                class="pf-dropdown-link">
@@ -452,7 +444,7 @@ if ($initials === '') {
             <a class="pf-mobile-link" href="<?php echo $base_url; ?>/customer/products.php">Products</a>
             <a class="pf-mobile-link" href="<?php echo $base_url; ?>/customer/orders.php">Orders</a>
             <a class="pf-mobile-link" href="<?php echo $base_url; ?>/customer/messages.php">Messages</a>
-            <a class="pf-mobile-link" href="<?php echo $base_url; ?>/customer/reviews.php">Reviews</a>
+
         </div>
     </div>
     <?php endif; ?>

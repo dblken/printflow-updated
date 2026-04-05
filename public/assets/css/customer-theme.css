@@ -142,7 +142,7 @@ body.customer-theme #main-header .btn-gradient-primary,
 body.customer-theme #main-header .pf-auth-cta {
     background: var(--lp-accent) !important;
     border: 1px solid rgba(255, 255, 255, .12) !important;
-    border-radius: 0.5rem !important;
+    border-radius: 0 !important;
     color: #fff !important;
     font-weight: 600 !important;
     transition: box-shadow .25s, background .25s, transform 0.2s !important;
@@ -178,7 +178,7 @@ body.customer-theme #modal-cart-section {
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border: 1px solid var(--lp-border) !important;
-    border-radius: 1.25rem !important;
+    border-radius: 0 !important;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
     color: var(--lp-text) !important;
 }
@@ -227,7 +227,7 @@ body.customer-theme .action-button.btn-main {
     background: var(--lp-accent) !important;
     color: #ffffff !important;
     border: none !important;
-    border-radius: 0.75rem !important;
+    border-radius: 0 !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
@@ -257,7 +257,7 @@ body.customer-theme .action-button.btn-chat {
     background: transparent !important;
     color: var(--lp-accent-l) !important;
     border: 1px solid var(--lp-accent-l) !important;
-    border-radius: 0.75rem !important;
+    border-radius: 0 !important;
     text-decoration: none !important;
 }
 
@@ -408,7 +408,7 @@ body.customer-theme .input-shell {
 }
 ::-webkit-scrollbar-thumb {
     background: var(--lp-surface);
-    border-radius: 10px;
+    border-radius: 0 !important;
 }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--lp-accent);
@@ -482,7 +482,7 @@ body.customer-theme .shopee-image-section > div.sticky {
 body.customer-theme .shopee-main-image-wrap {
     background: rgba(255, 255, 255, 0.02) !important;
     border: 1px solid var(--lp-border) !important;
-    border-radius: 1.25rem !important;
+    border-radius: 0 !important;
     overflow: hidden !important;
     padding: 0 !important;
     position: sticky !important;
@@ -816,7 +816,7 @@ body.customer-theme .ct-product-card {
 body.customer-theme .ct-product-img,
 body.customer-theme .shopee-img {
     height: 180px !important;
-    border-radius: 0.75rem 0.75rem 0 0 !important;
+    border-radius: 0 !important;
     flex-shrink: 0 !important;
 }
 
@@ -852,7 +852,7 @@ body.customer-theme .shopee-btn {
     background: rgba(83, 197, 224, 0.1) !important;
     color: var(--lp-accent-l) !important;
     border: 1px solid var(--lp-accent-l) !important;
-    border-radius: 0.5rem !important;
+    border-radius: 0 !important;
     padding: 0.6rem !important;
     font-size: 0.8rem !important;
     font-weight: 700 !important;

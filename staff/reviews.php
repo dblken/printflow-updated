@@ -9,6 +9,10 @@ require_once __DIR__ . '/../includes/functions.php';
 require_role(['Staff', 'Admin']);
 require_once __DIR__ . '/../includes/staff_pending_check.php';
 
+require_once __DIR__ . '/../includes/branch_context.php';
+$branch_ctx = init_branch_context(false);
+$branchName = $branch_ctx['branch_name'] ?? 'Main Branch';
+
 // Filters
 $search = sanitize($_GET['search'] ?? '');
 $review_type = sanitize($_GET['review_type'] ?? '');
@@ -145,7 +149,104 @@ $page_title = 'Review Management - Staff';
     <title><?php echo htmlspecialchars($page_title); ?></title>
     <link rel="stylesheet" href="/printflow/public/assets/css/output.css">
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        .page-title { font-size: 24px; font-weight: 800; color: #1f2937; margin-bottom: 20px; }
+        .status-badge-pill { font-size: 10px; padding: 4px 10px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .table-text-main { font-size: 13px; font-weight: 600; color: #1f2937; }
+        .table-text-sub { font-size: 11px; color: #64748b; font-weight: 500; }
+        
+        /* ── Standard KPI Card Layout ── */
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .kpi-card.indigo { border-left: 4px solid #4f46e5; }
+        .kpi-card.amber { border-left: 4px solid #f59e0b; }
+        .kpi-card.blue { border-left: 4px solid #3b82f6; }
+        .kpi-card.emerald { border-left: 4px solid #10b981; }
+        .kpi-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .kpi-value { font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1.2; }
+        .kpi-sub { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; }
+
+        /* ── Toolbar Buttons ─── */
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            height: 38px;
+        }
+        .toolbar-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+        .toolbar-btn.active { background: #f0fdfa; border-color: #0d9488; color: #0d9488; }
+        
+        .filter-badge {
+            background: #0d9488;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
+            margin-left: 4px;
+        }
+
+        .sort-dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            z-index: 50;
+            padding: 8px;
+        }
+        .sort-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sort-option:hover { background: #f9fafb; color: #111827; }
+        .sort-option.selected { background: #f0fdfa; color: #0d9488; }
+
+        .filter-panel {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            width: 280px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            z-index: 50;
+            overflow: hidden;
+        }
+        .filter-panel-header { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: #1e293b; font-size: 14px; }
+        .filter-section { padding: 18px; border-bottom: 1px solid #f1f5f9; }
+        .filter-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .filter-section-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .filter-reset-link { font-size: 11px; color: #0d9488; font-weight: 700; border: none; background: none; cursor: pointer; padding: 0; }
+        .filter-reset-link:hover { text-decoration: underline; }
+        .filter-select-v2 { width: 100%; height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #1e293b; outline: none; transition: border-color 0.2s; }
+        .filter-select-v2:focus { border-color: #0d9488; }
+        
+        [x-cloak] { display: none !important; }
+
         .rv-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .rv-toolbar { padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; background: #fff; border-radius: 14px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
         .rv-group { display: flex; flex-direction: column; gap: 6px; }
@@ -204,43 +305,129 @@ $page_title = 'Review Management - Staff';
         <?php include __DIR__ . '/../includes/staff_sidebar.php'; ?>
     <?php endif; ?>
 
-    <div class="main-content">
+    <div class="main-content" x-data="reviewManager()" x-init="init()">
+        <header style="display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px;">
+            <h1 class="page-title" style="margin:0;">Review Management</h1>
+            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
+                Branch: <?php echo htmlspecialchars($branchName); ?>
+            </div>
+        </header>
 
         <main>
-            <form method="GET" class="rv-toolbar">
-                <div class="rv-group" style="flex: 1; min-width: 250px;">
-                    <label class="rv-label">Search Customer or Order</label>
-                    <input name="search" class="rv-input" type="text" value="<?php echo htmlspecialchars($search); ?>" placeholder="E.g. John Doe, 2261" onchange="this.form.submit()">
+            <!-- KPI Summary Row -->
+            <div class="kpi-row">
+                <div class="kpi-card indigo">
+                    <div class="kpi-label">Total Reviews</div>
+                    <div class="kpi-value"><?php echo number_format(count($reviews)); ?></div>
+                    <div class="kpi-sub">Customers feedback</div>
                 </div>
-                <div class="rv-group">
-                    <label class="rv-label">Service</label>
-                    <select name="service" class="rv-select" onchange="this.form.submit()">
-                        <option value="">All Services</option>
-                        <?php foreach($available_services as $as): ?>
-                            <option value="<?php echo htmlspecialchars($as['name']); ?>" <?php echo $service === $as['name'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($as['name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="kpi-card amber">
+                    <div class="kpi-label">Average Rating</div>
+                    <div class="kpi-value">
+                        <?php 
+                        $avg = db_query("SELECT AVG(rating) as avg FROM reviews");
+                        echo number_format($avg[0]['avg'] ?? 0, 1);
+                        ?>
+                        <span style="font-size: 18px; color: #f59e0b;">★</span>
+                    </div>
+                    <div class="kpi-sub">Global rating score</div>
                 </div>
-                <div class="rv-group">
-                    <label class="rv-label">Type</label>
-                    <select name="review_type" class="rv-select" onchange="this.form.submit()">
-                        <option value="">All Types</option>
-                        <option value="product" <?php echo $review_type === 'product' ? 'selected' : ''; ?>>Fixed Products</option>
-                        <option value="custom" <?php echo $review_type === 'custom' ? 'selected' : ''; ?>>Custom Services</option>
-                    </select>
+                <div class="kpi-card blue">
+                    <div class="kpi-label">Service Focus</div>
+                    <div class="kpi-value" style="font-size: 20px; height: 34px; display: flex; align-items: center;">
+                        <?php 
+                        $top = db_query("SELECT service_type, COUNT(*) as c FROM reviews GROUP BY service_type ORDER BY c DESC LIMIT 1");
+                        echo htmlspecialchars(ucfirst($top[0]['service_type'] ?? 'None'));
+                        ?>
+                    </div>
+                    <div class="kpi-sub">Top reviewed type</div>
                 </div>
-                <div class="rv-group">
-                    <label class="rv-label">Rating</label>
-                    <select name="rating" class="rv-select" onchange="this.form.submit()">
-                        <option value="0">All Ratings</option>
-                        <?php for($i=5; $i>=1; $i--): ?>
-                            <option value="<?php echo $i; ?>" <?php echo $rating === $i ? 'selected' : ''; ?>><?php echo $i; ?> Stars</option>
-                        <?php endfor; ?>
-                    </select>
+                <div class="kpi-card emerald">
+                    <div class="kpi-label">Pending Replies</div>
+                    <div class="kpi-value">
+                        <?php 
+                        $pending = db_query("SELECT COUNT(*) as c FROM reviews r WHERE (SELECT COUNT(*) FROM review_replies rr WHERE rr.review_id = r.id) = 0");
+                        echo $pending[0]['c'] ?? 0;
+                        ?>
+                    </div>
+                    <div class="kpi-sub">Awaiting staff response</div>
                 </div>
-                <!-- Filter button removed for automatic onchange updates -->
-                <a href="reviews.php" class="rv-btn light">Reset</a>
-            </form>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="card overflow-visible" style="background: #fff; padding: 20px; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 24px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <h3 style="font-size:16px; font-weight:700; color:#1f2937; margin:0;">Reviews Feed</h3>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <!-- Search Field -->
+                        <div style="position: relative; width: 260px;">
+                            <input type="text" x-model="search" @input.debounce.500ms="applyFilters()" placeholder="Search customer or order #..." 
+                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
+                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </div>
+                        </div>
+
+                        <!-- Filter Button -->
+                        <div style="position:relative;">
+                            <button class="toolbar-btn" :class="{ active: filterOpen || filterActiveCount > 0 }" @click="filterOpen = !filterOpen" style="height:38px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                </svg>
+                                Filters
+                                <span class="filter-badge" x-show="filterActiveCount > 0" x-text="filterActiveCount"></span>
+                            </button>
+                            <!-- Filter Panel -->
+                            <div class="filter-panel" x-show="filterOpen" x-cloak @click.outside="filterOpen = false">
+                                <div class="filter-panel-header">Refine Reviews</div>
+                                
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Service</span>
+                                        <button class="filter-reset-link" @click="service = ''; applyFilters()">Reset</button>
+                                    </div>
+                                    <select class="filter-select-v2" x-model="service" @change="applyFilters()">
+                                        <option value="">All Services</option>
+                                        <?php foreach($available_services as $as): ?>
+                                            <option value="<?php echo htmlspecialchars($as['name']); ?>"><?php echo htmlspecialchars($as['name']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Type</span>
+                                        <button class="filter-reset-link" @click="reviewType = ''; applyFilters()">Reset</button>
+                                    </div>
+                                    <select class="filter-select-v2" x-model="reviewType" @change="applyFilters()">
+                                        <option value="">All Types</option>
+                                        <option value="product">Fixed Products</option>
+                                        <option value="custom">Custom Services</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Rating</span>
+                                        <button class="filter-reset-link" @click="rating = 0; applyFilters()">Reset</button>
+                                    </div>
+                                    <select class="filter-select-v2" x-model="rating" @change="applyFilters()">
+                                        <option value="0">All Ratings</option>
+                                        <?php for($i=5; $i>=1; $i--): ?>
+                                            <option value="<?php echo $i; ?>"><?php echo $i; ?> Stars</option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+
+                                <div style="padding:14px 18px; background:#f9fafb; display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:12px; color:#6b7280;"><?php echo count($reviews); ?> in current page</span>
+                                    <button class="filter-reset-link" @click="resetFilters()">Clear All</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div id="reviewsList">
                 <?php if (empty($reviews)): ?>
@@ -307,7 +494,6 @@ $page_title = 'Review Management - Staff';
                                     <select class="rv-select" style="width: 100%; font-size: 12px;" onchange="applyQuickReply(this, <?php echo $review['id']; ?>)">
                                         <option value="">⚡ Quick Reply Suggestions...</option>
                                         <option value="Thank you! We're happy to hear you're satisfied with your order.">Positive Feedback</option>
-                                        <option value="Thank you for your review! We look forward to serving you again.">Great experience</option>
                                         <option value="We apologize for the inconvenience. Please contact us so we can resolve this.">Negative Feedback</option>
                                     </select>
                                     <div class="reply-input-wrap">
@@ -336,13 +522,48 @@ $page_title = 'Review Management - Staff';
 </div>
 
 <script>
+function reviewManager() {
+    return {
+        search: '<?php echo addslashes($search); ?>',
+        service: '<?php echo addslashes($service); ?>',
+        reviewType: '<?php echo addslashes($review_type); ?>',
+        rating: <?php echo $rating; ?>,
+        filterOpen: false,
+
+        init() {
+            // Keep state
+        },
+
+        get filterActiveCount() {
+            let count = 0;
+            if (this.service) count++;
+            if (this.reviewType) count++;
+            if (this.rating > 0) count++;
+            return count;
+        },
+
+        applyFilters() {
+            const params = new URLSearchParams();
+            if (this.search) params.set('search', this.search);
+            if (this.service) params.set('service', this.service);
+            if (this.reviewType) params.set('review_type', this.reviewType);
+            if (this.rating > 0) params.set('rating', this.rating);
+            window.location.search = params.toString();
+        },
+
+        resetFilters() {
+            window.location.href = 'reviews.php';
+        }
+    };
+}
+
 function openMediaModal(src, type) {
     const modal = document.getElementById('mediaModal');
     const content = document.getElementById('modalContent');
     if (type === 'video') {
-        content.innerHTML = `<video src="${src}" controls autoplay style="max-height: 80vh;"></video>`;
+        content.innerHTML = `<video src="${src}" controls autoplay style="max-height: 80vh; max-width: 100%; border-radius: 12px;"></video>`;
     } else {
-        content.innerHTML = `<img src="${src}" style="max-height: 80vh;">`;
+        content.innerHTML = `<img src="${src}" style="max-height: 80vh; max-width: 100%; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">`;
     }
     modal.classList.add('open');
 }

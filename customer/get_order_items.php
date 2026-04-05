@@ -35,7 +35,7 @@ $order = $order_result[0];
 
 // Get items with design info
 $items = db_query("
-    SELECT oi.*, p.name as product_name, p.category
+    SELECT oi.*, p.name as product_name, p.category, p.product_id, p.photo_path
     FROM order_items oi
     LEFT JOIN products p ON oi.product_id = p.product_id
     WHERE oi.order_id = ?
@@ -97,6 +97,29 @@ foreach ($items as $item) {
         'design_url'    => (!empty($item['design_image']) || !empty($item['design_file']))
                             ? '/printflow/public/serve_design.php?type=order_item&id=' . (int)$item['order_item_id']
                             : null,
+        'product_image' => (function() use ($item) {
+            $path = $item['photo_path'] ?? '';
+            $base_dir = __DIR__ . '/../';
+            
+            if ($path !== '') {
+                // If it's already an absolute path or external URL
+                if ($path[0] === '/' || strpos($path, 'http') !== false) return $path;
+                
+                // Check in uploads/products
+                if (file_exists($base_dir . 'uploads/products/' . $path)) {
+                    return '/printflow/uploads/products/' . $path;
+                }
+            }
+            
+            // Fallback for legacy product images (product_ID.jpg)
+            if (!empty($item['product_id'])) {
+                $pid = (int)$item['product_id'];
+                $dir = $base_dir . 'public/images/products/';
+                if (file_exists($dir . 'product_' . $pid . '.jpg')) return '/printflow/public/images/products/product_' . $pid . '.jpg';
+                if (file_exists($dir . 'product_' . $pid . '.png')) return '/printflow/public/images/products/product_' . $pid . '.png';
+            }
+            return '/printflow/public/assets/images/services/default.png';
+        })(),
         'reference_url' => !empty($item['reference_image_file'])
                             ? '/printflow/public/serve_design.php?type=order_item&id=' . (int)$item['order_item_id'] . '&field=reference'
                             : null,

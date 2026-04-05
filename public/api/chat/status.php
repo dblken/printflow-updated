@@ -46,5 +46,36 @@ if ($user_type === 'Customer') {
 
 // Clear any accidental output before sending JSON
 ob_end_clean();
-echo json_encode(['success' => (bool)$result]);
+
+// Fetch partner info for calling system
+$partner = null;
+if ($user_type === 'Customer') {
+    // Customer calling Staff - look for last staff message sender
+    $p_res = db_query("SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as name, u.profile_picture as avatar 
+                       FROM order_messages om JOIN users u ON om.sender_id = u.user_id 
+                       WHERE om.order_id = ? AND om.sender = 'Staff' 
+                       ORDER BY om.message_id DESC LIMIT 1", 'i', [$order_id]);
+    if (empty($p_res)) {
+        // Fallback to shop admin (ID 1)
+        $p_res = db_query("SELECT user_id, CONCAT(first_name, ' ', last_name) as name, profile_picture as avatar FROM users WHERE user_id = 1");
+    }
+} else {
+    // Staff calling Customer
+    $p_res = db_query("SELECT c.customer_id as user_id, CONCAT(c.first_name, ' ', c.last_name) as name, c.profile_picture as avatar 
+                       FROM orders o JOIN customers c ON o.customer_id = c.customer_id 
+                       WHERE o.order_id = ?", 'i', [$order_id]);
+}
+
+if (!empty($p_res)) {
+    $partner = [
+        'id' => (int)$p_res[0]['user_id'],
+        'name' => $p_res[0]['name'],
+        'avatar' => $p_res[0]['avatar']
+    ];
+}
+
+echo json_encode([
+    'success' => (bool)$result,
+    'partner' => $partner
+]);
 ?>

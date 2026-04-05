@@ -7,6 +7,9 @@
         "watch": "npx tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/output.css --watch",
         "build:phone": "cd phone-verify-app && npm run build"
     },
+    "dependencies": {
+        "socket.io": "^4.7.2"
+    },
     "devDependencies": {
         "tailwindcss": "^3.4.15"
     }
