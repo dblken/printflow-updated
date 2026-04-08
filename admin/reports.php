@@ -575,8 +575,7 @@ if (!$branch_empty && !empty($top_products)) {
 <title><?php echo $page_title; ?></title>
 <?php require_once __DIR__ . '/../includes/favicon_links.php'; ?>
 <link rel="stylesheet" href="/printflow/public/assets/css/output.css">
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.0/dist/apexcharts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/printflow/public/assets/vendor/apexcharts.min.js"></script>
 <script>
 function reportsPrintInPlace(url) {
     const iframe = document.createElement('iframe');

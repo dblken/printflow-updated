@@ -24,13 +24,14 @@ function load_cfg($path) {
     return file_exists($path) ? (json_decode(file_get_contents($path), true) ?: []) : [];
 }
 function save_cfg($path, $data) {
-    file_put_contents($path, json_encode($data));
+    return file_put_contents($path, json_encode($data));
 }
 
 $payment_cfg = load_cfg($qr_dir . 'payment_methods.json');
 $shop_cfg   = load_cfg($logo_dir . 'shop_config.json');
 $footer_cfg = load_cfg($logo_dir . 'footer_config.json');
 $about_cfg  = load_cfg($logo_dir . 'about_config.json');
+$xendit_cfg = load_cfg(__DIR__ . '/../includes/xendit_config.json');
 
 // Load branches for address selector
 $branches = db_query("SELECT id, branch_name AS name FROM branches ORDER BY branch_name") ?: [];
@@ -195,6 +196,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf_token($_POST['csrf_toke
         $success = 'About page content saved!';
         $about_cfg = load_cfg($logo_dir . 'about_config.json');
     }
+
+    // Save Xendit Config
+    if (isset($_POST['save_xendit'])) {
+        $xendit_cfg = [
+            'secret_key'     => trim($_POST['xendit_secret_key'] ?? ''),
+            'callback_token' => trim($_POST['xendit_callback_token'] ?? ''),
+            'is_enabled'     => (int)($_POST['xendit_enabled'] ?? 0)
+        ];
+        $res = save_cfg(__DIR__ . '/../includes/xendit_config.json', $xendit_cfg);
+        if ($res === false) {
+            $error = 'Failed to save Xendit config file. Check permissions of includes/ folder.';
+        } else {
+            $success = 'Xendit configuration updated!';
+        }
+    }
 }
 
 $page_title = 'Settings - Admin';
@@ -206,8 +222,8 @@ $page_title = 'Settings - Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?></title>
     <link rel="stylesheet" href="/printflow/public/assets/css/output.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <link rel="stylesheet" href="/printflow/public/assets/vendor/cropper.min.css">
+    <script src="/printflow/public/assets/vendor/cropper.min.js"></script>
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
     <style>
         .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
@@ -279,6 +295,8 @@ $page_title = 'Settings - Admin';
                     </div>
                     <form method="POST" enctype="multipart/form-data">
                         <?php echo csrf_field(); ?>
+                        <input type="hidden" name="save_general" value="1">
+                        <input type="hidden" name="save_general" value="1">
                         <!-- Logo -->
                         <div class="f-group">
                             <label>Shop Logo</label>
@@ -311,6 +329,50 @@ $page_title = 'Settings - Admin';
                     </form>
                 </div>
 
+                <!-- Xendit Payment Gateway -->
+                <div class="settings-card">
+                    <div class="settings-card-title">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Xendit Payment Gateway
+                    </div>
+                    <form method="POST">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="save_xendit" value="1">
+                        <div class="toggle-row">
+                            <div>
+                                <div class="toggle-label">Enable Xendit Payments</div>
+                                <div class="toggle-sub"><?php echo ($xendit_cfg['is_enabled'] ?? 0) ? 'Enabled (Active)' : 'Disabled (Paused)'; ?></div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="xendit_enabled" value="1" onchange="this.form.querySelector('button[name=\'save_xendit\']').click()" <?php echo ($xendit_cfg['is_enabled'] ?? 0) ? 'checked' : ''; ?>>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="f-group">
+                            <label>Xendit Secret Key</label>
+                            <input type="password" name="xendit_secret_key" value="<?php echo htmlspecialchars($xendit_cfg['secret_key'] ?? ''); ?>" placeholder="xnd_development_...">
+                            <p style="font-size:11px;color:#9ca3af;margin-top:4px;">🔑 Keep this secret. Used for generating payment links.</p>
+                        </div>
+
+                        <div class="f-group">
+                            <label>Xendit Callback Token</label>
+                            <input type="password" name="xendit_callback_token" value="<?php echo htmlspecialchars($xendit_cfg['callback_token'] ?? ''); ?>" placeholder="Enter your callback token">
+                            <p style="font-size:11px;color:#9ca3af;margin-top:4px;">🛡️ Used to verify incoming webhook requests from Xendit.</p>
+                        </div>
+
+                        <div class="f-group">
+                            <label>Webhook URL (for ngrok/production)</label>
+                            <input type="text" readonly value="https://jessika-cellular-adelina.ngrok-free.dev/printflow/api/xendit_webhook.php" style="background:#f0fdf4; color:#166534; font-family:monospace; font-size:12px; border-color:#bbf7d0;">
+                            <p style="font-size:11px;color:#9ca3af;margin-top:4px;">📋 This is your active Webhook URL for Xendit callbacks via ngrok.</p>
+                        </div>
+
+                        <div class="section-save">
+                            <button type="submit" name="save_xendit" class="btn-save-sm">Save Xendit Config</button>
+                        </div>
+                    </form>
+                </div>
+
                 <!-- Payment Methods (Dynamic) -->
                 <div class="settings-card">
                     <div class="settings-card-title">
@@ -319,6 +381,7 @@ $page_title = 'Settings - Admin';
                     </div>
                     <form method="POST" enctype="multipart/form-data">
                         <?php echo csrf_field(); ?>
+                        <input type="hidden" name="save_payment_methods" value="1">
                         <div id="pm-list" style="display:flex;flex-direction:column;gap:16px;">
                             <?php
                             if (empty($payment_cfg)) $payment_cfg = [['provider'=>'GCash','label'=>'','enabled'=>1,'file'=>'']];
@@ -332,7 +395,7 @@ $page_title = 'Settings - Admin';
                                         <div class="toggle-label">Show Payment Option</div>
                                         <div class="toggle-sub"><?php echo ($pm['enabled'] ?? 1) ? 'Enabled' : 'Disabled'; ?></div>
                                     </div>
-                                    <select name="pm_enabled[]" style="padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;background:#fff;">
+                                    <select name="pm_enabled[]" onchange="this.form.querySelector('button[name=\'save_payment_methods\']').click()" style="padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;background:#fff;">
                                         <option value="1" <?php echo ($pm['enabled'] ?? 1) ? 'selected' : ''; ?>>Enabled</option>
                                         <option value="0" <?php echo !($pm['enabled'] ?? 1) ? 'selected' : ''; ?>>Disabled</option>
                                     </select>
@@ -378,6 +441,7 @@ $page_title = 'Settings - Admin';
                     </div>
                     <form method="POST">
                         <?php echo csrf_field(); ?>
+                        <input type="hidden" name="save_footer" value="1">
                         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
 
                             <!-- Col 1: Info -->
@@ -476,6 +540,7 @@ Stickers &amp; Decals"><?php
                     </div>
                     <form method="POST" enctype="multipart/form-data">
                         <?php echo csrf_field(); ?>
+                        <input type="hidden" name="save_about" value="1">
 
                         <!-- Hero -->
                         <p style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;">Hero Section</p>
@@ -666,7 +731,7 @@ function printflowInitSettingsPage() {
                         <div class="toggle-label">Show Payment Option</div>
                         <div class="toggle-sub">Enabled</div>
                     </div>
-                    <select name="pm_enabled[]" style="padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;background:#fff;">
+                    <select name="pm_enabled[]" onchange="this.form.querySelector('button[name=\\'save_payment_methods\\']').click()" style="padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;background:#fff;">
                         <option value="1" selected>Enabled</option>
                         <option value="0">Disabled</option>
                     </select>

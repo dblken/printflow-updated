@@ -248,7 +248,7 @@ function reflUpdateNotesCounter(textarea) {
     document.querySelector('.notes-counter').textContent = `${count} / 500`;
 }
 
-let dimensionMode = 'preset';
+var dimensionMode = 'preset';
 
 function selectDimension(w, h, e) {
     e.preventDefault();

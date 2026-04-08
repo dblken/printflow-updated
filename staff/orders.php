@@ -146,11 +146,12 @@ if ($max_price_filter !== '') {
     $types .= 'd';
 }
 if ($customer_filter !== '') {
-    $sql_conditions .= " AND (CONCAT_WS(' ', c.first_name, c.last_name) LIKE ? OR (o.customer_id IS NULL AND 'Walk-in Customer (Guest)' LIKE ?))";
+    $sql_conditions .= " AND (o.order_id LIKE ? OR CONCAT_WS(' ', c.first_name, c.last_name) LIKE ? OR (o.customer_id IS NULL AND 'Walk-in Customer (Guest)' LIKE ?))";
     $like = '%' . $customer_filter . '%';
     $params[] = $like;
     $params[] = $like;
-    $types .= 'ss';
+    $params[] = $like;
+    $types .= 'sss';
 }
 if ($payment_status_filter !== '') {
     $sql_conditions .= " AND o.payment_status = ?";
@@ -308,17 +309,7 @@ $page_title = 'Orders - Staff';
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
     <link rel="stylesheet" href="/printflow/public/assets/css/chat.css">
     <style>
-        /* KPI Row - matches reports page */
-        .kpi-row { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:24px; }
-        @media (max-width:768px) { .kpi-row { grid-template-columns:repeat(2, 1fr); } }
-        .kpi-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; }
-        .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
-        .kpi-card.amber::before { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
-        .kpi-card.blue::before { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
-        .kpi-card.emerald::before { background:linear-gradient(90deg,#059669,#34d399); }
-        .kpi-card.indigo::before { background:linear-gradient(90deg,#6366f1,#818cf8); }
-        .kpi-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#9ca3af; margin-bottom:6px; }
-        .kpi-sub { font-size:12px; color:#6b7280; margin-top:4px; }
+
 
         /* ── Toolbar Buttons (Sort / Filter) ─── */
         .toolbar-btn {
@@ -417,6 +408,47 @@ $page_title = 'Orders - Staff';
             cursor: pointer;
         }
         .filter-select:focus { outline: none; border-color: #0d9488; }
+
+        .filter-search-wrap { position: relative; }
+        .filter-search-wrap svg {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+        .filter-search-input {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 0 12px;
+            color: #1f2937;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .filter-search-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            padding: 14px 18px;
+            border-top: 1px solid #f3f4f6;
+        }
+        .filter-btn-reset {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
 
         /* ── Sort Dropdown ─── */
         .sort-dropdown {
@@ -1117,9 +1149,9 @@ $page_title = 'Orders - Staff';
     <!-- Main Content -->
     <div class="main-content">
         <header>
-            <h1 class="page-title">Orders Management</h1>
-            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
-                Branch: <?php echo htmlspecialchars($branchName); ?>
+            <div>
+                <h1 class="page-title">Orders Management</h1>
+                <p class="page-subtitle">Track and manage all customer orders and job statuses</p>
             </div>
         </header>
 
@@ -1161,14 +1193,7 @@ $page_title = 'Orders - Staff';
                         Orders List
                     </h3>
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                        <!-- Search Input -->
-                        <div style="position: relative; width: 260px;">
-                            <input type="text" id="fp_customer" placeholder="Search Order # or Customer..." value="<?php echo htmlspecialchars($customer_filter); ?>"
-                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
-                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            </div>
-                        </div>
+                        <!-- Filter Button is now the primary way to search -->
 
                         <!-- Sort Button -->
                         <div style="position:relative;">
@@ -1211,7 +1236,7 @@ $page_title = 'Orders - Staff';
                                 </span>
                             </button>
 
-                            <!-- Filter Panel -->
+                             <!-- Filter Panel -->
                             <div class="filter-panel" x-show="filterOpen" x-cloak @click.outside="filterOpen = false">
                                 <div class="filter-panel-header">Filter</div>
 
@@ -1256,29 +1281,14 @@ $page_title = 'Orders - Staff';
                                     </select>
                                 </div>
 
-                                <!-- Payment Status -->
+                                <!-- Keyword Search -->
                                 <div class="filter-section">
                                     <div class="filter-section-head">
-                                        <span class="filter-section-label">Payment Status</span>
-                                        <button class="filter-reset-link" @click="resetFilterField(['payment_status'])">Reset</button>
+                                        <span class="filter-section-label">Keyword search</span>
+                                        <button class="filter-reset-link" @click="resetFilterField(['customer'])">Reset</button>
                                     </div>
-                                    <select id="fp_payment_status" class="filter-select" @change="applyFilters()">
-                                        <option value="">Any Payment Status</option>
-                                        <option value="Unpaid"  <?php echo $payment_status_filter === 'Unpaid'  ? 'selected' : ''; ?>>Unpaid</option>
-                                        <option value="Partial" <?php echo $payment_status_filter === 'Partial' ? 'selected' : ''; ?>>Partial</option>
-                                        <option value="Paid"    <?php echo $payment_status_filter === 'Paid'    ? 'selected' : ''; ?>>Paid</option>
-                                    </select>
-                                </div>
-
-                                <!-- Price Range -->
-                                <div class="filter-section">
-                                    <div class="filter-section-head">
-                                        <span class="filter-section-label">Price Range</span>
-                                        <button class="filter-reset-link" @click="resetFilterField(['min_price','max_price'])">Reset</button>
-                                    </div>
-                                    <div class="filter-date-row">
-                                        <input type="number" id="fp_min_price" class="filter-input" placeholder="Min" value="<?php echo htmlspecialchars($min_price_filter); ?>" @change="applyFilters()">
-                                        <input type="number" id="fp_max_price" class="filter-input" placeholder="Max" value="<?php echo htmlspecialchars($max_price_filter); ?>" @change="applyFilters()">
+                                    <div class="filter-search-wrap">
+                                        <input type="text" id="fp_customer" class="filter-search-input" placeholder="Search..." value="<?php echo htmlspecialchars($customer_filter); ?>">
                                     </div>
                                 </div>
 

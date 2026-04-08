@@ -8,13 +8,13 @@
  * loaded these libraries — controls appear "dead". Loaded once per request; POS skips Turbo via PRINTFLOW_DISABLE_TURBO.
  */
 if (empty($GLOBALS['__printflow_shell_core_js'])) {
-    $GLOBALS['__printflow_shell_core_js'] = true;
     $__pf_asset_js = '/printflow/public/assets/js';
+    $__pf_asset_vendor = '/printflow/public/assets/vendor';
     $__pf_skip_turbo = !empty($GLOBALS['PRINTFLOW_DISABLE_TURBO']);
     ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?php echo $__pf_asset_vendor; ?>/chart.umd.min.js"></script>
 <?php if (!$__pf_skip_turbo): ?>
-<script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.13/dist/turbo.es2017-umd.js" defer></script>
+<script src="<?php echo $__pf_asset_vendor; ?>/turbo.min.js" defer></script>
 <?php endif; ?>
 <script src="<?php echo $__pf_asset_js; ?>/alpine.min.js" defer></script>
 <?php if (!$__pf_skip_turbo): ?>
@@ -56,6 +56,10 @@ if (empty($GLOBALS['__printflow_shell_core_js'])) {
     }, 2500);
 })();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
 <style>
     /* Admin White Theme - Consistent Clean Design */
     :root {
@@ -74,9 +78,11 @@ if (empty($GLOBALS['__printflow_shell_core_js'])) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body { 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
         background: var(--bg-color); 
         color: var(--text-main);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 
     /*
@@ -157,21 +163,35 @@ if (empty($GLOBALS['__printflow_shell_core_js'])) {
     /* Common Headers */
     .top-bar, header { 
         background: var(--bg-color); 
-        padding: 24px 32px; /* Increased top/bottom padding to match dashboard look */
+        padding: 16px 32px; 
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
-        /* position: sticky;  <-- Removed sticky */
-        /* top: 0; */
-        /* z-index: 10; */
-        margin-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 24px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
-    
-    .page-title, h1, h2 { font-size: 24px; font-weight: 600; color: var(--text-main); }
+
+    .page-title, h1, h2 { font-size: 24px; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+    .page-subtitle { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+    .branch-badge {
+        font-size: 13px; 
+        color: #64748b; 
+        font-weight: 600; 
+        background: #f1f5f9; 
+        padding: 6px 12px; 
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
     
     .content-area, main { padding: 0 32px 32px 32px; }
     
-    /* Cards */
+    /* General Cards */
     .card, .stat-card, .chart-card { 
         background: white; 
         border-radius: 16px; 
@@ -206,7 +226,37 @@ if (empty($GLOBALS['__printflow_shell_core_js'])) {
     }
     
     label { display: block; font-size: 13px; font-weight: 500; color: var(--text-main); margin-bottom: 6px; }
+
+    /* Consolidated KPI Card System (Modern/Enterprise) */
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .kpi-row { grid-template-columns: 1fr; } }
+
+    .kpi-card { 
+        background: #ffffff; 
+        border: 1px solid #e5e7eb; 
+        border-radius: 12px; 
+        padding: 18px 20px; 
+        position: relative; 
+        overflow: hidden; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
     
+    /* Card Variants (Top Borders) */
+    .kpi-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .kpi-card.blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .kpi-card.emerald::before { background: linear-gradient(90deg, #059669, #34d399); }
+    .kpi-card.indigo::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+    .kpi-card.teal::before { background: linear-gradient(90deg, #0d9488, #2dd4bf); }
+    .kpi-card.rose::before { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+
+    .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 6px; display: block; }
+    .kpi-value { font-size: 28px; font-weight: 700; color: #1e293b; line-height: 1.2; display: block; }
+    .kpi-sub { font-size: 12px; color: #64748b; font-weight: 500; margin-top: 4px; display: block; }
+
     /* Buttons */
     .btn-primary {
         background: #1f2937; 

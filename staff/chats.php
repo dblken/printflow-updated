@@ -50,7 +50,7 @@ $current_user = get_logged_in_user();
             height: 100%; min-height: 0;
         }
         .sidebar-top { padding: 1.5rem; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
-        .sidebar-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; }
+        .sidebar-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
         
         .search-box { position: relative; }
         .search-box input { 
@@ -100,7 +100,7 @@ $current_user = get_logged_in_user();
             background: #fff; z-index: 20;
         }
         .window-title-area { flex: 1; min-width: 0; }
-        .window-title { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+        .window-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
         .window-meta { font-size: 0.85rem; color: #1e293b; margin: 0; text-transform: capitalize; }
         
         .header-actions { display: flex; gap: 8px; }
@@ -121,9 +121,12 @@ $current_user = get_logged_in_user();
         .bubble-row.system { justify-content: center; }
 
         .bubble { 
-            padding: 0.75rem 1.15rem; border-radius: 18px; font-size: 0.92rem; font-weight: 500; line-height: 1.5; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-wrap: break-word; word-break: break-word;
-            max-width: 100%; width: fit-content; transition: all 0.2s ease;
+            padding: 6px 12px; border-radius: 18px; font-size: 0.92rem; font-weight: 500; line-height: 1.4; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.2s ease;
+            display: inline-block; width: auto; max-width: 100%;
+        }
+        .bubble span {
+            white-space: normal; word-break: break-word; overflow-wrap: break-word;
         }
         .bubble:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
         .bubble-row.self .bubble { background: #0a2530; color: #fff; border-radius: 18px 18px 4px 18px; }
@@ -138,8 +141,8 @@ $current_user = get_logged_in_user();
         
         /* msg-content-col: use GRID for self (right-aligns to max-content, not min-content)
            This prevents the letter-stacking bug that flex align-items:flex-end causes */
-        .msg-content-col { position: relative; min-width: 0; max-width: 70%; }
-        .bubble-row.self .msg-content-col { display: grid; justify-items: end; width: auto; max-width: 70%; }
+        .msg-content-col { position: relative; min-width: 0; max-width: 75%; }
+        .bubble-row.self .msg-content-col { display: grid; justify-items: end; width: auto; max-width: 75%; }
         .bubble-row.other .msg-content-col { display: flex; flex-direction: column; align-items: flex-start; }
         
         .msg-sender-info { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; padding: 0 4px; font-weight: 600; }
@@ -729,7 +732,7 @@ $current_user = get_logged_in_user();
     <div class="details-modal-panel" onclick="event.stopPropagation()">
         <div class="details-modal-header">
             <div>
-                <h2 style="font-size:1.1rem; font-weight:900; color:#1e293b; margin:0;">Customer Order Overview</h2>
+                <h2 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin:0;">Customer Order Overview</h2>
                 <p style="font-size:9px; font-weight:800; text-transform:uppercase; color:#94a3b8; letter-spacing:0.12em; margin:2px 0 0;">Production Specifications</p>
             </div>
             <button type="button" onclick="closeDetailsModal()" class="h-btn" style="border:none; background:transparent;">
@@ -1001,8 +1004,8 @@ function openPinnedModal(pinned) {
     const list = document.getElementById('pinnedList');
     list.innerHTML = pinned.map(m => `
         <div onclick="goToMessage(${m.id}); document.getElementById('pinnedModal').classList.remove('active')" style="padding:12px; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; cursor:pointer; transition:all 0.2s;">
-            <div style="font-size:0.7rem; color:#53c5e0; font-weight:800; margin-bottom:4px;">${m.sender_name} • ${m.created_at}</div>
-            <div style="font-size:0.85rem; color:#1e293b; line-height:1.4;">${escapeHtml(m.message || (m.image_path ? '📸 Attachment' : 'Message'))}</div>
+            <div style="font-size:0.7rem; color:#000000; font-weight:800; margin-bottom:4px;">${m.sender_name} • ${m.created_at}</div>
+            <div style="font-size:0.95rem; color:#000000; line-height:1.4; word-break:break-word; overflow-wrap:anywhere;">${escapeHtml(m.message || (m.image_path ? '📸 Attachment' : 'Message'))}</div>
         </div>
     `).join('');
 }
@@ -1038,7 +1041,7 @@ function appendMsgUI(m) {
     
     // Setup Avatar (Both sides now get an avatar in this modern layout)
     let avatarHtml = '';
-    if (!m.is_system) {
+    if (!m.is_system && !m.is_self) {
         const avSrc = m.sender_avatar ? `${window.baseUrl}/${m.sender_avatar}` : '';
         const initial = (m.sender_name || (m.is_self ? 'S' : 'C'))[0].toUpperCase();
         
@@ -1134,7 +1137,7 @@ function appendMsgUI(m) {
         }
     }
     if (m.message) {
-        colHtml += `<div style="${isCallMsg ? 'white-space:nowrap;' : ''}">${escapeHtml(m.message)}</div>`;
+        colHtml += `<span style="${isCallMsg ? 'white-space:nowrap;' : ''}">${escapeHtml(m.message)}</span>`;
     }
     if (!m.is_system) {
         colHtml += `<div class="reaction-display-container" id="reactions-for-${m.id}" style="display:none;"></div>`;
@@ -1202,6 +1205,18 @@ function togglePicker(msgId, e) {
         picker.classList.add('active');
         const row = document.getElementById(`ms-${msgId}`);
         if (row) row.classList.add('has-active-menu');
+        
+        // Smart Position
+        const rect = picker.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            picker.style.bottom = '100%';
+            picker.style.top = 'auto';
+            picker.style.marginBottom = '12px';
+        } else {
+            picker.style.bottom = 'auto';
+            picker.style.top = 'calc(100% + 12px)';
+            picker.style.marginTop = '0';
+        }
     }
 }
 
@@ -1215,6 +1230,15 @@ function toggleMoreMenu(msgId, e) {
         menu.classList.add('active');
         const row = document.getElementById(`ms-${msgId}`);
         if (row) row.classList.add('has-active-menu');
+
+        const rect = menu.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            menu.style.bottom = 'calc(100% + 10px)';
+            menu.style.top = 'auto';
+        } else {
+            menu.style.bottom = 'auto';
+            menu.style.top = '100%';
+        }
     }
 }
 
@@ -1260,6 +1284,30 @@ function initForward(msgId, b64, hasImage) {
     openForwardModal();
     closeAllMenus();
 }
+
+function initReply(msgId, b64, hasImage) {
+    replyToMessageId = msgId;
+    const text = safeBase64Decode(b64);
+    const preview = document.getElementById('replyPreviewBox');
+    const previewText = document.getElementById('replyPreviewText');
+    if (preview && previewText) {
+        preview.style.display = 'flex'; // Use flex so it aligns with button
+        previewText.textContent = hasImage == '1' ? '📸 Attachment' : (text || 'Message');
+        const msgInput = document.getElementById('msgInput');
+        if (msgInput) {
+            msgInput.focus();
+            scrollToBottom(true, true);
+        }
+    }
+    closeAllMenus();
+}
+
+function cancelReply() {
+    replyToMessageId = null;
+    const preview = document.getElementById('replyPreviewBox');
+    if (preview) preview.style.display = 'none';
+}
+
 
 
 
@@ -1322,14 +1370,14 @@ function loadForwardList(q = '') {
         list.innerHTML = data.conversations.map(c => {
             const isSelected = selectedForwardTargets.includes(c.order_id);
             return `
-            <div onclick="toggleForwardTarget(${c.order_id})" style="padding:10px 14px; border-radius:14px; background:${isSelected ? '#f1f5f9' : '#fff'}; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.15s; border:1px solid ${isSelected ? '#e2e8f0' : 'transparent'};">
-                <div class="conv-avatar" style="width:36px; height:36px; background:#f1f5f9; color:#475569;">${(c.customer_name || 'C')[0].toUpperCase()}</div>
+            <div onclick="toggleForwardTarget(${c.order_id})" style="padding:10px 14px; border-radius:14px; background:${isSelected ? '#f1f5f9' : '#fff'}; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.15s; border:1px solid ${isSelected ? '#e2e8f0' : '#f1f5f9'};">
+                <div class="conv-avatar" style="width:36px; height:36px; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0;">${(c.customer_name || 'C')[0].toUpperCase()}</div>
                 <div style="flex:1;">
-                    <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${escapeHtml(c.customer_name)}</div>
-                    <div style="font-size:0.7rem; color:#64748b;">${escapeHtml(c.service_name || 'Order')}</div>
+                    <div style="font-size:0.88rem; font-weight:800; color:#0f172a;">${escapeHtml(c.customer_name)}</div>
+                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">${escapeHtml(c.service_name || 'Order')}</div>
                 </div>
-                <div style="width:20px; height:20px; border-radius:50%; border:2px solid ${isSelected ? '#0a2530' : '#e2e8f0'}; background:${isSelected ? '#0a2530' : 'transparent'}; display:flex; align-items:center; justify-content:center;">
-                    ${isSelected ? '<i class="bi bi-check" style="color:#fff; font-size:12px;"></i>' : ''}
+                <div style="width:22px; height:22px; border-radius:50%; border:2px solid ${isSelected ? '#0a2530' : '#cbd5e1'}; background:${isSelected ? '#0a2530' : 'transparent'}; display:flex; align-items:center; justify-content:center;">
+                    ${isSelected ? '<i class="bi bi-check" style="color:#fff; font-size:14px;"></i>' : ''}
                 </div>
             </div>`;
         }).join('');
@@ -1612,7 +1660,12 @@ function renderMediaGrid() {
     const filtered = sharedMedia.filter(m => m.file_type === activeGalleryTab);
     
     if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-3 text-center py-10 opacity-40 text-[10px] font-bold uppercase tracking-wider">No shared ${activeGalleryTab}s</div>`;
+        grid.innerHTML = `
+        <div style="grid-column: span 3; padding:5rem 1rem; text-align:center; color:#94a3b8;">
+            <i class="bi bi-file-earmark-image" style="font-size:2.5rem; display:block; margin-bottom:1rem; opacity:0.3;"></i>
+            <div style="font-size:0.85rem; font-weight:700;">No shared ${activeGalleryTab}s</div>
+            <div style="font-size:0.7rem; margin-top:4px; font-weight:600; opacity:0.7;">Shared ${activeGalleryTab}s from this conversation will appear here.</div>
+        </div>`;
         return;
     }
     

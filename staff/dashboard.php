@@ -180,93 +180,72 @@ $page_title = 'Staff Dashboard - PrintFlow';
         .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         .filter-bar .input-field, .filter-bar select { width: auto; min-width: 140px; height: 34px !important; font-size: 12px; }
 
-        /* Ultra-Fluid KPI Container */
-        .kpi-premium-container {
-            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-bottom: 16px;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 1px solid rgba(6, 161, 161, 0.1);
+        /* KPI Cards (Matching Admin Style) */
+        .kpi-row { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:24px; }
+        @media (max-width:768px) { .kpi-row { grid-template-columns:repeat(2, 1fr); } }
+        .kpi-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; }
+        .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+        .kpi-card.indigo::before { background:linear-gradient(90deg,#6366f1,#818cf8); }
+        .kpi-card.emerald::before { background:linear-gradient(90deg,#10b981,#34d399); }
+        .kpi-card.amber::before { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+        .kpi-card.rose::before { background:linear-gradient(90deg,#f43f5e,#fb7185); }
+        .kpi-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#9ca3af; margin-bottom:6px; }
+        .kpi-sub { font-size:12px; color:#6b7280; margin-top:4px; }
+
+        /* Clickable KPI cards */
+        a.kpi-card.kpi-card--link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,35,43,.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.2s ease, opacity 0.2s ease;
+            -webkit-tap-highlight-color: rgba(83, 197, 224, 0.25);
         }
-        .kpi-bg-shape {
-            position: absolute;
-            background: linear-gradient(135deg, rgba(6, 161, 161, 0.1), rgba(6, 161, 161, 0.05));
-            border-radius: 50%;
+        a.kpi-card.kpi-card--link:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 28px rgba(0,35,43,.12);
+        }
+        a.kpi-card.kpi-card--link:focus { outline: none; }
+        a.kpi-card.kpi-card--link:focus-visible {
+            outline: 2px solid #53C5E0;
+            outline-offset: 3px;
+        }
+        a.kpi-card.kpi-card--link:active {
+            transform: scale(0.99);
+            box-shadow: 0 4px 14px rgba(0,35,43,.08);
+        }
+        a.kpi-card.kpi-card--link.is-kpi-navigating {
             pointer-events: none;
-            filter: blur(50px);
-            z-index: 1;
+            opacity: 0.92;
         }
-        .shape-1 { width: 400px; height: 400px; top: -150px; right: -50px; animation: float 18s infinite alternate; }
-        .shape-2 { width: 300px; height: 300px; bottom: -80px; left: -80px; animation: float 15s infinite alternate-reverse; }
-
-        .kpi-header { 
-            position: relative; 
-            z-index: 2; 
-            margin-bottom: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .kpi-title-group { flex: 1; min-width: 300px; }
-        .kpi-title { font-size: 24px; font-weight: 900; color: #013a3a; margin: 0; letter-spacing: -0.02em; }
-        .kpi-subtitle { font-size: 12px; color: #064e3b; margin: 2px 0 0; opacity: 0.6; font-weight: 500; }
-
-        .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+        .kpi-card--link .kpi-card-inner {
             position: relative;
-            z-index: 2;
+            display: block;
+            padding-bottom: 22px;
         }
-        @media (max-width: 1200px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .kpi-row { grid-template-columns: 1fr; } }
-
-        .kpi-card-v2 {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        .kpi-card-v2:hover { 
-            transform: translateY(-4px); 
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 15px 30px -10px rgba(6, 161, 161, 0.12); 
-            border-color: #06A1A1;
-        }
-        .kpi-v2-value { 
-            font-size: 26px; 
-            font-weight: 900; 
-            color: #013a3a; 
-            line-height: 1; 
-            margin-bottom: 8px; 
-            letter-spacing: -0.03em;
-        }
-        .kpi-v2-label { 
-            font-size: 10px; 
-            font-weight: 800; 
-            color: #06A1A1; 
-            text-transform: uppercase; 
-            letter-spacing: 0.08em;
-            opacity: 0.8;
-        }
-        .kpi-v2-sub { 
-            font-size: 10px; 
-            color: #475569; 
-            margin-top: 4px; 
+        .kpi-card--link .kpi-label,
+        .kpi-card--link .kpi-value,
+        .kpi-card--link .kpi-sub { display: block; }
+        .kpi-card-cta {
+            position: absolute;
+            right: 2px;
+            bottom: 0;
+            font-size: 11px;
             font-weight: 600;
-            opacity: 0.5;
+            color: #6b7280;
+            letter-spacing: 0.02em;
+            transition: opacity 0.25s ease, color 0.25s ease;
         }
-        .kpi-card-indicator { position: absolute; top: 10px; right: 16px; width: 24px; height: 3px; border-radius: 2px; opacity: 0.3; }
+        @media (hover: hover) {
+            a.kpi-card.kpi-card--link .kpi-card-cta { opacity: 0.4; }
+            a.kpi-card.kpi-card--link:hover .kpi-card-cta,
+            a.kpi-card.kpi-card--link:focus-visible .kpi-card-cta { opacity: 1; color: #00232b; }
+        }
+        @media (hover: none) {
+            a.kpi-card.kpi-card--link .kpi-card-cta { opacity: 0.75; }
+        }
+        .kpi-value { font-size:32px; font-weight:800; color:#1f2937; line-height:1; margin-bottom:6px; position:relative; z-index:1; }
 
         /* Full Width Card Adjustments */
         .card { padding: 20px; border-radius: 16px; margin-bottom: 16px; height: 100%; border: 1px solid #f1f5f9; position: relative; }
@@ -312,63 +291,75 @@ $page_title = 'Staff Dashboard - PrintFlow';
 
     <div class="main-content" style="padding: 12px 12px 0;">
         <main style="max-width: 100%;" id="dashboard-main">
-            <!-- PREMIUM KPI SECTION (Fluid Layout) -->
-            <div class="kpi-premium-container">
-                <div class="kpi-bg-shape shape-1"></div>
-                <div class="kpi-bg-shape shape-2"></div>
-                
-                <div class="kpi-header">
-                    <div class="kpi-title-group">
-                        <h2 class="kpi-title">Operations Distribution</h2>
-                        <p class="kpi-subtitle" id="kpi-subtitle">Metrics for <?php echo htmlspecialchars($timeframe_label); ?> at <?php echo htmlspecialchars($branch_name); ?></p>
-                    </div>
+            <!-- KPI SUMMARY ROW (Clickable Cards Matching Admin Style) -->
+            <div class="kpi-row">
+                <a class="kpi-card indigo kpi-card--link"
+                   href="/printflow/staff/reports.php?range=today"
+                   aria-label="View revenue details"
+                   title="View revenue reports">
+                    <span class="kpi-card-inner">
+                        <span class="kpi-label">Total Revenue</span>
+                        <span class="kpi-value" id="stat-revenue">₱<?php echo number_format($total_sales_today, 2); ?></span>
+                        <span class="kpi-sub">Gross branch income</span>
+                        <span class="kpi-card-cta" aria-hidden="true">View details →</span>
+                    </span>
+                </a>
+                <a class="kpi-card amber kpi-card--link"
+                   href="/printflow/staff/reports.php?range=today"
+                   aria-label="View all orders"
+                   title="View orders report">
+                    <span class="kpi-card-inner">
+                        <span class="kpi-label">Total Orders</span>
+                        <span class="kpi-value" id="stat-total-orders"><?php echo $total_orders_today; ?></span>
+                        <span class="kpi-sub">Requests processed</span>
+                        <span class="kpi-card-cta" aria-hidden="true">View details →</span>
+                    </span>
+                </a>
+                <a class="kpi-card rose kpi-card--link"
+                   href="/printflow/staff/reports.php?range=today&status=Pending"
+                   aria-label="View pending orders"
+                   title="View pending orders report">
+                    <span class="kpi-card-inner">
+                        <span class="kpi-label">Pending</span>
+                        <span class="kpi-value" id="stat-pending"><?php echo $pending_orders; ?></span>
+                        <span class="kpi-sub">Active reviews</span>
+                        <span class="kpi-card-cta" aria-hidden="true">View details →</span>
+                    </span>
+                </a>
+                <a class="kpi-card emerald kpi-card--link"
+                   href="/printflow/staff/reports.php?range=today&status=Completed"
+                   aria-label="View completed orders"
+                   title="View completed orders report">
+                    <span class="kpi-card-inner">
+                        <span class="kpi-label">Completed</span>
+                        <span class="kpi-value" id="stat-completed"><?php echo $completed_today; ?></span>
+                        <span class="kpi-sub">Finished today</span>
+                        <span class="kpi-card-cta" aria-hidden="true">View details →</span>
+                    </span>
+                </a>
+            </div>
 
-                    <form method="GET" class="filter-bar" id="filter-form">
-                        <select name="status" id="filter-status" class="input-field">
-                            <option value="">All Statuses</option>
-                            <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
-                            <option value="Processing" <?php echo $status_filter === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                            <option value="Ready for Pickup" <?php echo $status_filter === 'Ready for Pickup' ? 'selected' : ''; ?>>Ready</option>
-                            <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                            <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                        </select>
-                        <select name="timeframe" id="filter-timeframe" class="input-field">
-                            <option value="today" <?php echo $timeframe === 'today' ? 'selected' : ''; ?>>Today</option>
-                            <option value="week" <?php echo $timeframe === 'week' ? 'selected' : ''; ?>>This Week</option>
-                            <option value="month" <?php echo $timeframe === 'month' ? 'selected' : ''; ?>>This Month</option>
-                        </select>
-                        <a href="pos.php" class="btn-primary" style="text-decoration: none; height: 34px; display: flex; align-items: center; padding: 0 16px; font-size: 13px;">
-                            POS (Walk-in)
-                        </a>
-                    </form>
-                </div>
-
-                <div class="kpi-row content-transition">
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #06A1A1;"></div>
-                        <div class="kpi-v2-value" id="stat-revenue" style="color: #06A1A1;">₱<?php echo number_format($total_sales_today, 2); ?></div>
-                        <div class="kpi-v2-label">Total Revenue</div>
-                        <div class="kpi-v2-sub">Gross branch income</div>
-                    </div>
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #064e3b;"></div>
-                        <div class="kpi-v2-value" id="stat-total-orders"><?php echo $total_orders_today; ?></div>
-                        <div class="kpi-v2-label">Total Orders</div>
-                        <div class="kpi-v2-sub">Requests processed</div>
-                    </div>
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #d97706;"></div>
-                        <div class="kpi-v2-value" id="stat-pending" style="color: #d97706;"><?php echo $pending_orders; ?></div>
-                        <div class="kpi-v2-label">Pending</div>
-                        <div class="kpi-v2-sub">Active reviews</div>
-                    </div>
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #059669;"></div>
-                        <div class="kpi-v2-value" id="stat-completed" style="color: #059669;"><?php echo $completed_today; ?></div>
-                        <div class="kpi-v2-label">Completed</div>
-                        <div class="kpi-v2-sub">Finished today</div>
-                    </div>
-                </div>
+            <!-- Dashboard Filters -->
+            <div class="card" style="margin-bottom: 20px; padding: 16px;">
+                <form method="GET" class="filter-bar" id="filter-form" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <label style="font-size: 13px; font-weight: 600; color: #475569;">Filter by:</label>
+                    <select name="status" id="filter-status" class="input-field" style="min-width: 160px; height: 38px; font-size: 13px;">
+                        <option value="">All Statuses</option>
+                        <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
+                        <option value="Processing" <?php echo $status_filter === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                        <option value="Ready for Pickup" <?php echo $status_filter === 'Ready for Pickup' ? 'selected' : ''; ?>>Ready</option>
+                        <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>Completed</option>
+                        <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                    </select>
+                    <select name="timeframe" id="filter-timeframe" class="input-field" style="min-width: 140px; height: 38px; font-size: 13px;">
+                        <option value="today" <?php echo $timeframe === 'today' ? 'selected' : ''; ?>>Today</option>
+                        <option value="week" <?php echo $timeframe === 'week' ? 'selected' : ''; ?>>This Week</option>
+                        <option value="month" <?php echo $timeframe === 'month' ? 'selected' : ''; ?>>This Month</option>
+                    </select>
+                    <a href="pos.php" class="btn-primary" style="text-decoration: none; height: 38px; display: flex; align-items: center; padding: 0 20px; font-size: 13px; font-weight: 600;">
+                        POS (Walk-in)
+                    </a>
+                </form>
             </div>
             <!-- SALES & TOP SERVICES ROW -->
             <div class="grid-cols-3" style="margin-bottom: 16px;">
@@ -656,6 +647,35 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
     document.addEventListener('DOMContentLoaded', initDashboardInteractions);
 }
 document.addEventListener('turbo:load', initDashboardInteractions);
+
+// KPI Card Click Handler (matching admin)
+function initStaffKPIs() {
+    var links = document.querySelectorAll('a.kpi-card--link');
+    var clearKpiNav = function (a) {
+        delete a.dataset.kpiNav;
+        a.classList.remove('is-kpi-navigating');
+        a.removeAttribute('aria-busy');
+    };
+    links.forEach(function (a) {
+        a.removeEventListener('click', a._pfKpiHandler);
+        a._pfKpiHandler = function (e) {
+            if (a.dataset.kpiNav === '1') {
+                e.preventDefault();
+                return;
+            }
+            a.dataset.kpiNav = '1';
+            a.classList.add('is-kpi-navigating');
+            a.setAttribute('aria-busy', 'true');
+            window.setTimeout(function () { clearKpiNav(a); }, 4000);
+        };
+        a.addEventListener('click', a._pfKpiHandler);
+    });
+    window.addEventListener('pageshow', function (ev) {
+        if (!ev.persisted) return;
+        links.forEach(clearKpiNav);
+    });
+}
+initStaffKPIs();
 </script>
 
 </body>

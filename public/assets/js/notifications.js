@@ -175,7 +175,7 @@
                 isPayment = true;
             }
 
-            if (isPayment && did) url = base + '/customer/payment.php?order_id=' + did;
+            if (isPayment && did) url = base + '/customer/order_details.php?id=' + did + '&pay=1';
             else if (t.indexOf('order') !== -1 || t.indexOf('status') !== -1) url = base + '/customer/orders.php?highlight=' + did;
             else if (t.indexOf('job') !== -1) url = base + '/customer/order_details.php?id=' + did;
             else if (t.indexOf('chat') !== -1 || t.indexOf('message') !== -1) url = did ? base + '/customer/chat.php?order_id=' + did : base + '/customer/messages.php';

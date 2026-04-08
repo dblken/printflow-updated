@@ -84,24 +84,13 @@ $page_title = 'Products & Inventory - Staff';
     <title><?php echo $page_title; ?></title>
     <link rel="stylesheet" href="/printflow/public/assets/css/output.css">
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        .page-title { font-size: 24px; font-weight: 800; color: #1f2937; margin-bottom: 20px; }
+        .page-title { font-size: 24px; font-weight: 700; color: #1f2937; margin-bottom: 20px; }
         .status-badge-pill { font-size: 10px; padding: 4px 10px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
         .table-text-main { font-size: 13px; font-weight: 600; color: #1f2937; }
         .table-text-sub { font-size: 11px; color: #64748b; font-weight: 500; }
         
-        /* ── Standard KPI Card Layout (Explicitly Defined) ── */
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .kpi-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .kpi-card.indigo { border-left: 4px solid #4f46e5; }
-        .kpi-card.amber { border-left: 4px solid #f59e0b; }
-        .kpi-card.blue { border-left: 4px solid #3b82f6; }
-        .kpi-card.emerald { border-left: 4px solid #10b981; }
-        .kpi-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-        .kpi-value { font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1.2; }
-        .kpi-sub { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
 
         /* ── Toolbar Buttons ─── */
         .toolbar-btn {
@@ -179,6 +168,49 @@ $page_title = 'Products & Inventory - Staff';
         .filter-reset-link:hover { text-decoration: underline; }
         .filter-select-v2 { width: 100%; height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #1e293b; outline: none; transition: border-color 0.2s; }
         .filter-select-v2:focus { border-color: #0d9488; }
+
+        /* Filter refined styles */
+        .filter-search-wrap { position: relative; }
+        .filter-search-wrap svg {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+        .filter-search-input {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 0 12px 0 32px;
+            color: #1f2937;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .filter-search-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            padding: 14px 18px;
+            border-top: 1px solid #f3f4f6;
+        }
+        .filter-btn-reset {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .filter-btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
         
         [x-cloak] { display: none !important; }
     </style>
@@ -191,10 +223,10 @@ $page_title = 'Products & Inventory - Staff';
 
     <!-- Main Content -->
     <div class="main-content">
-        <header style="display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px;">
-            <h1 class="page-title" style="margin:0;">Products & Inventory</h1>
-            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
-                Branch: <?php echo htmlspecialchars($branchName); ?>
+        <header>
+            <div>
+                <h1 class="page-title">Products & Inventory</h1>
+                <p class="page-subtitle">Monitor stock levels and manage product availability</p>
             </div>
         </header>
 
@@ -232,14 +264,7 @@ $page_title = 'Products & Inventory - Staff';
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                     <h3 style="font-size:16px; font-weight:700; color:#1f2937; margin:0;">Inventory List</h3>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <!-- Search Field -->
-                        <div style="position: relative; width: 260px;">
-                            <input type="text" x-model="search" placeholder="Search product or SKU..." 
-                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
-                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            </div>
-                        </div>
+                        <!-- Filter Button is now the entry point for searching -->
 
                         <!-- Sort Button -->
                         <div style="position:relative;">
@@ -288,9 +313,20 @@ $page_title = 'Products & Inventory - Staff';
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <div style="padding:14px 18px; background:#f9fafb; display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-size:12px; color:#6b7280;" x-text="filteredProducts.length + ' results found'"></span>
-                                    <button class="filter-reset-link" @click="categoryFilter = ''">Clear All</button>
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Keyword search</span>
+                                        <button class="filter-reset-link" @click="search = ''">Reset</button>
+                                    </div>
+                                    <div class="filter-search-wrap">
+                                        <input type="text" x-model="search" class="filter-search-input" placeholder="Search product or SKU...">
+                                        <div style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="filter-actions">
+                                    <button class="filter-btn-reset" @click="categoryFilter = ''; search = '';">Reset all filters</button>
                                 </div>
                             </div>
                         </div>

@@ -122,60 +122,10 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             -webkit-backdrop-filter: blur(15px);
             padding: 20px;
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            z-index: 2;
-        }
-        .kpi-card-v2:hover { 
-            transform: translateY(-4px); 
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 15px 30px -10px rgba(6, 161, 161, 0.12); 
-            border-color: #06A1A1;
-        }
-        .kpi-v2-value { 
-            font-size: 28px; 
-            font-weight: 950; 
-            color: #013a3a; 
-            line-height: 1; 
-            margin-bottom: 8px; 
-            letter-spacing: -0.04em;
-        }
-        .kpi-v2-label { 
-            font-size: 10px; 
-            font-weight: 800; 
-            color: #0d9488; 
-            text-transform: uppercase; 
-            letter-spacing: 0.1em;
-            opacity: 0.9;
-        }
-        .kpi-v2-sub { 
-            font-size: 11px; 
-            color: #475569; 
-            margin-top: 4px; 
-            font-weight: 600;
-            opacity: 0.6;
-        }
-        .kpi-card-indicator { position: absolute; top: 12px; right: 18px; width: 28px; height: 4px; border-radius: 2px; opacity: 0.4; }
-
         @keyframes float {
             from { transform: translate(0, 0) rotate(0deg); }
             to { transform: translate(20px, 20px) rotate(10deg); }
         }
-
-        .kpi-v2-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            position: relative;
-            z-index: 2;
-        }
-        @media (max-width: 1200px) { .kpi-v2-row { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .kpi-v2-row { grid-template-columns: 1fr; } }
-
-
 
         /* ── Status Tabs (Restored) ─── */
         .pf-custom-tabs-row {
@@ -196,7 +146,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
         .pill-tab { 
             position: relative;
             padding: 8px 14px; 
-            font-weight: 700; 
+            font-weight: 600; 
             font-size: 11px; 
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -219,7 +169,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             font-size: 10px; 
             padding: 1px 7px; 
             border-radius: 9999px; 
-            font-weight: 800;
+            font-weight: 700;
         }
         .pill-tab.active .tab-count { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
 
@@ -363,6 +313,34 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             font-weight: 700;
         }
 
+        /* ── Modal Styles ─── */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-panel {
+            background: #ffffff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 800px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
         [x-cloak] { display: none !important; }
         .dashboard-container { min-height: 100vh; background: #f8fafc; }
         .main-content {
@@ -382,6 +360,49 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
         }
         .kpi-premium-container { margin-bottom: 12px !important; padding: 18px 24px !important; }
+
+        /* Filter refined styles */
+        .filter-search-wrap { position: relative; }
+        .filter-search-wrap svg {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+        .filter-search-input {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 0 12px 0 32px;
+            color: #1f2937;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .filter-search-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            padding: 14px 18px;
+            border-top: 1px solid #f3f4f6;
+        }
+        .filter-btn-reset {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .filter-btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
     </style>
 </head>
 <body data-base-url="<?php echo htmlspecialchars(BASE_URL); ?>" data-csrf="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
@@ -395,44 +416,35 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
     ?>
     <div class="main-content">
         <div id="staffJoCustomizationsPage" x-data="joManager('ALL')" x-init="init()" class="pf-staff-customizations-root" @keydown.escape.window="onSvcEscape()">
-        <header style="display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px;">
-            <h1 class="page-title" style="margin:0;">Customizations</h1>
-            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
-                Branch: <?php echo htmlspecialchars($branchName); ?>
+        <header>
+            <div>
+                <h1 class="page-title">Customizations</h1>
+                <p class="page-subtitle">Production workflow and material allocation management</p>
             </div>
         </header>
 
         <main>
-            <!-- New Premium KPI Container -->
-            <div class="kpi-premium-container">
-                <div class="kpi-bg-shape shape-1"></div>
-                <div class="kpi-bg-shape shape-2"></div>
-                
-                <div class="kpi-v2-row">
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #06A1A1;"></div>
-                        <div class="kpi-v2-label">Total Customizations</div>
-                        <div class="kpi-v2-value"><?php echo $total_jobs; ?></div>
-                        <div class="kpi-v2-sub"><?php echo $completed_jobs; ?> items finished</div>
-                    </div>
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #d97706;"></div>
-                        <div class="kpi-v2-label">Pending Approval</div>
-                        <div class="kpi-v2-value" style="color: #d97706;"><?php echo $pending_jobs; ?></div>
-                        <div class="kpi-v2-sub">Awaiting review</div>
-                    </div>
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #0369a1;"></div>
-                        <div class="kpi-v2-label">Approved</div>
-                        <div class="kpi-v2-value" style="color: #0369a1;"><?php echo $approval_jobs; ?></div>
-                        <div class="kpi-v2-sub">Ready for production</div>
-                    </div>
-                    <div class="kpi-card-v2">
-                        <div class="kpi-card-indicator" style="background: #059669;"></div>
-                        <div class="kpi-v2-label">In Production</div>
-                        <div class="kpi-v2-value" style="color: #059669;"><?php echo $in_production; ?></div>
-                        <div class="kpi-v2-sub">Aktive task tracks</div>
-                    </div>
+            <!-- KPI Summary Row -->
+            <div class="kpi-row">
+                <div class="kpi-card indigo">
+                    <div class="kpi-label">Active Jobs</div>
+                    <div class="kpi-value"><?php echo number_format($total_jobs); ?></div>
+                    <div class="kpi-sub"><?php echo number_format($completed_jobs); ?> items finished</div>
+                </div>
+                <div class="kpi-card amber">
+                    <div class="kpi-label">Pending Approval</div>
+                    <div class="kpi-value"><?php echo number_format($pending_jobs); ?></div>
+                    <div class="kpi-sub">Awaiting review</div>
+                </div>
+                <div class="kpi-card blue">
+                    <div class="kpi-label">Approved</div>
+                    <div class="kpi-value"><?php echo number_format($approval_jobs); ?></div>
+                    <div class="kpi-sub">Ready for production</div>
+                </div>
+                <div class="kpi-card emerald">
+                    <div class="kpi-label">In Production</div>
+                    <div class="kpi-value text-emerald-600"><?php echo number_format($in_production); ?></div>
+                    <div class="kpi-sub">Active workflow track</div>
                 </div>
             </div>
 
@@ -463,14 +475,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                     <h3 style="font-size:16px; font-weight:700; color:#1f2937; margin:0;">Customizations List</h3>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <!-- Search Field -->
-                        <div style="position: relative; width: 260px;">
-                            <input type="text" x-model="search" placeholder="Search Order # or Customer..." 
-                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
-                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            </div>
-                        </div>
+                        <!-- Filter Button is now the primary entry for search/sort -->
 
                         <!-- Sort Button -->
                         <div style="position:relative;">
@@ -478,7 +483,7 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/>
                                 </svg>
-                                <span x-text="activeSortLabel">Newest First</span>
+                                Sort by
                             </button>
                             <div class="sort-dropdown" x-show="sortOpen" x-cloak @click.outside="sortOpen = false">
                                 <template x-for="s in [
@@ -547,9 +552,21 @@ $completed_jobs = $completed_jobs_jobs + $completed_orders;
                                     </div>
                                 </div>
 
-                                <div style="padding:14px 18px; background:#f9fafb; display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-size:12px; color:#6b7280;" x-text="filteredOrders.length + ' results found'"></span>
-                                    <button class="filter-reset-link" @click="resetFilters()">Clear All</button>
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Keyword search</span>
+                                        <button class="filter-reset-link" @click="search = ''">Reset</button>
+                                    </div>
+                                    <div class="filter-search-wrap">
+                                        <input type="text" x-model="search" class="filter-search-input" placeholder="Search...">
+                                        <div style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="filter-actions">
+                                    <button class="filter-btn-reset" @click="resetFilters()">Reset all filters</button>
                                 </div>
                             </div>
                         </div>

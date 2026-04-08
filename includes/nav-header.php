@@ -78,6 +78,11 @@ if ($initials === '') {
         #main-header .pf-notif-empty { padding: 32px 16px; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; }
         #main-header .pf-avatar { width: 2.55rem; height: 2.55rem; border-radius: 9999px; overflow: hidden; border: 1px solid rgba(83,197,224,.45); background: linear-gradient(135deg, rgba(83,197,224,.24), rgba(50,161,196,.4)); display: inline-flex; align-items: center; justify-content: center; color: #e6f7fc; font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
         #main-header .pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        #main-header .pf-install-btn { display: none; align-items: center; gap: .5rem; padding: .6rem 1.1rem; border-radius: 9999px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-size: .85rem; font-weight: 700; cursor: pointer; transition: all .25s ease; box-shadow: 0 4px 12px rgba(16,185,129,.3); letter-spacing: .02em; }
+        #main-header .pf-install-btn:hover { background: linear-gradient(135deg, #059669, #047857); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,.4); }
+        #main-header .pf-install-btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(16,185,129,.3); }
+        #main-header .pf-install-btn svg { flex-shrink: 0; }
+        @media (max-width: 640px) { #main-header .pf-install-text { display: none; } #main-header .pf-install-btn { padding: .65rem; } }
         #main-header .pf-dropdown-menu { display: none; }
         #main-header .pf-dropdown-menu.open { display: block; }
         #main-header .pf-dropdown-link,
@@ -310,6 +315,15 @@ if ($initials === '') {
 
             <!-- Right Side Icons -->
             <div class="pf-header-right">
+                <!-- Install App Button (PWA) - Only on landing page for non-logged-in users -->
+                <?php if (!$is_logged_in): ?>
+                <button type="button" id="pf-install-btn" class="pf-install-btn" style="display:none;" title="Install PrintFlow App">
+                    <svg style="width:1.1rem;height:1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    <span class="pf-install-text">Install App</span>
+                </button>
+                <?php endif; ?>
                 <?php if ($is_logged_in): ?>
                     <?php if (is_customer()): ?>
                     <button type="button" class="pf-burger-btn" data-pf-mobile-toggle aria-label="Open navigation menu">
@@ -406,6 +420,7 @@ if ($initials === '') {
                                 </svg>
                                 Profile
                             </a>
+
                             <div style="height:1px;background:rgba(83,197,224,0.1);margin:0.25rem 0;"></div>
                             <button onclick="document.getElementById('logout-confirm-modal').style.display='flex'" type="button"
                                class="pf-dropdown-btn">
@@ -422,10 +437,7 @@ if ($initials === '') {
                 <?php else: ?>
                     <a href="#" data-auth-modal="login" class="font-medium transition-colors duration-200" style="color:inherit;">Login</a>
                     <a href="#" data-auth-modal="register" class="btn-gradient-primary pf-auth-cta pf-register-cta">Register</a>
-                    <button type="button" id="pwa-install-btn" aria-label="Install PrintFlow app" class="pf-auth-cta" style="display:inline-flex;align-items:center;gap:0.45rem;white-space:nowrap;">
-                        <svg style="width:15px;height:15px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        Install App
-                    </button>
+
                 <?php endif; ?>
 
             </div>
@@ -569,5 +581,48 @@ if ($initials === '') {
             }
         });
     }
+
+    // PWA Install Button Handler
+    (function initPWAInstall() {
+        var installBtn = document.getElementById('pf-install-btn');
+        if (!installBtn) return;
+        
+        var deferredPrompt = null;
+        
+        // Check if already installed
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            return; // Already installed, don't show button
+        }
+        
+        // Listen for beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex';
+        });
+        
+        // Handle install button click
+        installBtn.addEventListener('click', function() {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            
+            deferredPrompt.userChoice.then(function(choiceResult) {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('PWA installed');
+                } else {
+                    console.log('PWA installation declined');
+                }
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            });
+        });
+        
+        // Hide button after successful install
+        window.addEventListener('appinstalled', function() {
+            installBtn.style.display = 'none';
+            deferredPrompt = null;
+        });
+    })();
 }());
 </script>

@@ -340,7 +340,7 @@ $dimension_presets = [
 </div>
 
 <script>
-let gatepassDimMode = 'preset';
+var gatepassDimMode = 'preset';
 
 function updateOpt(input) {
     const group = input.closest('.shopee-opt-group');

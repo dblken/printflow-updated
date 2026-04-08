@@ -18,6 +18,7 @@ $search = sanitize($_GET['search'] ?? '');
 $review_type = sanitize($_GET['review_type'] ?? '');
 $rating = (int)($_GET['rating'] ?? 0);
 $service = sanitize($_GET['service'] ?? '');
+$sort_by = sanitize($_GET['sort_by'] ?? 'newest');
 
 // Get distinct services for the filter from reviews, services, and products table
 $available_services = db_query("
@@ -103,9 +104,14 @@ $query_sql = "
             ELSE r.service_type
         END) as item_name
     " . $sql_base . "
-    ORDER BY r.created_at DESC
-    LIMIT ? OFFSET ?
-";
+    ";
+
+    $order_sql = " ORDER BY r.created_at DESC ";
+    if ($sort_by === 'oldest')      $order_sql = " ORDER BY r.created_at ASC ";
+    if ($sort_by === 'rating_high') $order_sql = " ORDER BY r.rating DESC, r.created_at DESC ";
+    if ($sort_by === 'rating_low')  $order_sql = " ORDER BY r.rating ASC, r.created_at DESC ";
+
+    $query_sql .= $order_sql . " LIMIT ? OFFSET ? ";
 
 $fetch_params = array_merge($params, [$items_per_page, $offset]);
 $fetch_types = $types . 'ii';
@@ -149,25 +155,12 @@ $page_title = 'Review Management - Staff';
     <title><?php echo htmlspecialchars($page_title); ?></title>
     <link rel="stylesheet" href="/printflow/public/assets/css/output.css">
     <?php include __DIR__ . '/../includes/admin_style.php'; ?>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        .page-title { font-size: 24px; font-weight: 800; color: #1f2937; margin-bottom: 20px; }
+        .page-title { font-size: 24px; font-weight: 700; color: #1f2937; margin-bottom: 20px; }
         .status-badge-pill { font-size: 10px; padding: 4px 10px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
         .table-text-main { font-size: 13px; font-weight: 600; color: #1f2937; }
         .table-text-sub { font-size: 11px; color: #64748b; font-weight: 500; }
         
-        /* ── Standard KPI Card Layout ── */
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .kpi-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; position: relative; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .kpi-card.indigo { border-left: 4px solid #4f46e5; }
-        .kpi-card.amber { border-left: 4px solid #f59e0b; }
-        .kpi-card.blue { border-left: 4px solid #3b82f6; }
-        .kpi-card.emerald { border-left: 4px solid #10b981; }
-        .kpi-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-        .kpi-value { font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1.2; }
-        .kpi-sub { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; }
-
         /* ── Toolbar Buttons ─── */
         .toolbar-btn {
             display: inline-flex;
@@ -244,6 +237,49 @@ $page_title = 'Review Management - Staff';
         .filter-reset-link:hover { text-decoration: underline; }
         .filter-select-v2 { width: 100%; height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #1e293b; outline: none; transition: border-color 0.2s; }
         .filter-select-v2:focus { border-color: #0d9488; }
+
+        /* Filter refined styles */
+        .filter-search-wrap { position: relative; }
+        .filter-search-wrap svg {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+        .filter-search-input {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 0 12px 0 32px;
+            color: #1f2937;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .filter-search-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            padding: 14px 18px;
+            border-top: 1px solid #f3f4f6;
+        }
+        .filter-btn-reset {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .filter-btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
         
         [x-cloak] { display: none !important; }
 
@@ -306,10 +342,10 @@ $page_title = 'Review Management - Staff';
     <?php endif; ?>
 
     <div class="main-content" x-data="reviewManager()" x-init="init()">
-        <header style="display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px;">
-            <h1 class="page-title" style="margin:0;">Review Management</h1>
-            <div style="font-size: 13px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
-                Branch: <?php echo htmlspecialchars($branchName); ?>
+        <header>
+            <div>
+                <h1 class="page-title">Review Management</h1>
+                <p class="page-subtitle">Customer feedback and interaction history</p>
             </div>
         </header>
 
@@ -359,12 +395,26 @@ $page_title = 'Review Management - Staff';
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                     <h3 style="font-size:16px; font-weight:700; color:#1f2937; margin:0;">Reviews Feed</h3>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <!-- Search Field -->
-                        <div style="position: relative; width: 260px;">
-                            <input type="text" x-model="search" @input.debounce.500ms="applyFilters()" placeholder="Search customer or order #..." 
-                                   style="width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 8px; border: 1px solid #e5e7eb; font-size: 13px;">
-                            <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <!-- Sort Button -->
+                        <div style="position:relative;">
+                            <button class="toolbar-btn" :class="{ active: sortOpen }" @click="sortOpen = !sortOpen; filterOpen = false" style="height:38px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/>
+                                </svg>
+                                Sort by
+                            </button>
+                            <div class="sort-dropdown" x-show="sortOpen" x-cloak @click.outside="sortOpen = false">
+                                <template x-for="s in [
+                                    {id:'newest', label:'Newest first'},
+                                    {id:'oldest', label:'Oldest first'},
+                                    {id:'rating_high', label:'Rating: High to Low'},
+                                    {id:'rating_low', label:'Rating: Low to High'}
+                                ]" :key="s.id">
+                                    <div class="sort-option" :class="{ 'selected': activeSort === s.id }" @click="applySort(s.id)">
+                                        <span x-text="s.label"></span>
+                                        <svg x-show="activeSort === s.id" class="check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
@@ -419,9 +469,21 @@ $page_title = 'Review Management - Staff';
                                     </select>
                                 </div>
 
-                                <div style="padding:14px 18px; background:#f9fafb; display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-size:12px; color:#6b7280;"><?php echo count($reviews); ?> in current page</span>
-                                    <button class="filter-reset-link" @click="resetFilters()">Clear All</button>
+                                <div class="filter-section">
+                                    <div class="filter-section-head">
+                                        <span class="filter-section-label">Keyword search</span>
+                                        <button class="filter-reset-link" @click="search = ''; applyFilters()">Reset</button>
+                                    </div>
+                                    <div class="filter-search-wrap">
+                                        <input type="text" x-model="search" class="filter-search-input" placeholder="Search..." @keydown.enter="applyFilters()">
+                                        <div style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="filter-actions">
+                                    <button class="filter-btn-reset" @click="resetFilters()">Reset all filters</button>
                                 </div>
                             </div>
                         </div>
@@ -528,7 +590,9 @@ function reviewManager() {
         service: '<?php echo addslashes($service); ?>',
         reviewType: '<?php echo addslashes($review_type); ?>',
         rating: <?php echo $rating; ?>,
+        activeSort: '<?php echo addslashes($_GET['sort_by'] ?? 'newest'); ?>',
         filterOpen: false,
+        sortOpen: false,
 
         init() {
             // Keep state
@@ -548,7 +612,14 @@ function reviewManager() {
             if (this.service) params.set('service', this.service);
             if (this.reviewType) params.set('review_type', this.reviewType);
             if (this.rating > 0) params.set('rating', this.rating);
+            if (this.activeSort !== 'newest') params.set('sort_by', this.activeSort);
             window.location.search = params.toString();
+        },
+
+        applySort(id) {
+            this.activeSort = id;
+            this.sortOpen = false;
+            this.applyFilters();
         },
 
         resetFilters() {

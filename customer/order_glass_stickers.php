@@ -366,8 +366,8 @@ if ($display_img !== '' && strpos($display_img, 'http') === false && $display_im
 </style>
 
 <script>
-const ADDR_API = '<?php echo $addr_api; ?>';
-let dimensionMode = 'preset';
+var ADDR_API = '<?php echo $addr_api; ?>';
+var dimensionMode = 'preset';
 
 function selectDimension(w, h, e) {
     dimensionMode = 'preset';

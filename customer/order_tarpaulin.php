@@ -331,7 +331,7 @@ if ($sold_count >= 1000) {
 </style>
 
 <script>
-let dimensionMode = 'preset';
+var dimensionMode = 'preset';
 
 function openPricelistModal() { document.getElementById('pricelist-modal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
 function closePricelistModal() { document.getElementById('pricelist-modal').style.display = 'none'; document.body.style.overflow = ''; }

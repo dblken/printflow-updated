@@ -237,6 +237,10 @@ require_once __DIR__ . '/../includes/header.php';
     border-radius: 0 !important;
     margin-bottom: 0 !important;
     box-shadow: none !important;
+    height: 200px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 .ct-order-card + .ct-order-card {
     border-top: 1px solid var(--lp-border) !important;
@@ -291,7 +295,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 .pricing-column { text-align: right; min-width: 280px; display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
 .final-price { font-size: 1.35rem; font-weight: 900; color: #fff; letter-spacing: -0.02em; line-height: 1; }
-.hidden-price-msg { font-size: 0.72rem; color: var(--lp-muted); font-style: italic; line-height: 1.4; margin-bottom: 0.25rem; }
+.hidden-price-msg { font-size: 0.72rem; color: var(--lp-muted); font-style: italic; line-height: 1.4; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .card-actions-inline { display: flex; gap: 0.5rem; }
 
 .card-footer-actions {
@@ -582,11 +586,11 @@ require_once __DIR__ . '/../includes/header.php';
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                             Message
                                         </a>
-                                        <?php if (strtolower(trim($order['status'])) === 'to pay'): ?>
-                                        <a href="<?php echo BASE_URL; ?>/customer/payment.php?order_id=<?php echo $order['order_id']; ?>" class="action-button btn-main" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); padding: 0.45rem 0.85rem; font-size: 0.68rem; position: relative; z-index: 10; white-space: nowrap;">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                            Pay Now
-                                        </a>
+                                        <?php if (strtolower(trim($order['status'] ?? '')) === 'to pay'): ?>
+                                            <a href="<?php echo BASE_URL; ?>/customer/order_details.php?id=<?php echo $order['order_id']; ?>" class="action-button btn-main" style="background: linear-gradient(135deg, #4f46e5, #3730a3); color: #fff; border: none; padding: 0.45rem 0.85rem; font-size: 0.68rem; position: relative; z-index: 10; white-space: nowrap; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                                Pay Now
+                                            </a>
                                         <?php endif; ?>
                                         <button class="action-button btn-main" style="padding: 0.45rem 0.85rem; font-size: 0.68rem;" onclick="openItemsModal(<?php echo $order['order_id']; ?>)">View Details</button>
                                     </div>
@@ -876,7 +880,7 @@ function closeItemsModal() {
 }
 
 // Cancellation Logic
-let cancelOrderId = null, cancelCsrfToken = null;
+var cancelOrderId = null, cancelCsrfToken = null;
 function openCancelModal(id, token) {
     cancelOrderId = id; cancelCsrfToken = token;
     document.getElementById('cancelModal').classList.add('open');

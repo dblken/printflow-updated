@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/xendit_config.php';
 
 if (!defined('BASE_URL')) define('BASE_URL', '/printflow');
 require_role(['Admin', 'Staff', 'Manager']);
@@ -83,6 +84,54 @@ log_activity($staff_id, 'Order Status Update', "Order #{$order_id} → {$new_sta
 $notif = get_order_status_notification_payload($order_id, $new_status);
 create_notification($customer_id, 'Customer', $notif['message'], $notif['type'], false, false, $order_id);
 add_order_system_message($order_id, $notif['message']);
+
+// ── Xendit Integration: Generate Link if TO PAY ──────────────────
+if ($new_status === 'To Pay' && defined('XENDIT_ENABLED') && XENDIT_ENABLED) {
+    $full_order = db_query("
+        SELECT o.total_amount, o.payment_link, c.email, c.contact_number, c.customer_type 
+        FROM orders o 
+        JOIN customers c ON o.customer_id = c.customer_id 
+        WHERE o.order_id = ?
+    ", 'i', [$order_id])[0] ?? null;
+
+    if ($full_order && empty($full_order['payment_link'])) {
+        $amount = (float)$full_order['total_amount'];
+        $cust_type = strtolower($full_order['customer_type'] ?? 'new');
+        
+        // 50% for regular customers, 100% for new
+        if ($cust_type === 'regular') {
+            $amount = $amount * 0.5;
+            $pay_type_str = " (50% Downpayment)";
+        } else {
+            $pay_type_str = " (Full Payment)";
+        }
+
+        $res = xendit_generate_payment_link(
+            $order_id, 
+            $amount, 
+            $full_order['email'], 
+            $full_order['contact_number'] ?: null
+        );
+
+        if ($res && $res['success']) {
+            $pay_link = $res['data']['invoice_url'];
+            db_execute(
+                "UPDATE orders SET payment_link = ?, payment_status = 'TO PAY', downpayment_amount = ? WHERE order_id = ?",
+                'sdi', [$pay_link, ($cust_type === 'regular' ? $amount : 0), $order_id]
+            );
+
+            // Also sync to job_orders if it exists for this order
+            db_execute("UPDATE job_orders SET payment_status = 'TO PAY' WHERE order_id = ?", 'i', [$order_id]);
+            
+            // Auto-send payment link via chat & notification
+            $msg = "💳 Payment link generated{$pay_type_str}. Amount: " . format_currency($amount) . ". Pay here: {$pay_link}";
+            add_order_system_message($order_id, $msg);
+            create_notification($customer_id, 'Customer', $msg, 'Payment', false, false, $order_id);
+        } else {
+            error_log("Xendit failed for Order #{$order_id}: " . ($res['message'] ?? 'Unknown Error'));
+        }
+    }
+}
 
 echo json_encode([
     'success'    => true,

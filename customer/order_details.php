@@ -7,8 +7,19 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/order_ui_helper.php';
+require_once __DIR__ . '/../includes/xendit_config.php';
 
 require_role('Customer');
+
+// Check available payment methods
+$qr_dir = __DIR__ . '/../public/assets/uploads/qr/';
+$payment_cfg_path = $qr_dir . 'payment_methods.json';
+$payment_methods = file_exists($payment_cfg_path) ? json_decode(file_get_contents($payment_cfg_path), true) : [];
+if (!is_array($payment_methods)) $payment_methods = [];
+$enabled_methods = array_filter($payment_methods, function($m) { return !empty($m['enabled']); });
+
+$has_dynamic_payment = count($enabled_methods) > 0;
+$has_xendit = defined('XENDIT_ENABLED') && XENDIT_ENABLED;
 
 $order_id = (int)($_GET['id'] ?? 0);
 $customer_id = get_user_id();
@@ -127,7 +138,7 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- 1. Order Status & Date Alert -->
             <div style="padding:1rem; background:rgba(255,255,255,0.05); color:var(--lp-text); border: 1px solid var(--lp-border); border-radius:12px; font-weight:700; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center;">
                 <span>Placed on: <?php echo format_datetime($order['order_date']); ?></span>
-                <a href="<?php echo BASE_URL; ?>/customer/chat.php?order_id=<?php echo $order_id; ?>" class="btn-chat" style="padding:5px 12px; border-radius:6px; font-weight:800; font-size:0.75rem; text-decoration:none; display:inline-block;">
+                <a href="/printflow/customer/chat.php?order_id=<?php echo $order_id; ?>" class="btn-chat" style="padding:5px 12px; border-radius:6px; font-weight:800; font-size:0.75rem; text-decoration:none; display:inline-block;">
                     💬 Chat Support
                 </a>
             </div>
@@ -136,15 +147,15 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- Revision Required Alert -->
             <?php if ($order['status'] === 'For Revision'): ?>
-                <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start;">
-                    <div style="background: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem;">⚠️</div>
+                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 16px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start; backdrop-filter: blur(8px);">
+                    <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);">⚠️</div>
                     <div>
-                        <h3 style="color: #991b1b; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem;">Revision Required</h3>
-                        <p style="color: #b91c1c; font-size: 0.8rem; line-height: 1.5; margin-bottom:0.75rem;">
+                        <h3 style="color: #fca5a5; font-weight: 800; font-size: 0.95rem; margin-bottom: 0.35rem; letter-spacing: 0.02em;">Revision Required</h3>
+                        <p style="color: #fecaca; font-size: 0.85rem; line-height: 1.6; margin-bottom:0.75rem;">
                             The shop has requested a revision for this order. Please review the reason below and update your order details.
                         </p>
-                        <div style="background:white; border:1px solid #fca5a5; padding:10px; border-radius:8px; font-size:0.85rem; color:#991b1b; font-weight:600; line-height:1.55; white-space:normal; overflow-wrap:anywhere; word-break:break-word; max-width:100%;">
-                            <strong>Reason:</strong> <?php echo nl2br(htmlspecialchars($order['revision_reason'] ?? 'Not specified')); ?>
+                        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px; border-radius: 10px; font-size: 0.85rem; color: #fca5a5; font-weight: 500; line-height: 1.55; white-space: normal; overflow-wrap: anywhere; word-break: break-word; max-width: 100%;">
+                            <strong style="color: #f87171;">Reason:</strong> <?php echo nl2br(htmlspecialchars($order['revision_reason'] ?? 'Not specified')); ?>
                         </div>
                     </div>
                 </div>
@@ -152,42 +163,28 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- Cancellation Alert for Cancelled Orders -->
             <?php if ($order['status'] === 'Cancelled'): ?>
-                <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start;">
-                    <div style="background: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem;">✕</div>
+                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 16px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start; backdrop-filter: blur(8px);">
+                    <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);">✕</div>
                     <div style="font-size: 0.85rem;">
-                        <h3 style="color: #991b1b; font-weight: 700; margin-bottom: 0.25rem;">Order Cancelled</h3>
-                        <p style="color: #b91c1c; line-height: 1.5; margin:0;">
-                            <strong>Cancelled By:</strong> <?php echo htmlspecialchars($order['cancelled_by'] ?? 'N/A'); ?><br>
-                            <strong>Reason:</strong> <?php echo htmlspecialchars($order['cancel_reason'] ?? 'Not specified'); ?><br>
-                            <strong>Date:</strong> <?php echo !empty($order['cancelled_at']) ? format_datetime($order['cancelled_at']) : 'N/A'; ?>
+                        <h3 style="color: #fca5a5; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: 0.02em; font-size: 0.95rem;">Order Cancelled</h3>
+                        <p style="color: #fecaca; line-height: 1.6; margin:0; font-weight: 500;">
+                            <strong style="color:#f87171;">Cancelled By:</strong> <?php echo htmlspecialchars($order['cancelled_by'] ?? 'N/A'); ?><br>
+                            <strong style="color:#f87171;">Reason:</strong> <?php echo htmlspecialchars($order['cancel_reason'] ?? 'Not specified'); ?><br>
+                            <strong style="color:#f87171;">Date:</strong> <?php echo !empty($order['cancelled_at']) ? format_datetime($order['cancelled_at']) : 'N/A'; ?>
                         </p>
                     </div>
                 </div>
             <?php endif; ?>
 
-            <!-- Downpayment Required Alert (Only show if status is 'To Pay') -->
-            <?php if ($order['status'] === 'To Pay' && $order['payment_status'] === 'Unpaid'): ?>
-                <div style="background-color: #fff7ed; border: 1px solid #ffedd5; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start;">
-                    <div style="background: #f97316; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem;">💳</div>
-                    <div style="flex: 1;">
-                        <h3 style="color: #9a3412; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem;">Downpayment Required</h3>
-                        <p style="color: #c2410c; font-size: 0.8rem; line-height: 1.5; margin-bottom: 0.75rem;">
-                            Your order requires a 50% downpayment (<?php echo format_currency($order['total_amount'] * 0.5); ?>) to begin production.
-                        </p>
-                        <button onclick="openPaymentModal()" class="btn-primary" style="background:#f97316; padding:6px 14px; font-size:0.75rem;">
-                            Submit Payment Proof
-                        </button>
-                    </div>
-                </div>
-            <?php endif; ?>
+
 
             <!-- Payment Submitted Status Alert -->
             <?php if ($order['status'] === 'Downpayment Submitted'): ?>
-                <div style="background-color: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start;">
-                    <div style="background: #22c55e; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem;">⏳</div>
+                <div style="background: rgba(34, 197, 94, 0.07); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 16px; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start; backdrop-filter: blur(8px);">
+                    <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #86efac; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.2);">⏳</div>
                     <div>
-                        <h3 style="color: #166534; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem;">Payment Under Review</h3>
-                        <p style="color: #15803d; font-size: 0.8rem; line-height: 1.5; margin:0;">
+                        <h3 style="color: #86efac; font-weight: 800; font-size: 0.95rem; margin-bottom: 0.35rem; letter-spacing: 0.02em;">Payment Under Review</h3>
+                        <p style="color: #bbf7d0; font-size: 0.85rem; line-height: 1.6; margin:0; font-weight: 500;">
                             Your payment proof has been submitted. We'll notify you once it's verified and production begins.
                         </p>
                     </div>
@@ -195,170 +192,192 @@ require_once __DIR__ . '/../includes/header.php';
             <?php endif; ?>
 
         <!-- Payment Modal -->
+        <!-- Payment Modal -->
         <style>
             /* Custom scrollbar for modal */
             #paymentModal .card::-webkit-scrollbar {
-                width: 8px;
+                width: 6px;
             }
             #paymentModal .card::-webkit-scrollbar-track {
-                background: #f1f5f9; 
-                border-radius: 10px;
+                background: transparent; 
             }
             #paymentModal .card::-webkit-scrollbar-thumb {
-                background: #cbd5e1; 
+                background: rgba(83, 197, 224, 0.2); 
                 border-radius: 10px;
             }
             #paymentModal .card::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8; 
+                background: rgba(83, 197, 224, 0.4); 
+            }
+            
+            /* Premium Options UI */
+            .payment-policy-option {
+                display: flex; align-items: center; gap: 14px; padding: 14px 18px; 
+                border: 2px solid rgba(83, 197, 224, 0.15); border-radius: 14px; 
+                cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                background: rgba(255, 255, 255, 0.03);
+            }
+            .payment-policy-option:hover {
+                background: rgba(83, 197, 224, 0.08);
+                border-color: rgba(83, 197, 224, 0.3);
+            }
+            .payment-policy-option input[type="radio"] {
+                appearance: none; -webkit-appearance: none;
+                width: 22px; height: 22px; border: 2px solid rgba(83, 197, 224, 0.4);
+                border-radius: 50%; outline: none; transition: all 0.2s;
+                display: flex; align-items: center; justify-content: center;
+                background: rgba(0,0,0,0.2); flex-shrink: 0;
+            }
+            .payment-policy-option input[type="radio"]:checked {
+                border-color: #53c5e0; background: rgba(83, 197, 224, 0.1);
+            }
+            .payment-policy-option input[type="radio"]:checked::after {
+                content: ""; width: 10px; height: 10px; border-radius: 50%;
+                background: #53c5e0; box-shadow: 0 0 8px rgba(83, 197, 224, 0.8);
+            }
+            .pm-tab-btn {
+                flex: 1; padding: 12px; border-radius: 12px; 
+                border: 2px solid rgba(83, 197, 224, 0.15); background: rgba(255, 255, 255, 0.03); 
+                color: #8bbdcc; font-weight: 800; font-family: inherit; font-size: 0.85rem; 
+                cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+                white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em;
+            }
+            .pm-tab-btn:hover:not(.active) {
+                background: rgba(83, 197, 224, 0.08); border-color: rgba(83, 197, 224, 0.3); color: #eaf6fb;
+            }
+            .pm-tab-btn.active {
+                border-color: #53c5e0; background: rgba(83, 197, 224, 0.15); color: #53c5e0;
+                box-shadow: 0 4px 15px rgba(83, 197, 224, 0.15);
             }
         </style>
-        <div id="paymentModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; padding:20px; backdrop-filter: blur(8px);">
-            <div class="card" style="width:100%; position:relative; border-radius: 20px; padding: 2rem; max-height: 90vh; overflow-y: auto; background: var(--lp-surface); border: 1px solid var(--lp-border);">
-                <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:0.5rem; color:#111827; display: flex; align-items: center; gap: 10px;">
+        <div id="paymentModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,10,15,0.8); z-index:9999; align-items:flex-start; justify-content:center; padding: 80px 10px 10px 10px; backdrop-filter: blur(12px);">
+            <div class="card" style="width:100%; max-width: 800px; position:relative; border-radius: 0; padding: 1.5rem; max-height: calc(100vh - 100px); overflow-y: auto; background: rgba(0, 35, 43, 0.98); border: 1px solid rgba(83, 197, 224, 0.3); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 120px; background: radial-gradient(circle at top right, rgba(83, 197, 224, 0.15), transparent 70%); pointer-events: none; border-radius: 0;"></div>
+                
+                <button type="button" onclick="closePaymentModal()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(83, 197, 224, 0.4); color: #ffffff; width: 36px; height: 36px; border-radius: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.2s; font-size: 1.25rem;">
+                    ✕
+                </button>
+
+                <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.25rem; color:#eaf6fb; display: flex; align-items: center; gap: 10px; position:relative; letter-spacing: -0.02em;">
                     Submit Payment
                 </h2>
-                <?php 
-                $qr_dir = __DIR__ . '/../public/assets/uploads/qr/';
-                $payment_cfg_path = $qr_dir . 'payment_methods.json';
-                $payment_methods = file_exists($payment_cfg_path) ? json_decode(file_get_contents($payment_cfg_path), true) : [];
-                if (!is_array($payment_methods)) $payment_methods = [];
-                $enabled_methods = array_filter($payment_methods, function($m) { return !empty($m['enabled']); });
-                ?>
 
-                <form id="paymentForm" enctype="multipart/form-data">
+                <form id="paymentForm" enctype="multipart/form-data" style="position:relative;">
                     <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
                     <?php echo csrf_field(); ?>
 
-                    <p style="color:#6b7280; font-size:0.9rem; margin-bottom:1rem;">Follow the steps below to finalize your order.</p>
+                    <p style="color:#ffffff; font-size:0.85rem; margin-bottom:1rem; font-weight: 500;">Follow the steps below to finalize your order.</p>
                     
-                    <!-- Step 1: Payment Policy -->
-                    <div style="margin-bottom: 2rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1.5rem;">
-                        <label style="display:block; font-size:0.875rem; font-weight:800; color: #111827; margin-bottom:1rem; text-transform:uppercase; letter-spacing:0.04em;">Step 1: Choose Payment Policy</label>
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
-                            <label class="payment-policy-option" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: all 0.2s;">
-                                <input type="radio" name="payment_choice" value="full" checked onclick="updatePaymentUI('full')" style="width: 18px; height: 18px;">
-                                <div>
-                                    <div style="font-weight: 800; font-size: 0.95rem; color: #111827;">Full Payment (100%)</div>
-                                    <div style="font-size: 0.8rem; color: #6b7280;">Pay the full amount of <?php echo format_currency($order['total_amount']); ?></div>
-                                </div>
-                            </label>
-
-                            <label class="payment-policy-option" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: all 0.2s;">
-                                <input type="radio" name="payment_choice" value="half" onclick="updatePaymentUI('half')" style="width: 18px; height: 18px;">
-                                <div>
-                                    <div style="font-weight: 800; font-size: 0.95rem; color: #111827;">Downpayment (50%)</div>
-                                    <div style="font-size: 0.8rem; color: #6b7280;">Pay at least <?php echo format_currency($order['total_amount'] * 0.5); ?> to start production.</div>
-                                </div>
-                            </label>
-
-                        </div>
-                    </div>
-
                     <div id="paymentDetailsSection">
-                        <label style="display:block; font-size:0.875rem; font-weight:800; color: #111827; margin-bottom:1rem; text-transform:uppercase; letter-spacing:0.04em;">Step 2: Transfer & Upload Proof</label>
+                        <label style="display:block; font-size:0.75rem; font-weight:800; color: #ffffff; margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:0.06em;">Step 1: Choose Method & Transfer</label>
                         <?php if (empty($enabled_methods)): ?>
-                            <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; color: #b91c1c; font-size: 0.9rem;">
-                                No online payment methods are currently configured by the shop. Please contact support.
+                            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; color: #ffffff; font-size: 0.9rem; font-weight: 500; text-align: center;">
+                                ⚠️ No online payment methods are currently configured by the shop. Please contact support.
                             </div>
                         <?php else: ?>
                             <!-- Payment Methods Tabs/Selector -->
-                            <div style="display: flex; gap: 8px; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 4px;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 0.75rem; overflow-x: auto; padding-bottom: 4px;">
                                 <?php $first = true; foreach ($enabled_methods as $index => $pm): ?>
-                                    <button type="button" onclick="selectPaymentMethod(<?php echo $index; ?>)" id="btn-pm-<?php echo $index; ?>" class="pm-tab-btn" style="flex: 1; padding: 10px; border-radius: 10px; border: 2px solid <?php echo $first ? '#4F46E5' : '#e5e7eb'; ?>; background: <?php echo $first ? '#e0e7ff' : '#f9fafb'; ?>; color: <?php echo $first ? '#4F46E5' : '#4b5563'; ?>; font-weight: 700; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                                    <button type="button" onclick="selectPaymentMethod(<?php echo $index; ?>)" id="btn-pm-<?php echo $index; ?>" class="pm-tab-btn <?php echo $first ? 'active' : ''; ?>">
                                         <?php echo htmlspecialchars($pm['provider']); ?>
                                     </button>
                                 <?php $first = false; endforeach; ?>
                             </div>
 
                             <!-- Payment Provider Details -->
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; text-align: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <div style="background: rgba(0, 20, 26, 0.6); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 0.75rem; margin-bottom: 0.75rem; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);">
                                 <?php $first = true; foreach ($enabled_methods as $index => $pm): ?>
-                                    <div id="pm-details-<?php echo $index; ?>" style="display: <?php echo $first ? 'block' : 'none'; ?>; width: 100%;">
+                                    <div id="pm-details-<?php echo $index; ?>" class="pm-details-panel" style="display: <?php echo $first ? 'block' : 'none'; ?>; width: 100%; animation: fadeIn 0.3s ease;">
                                         <?php if (!empty($pm['file'])): ?>
-                                            <img src="/printflow/public/assets/uploads/qr/<?php echo htmlspecialchars($pm['file']); ?>?t=<?php echo time(); ?>" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px; border: 2px solid #e2e8f0; margin: 0 auto 10px auto; display: block; background: white;" alt="QR Code">
+                                            <div style="background: white; padding: 6px; border-radius: 12px; margin: 0 auto 10px auto; width: fit-content; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                                                <img src="/printflow/public/assets/uploads/qr/<?php echo htmlspecialchars($pm['file']); ?>?t=<?php echo time(); ?>" style="width: 100px; height: 100px; object-fit: contain; display: block;" alt="QR Code">
+                                            </div>
                                         <?php endif; ?>
-                                        <div style="font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px;"><?php echo htmlspecialchars($pm['provider']); ?></div>
+                                        <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-bottom: 4px; letter-spacing: -0.01em;"><?php echo htmlspecialchars($pm['provider']); ?></div>
                                         <?php if (!empty($pm['label'])): ?>
-                                            <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;"><?php echo htmlspecialchars($pm['label']); ?></div>
+                                            <div style="font-size: 0.85rem; color: #ffffff; font-weight: 700; background: rgba(255, 255, 255, 0.1); padding: 2px 10px; border-radius: 999px; display: inline-block; border: 1px solid rgba(255, 255, 255, 0.2);"><?php echo htmlspecialchars($pm['label']); ?></div>
                                         <?php endif; ?>
                                     </div>
                                 <?php $first = false; endforeach; ?>
                             </div>
                         <?php endif; ?>
 
-
-                    
                         <div id="proofUploadSection">
-                            <div style="margin-bottom:1.25rem;">
-                                <label style="display:block; font-size:0.875rem; font-weight:700; color: #374151; margin-bottom:0.5rem;">Amount to Pay (PHP)</label>
-                                <input type="number" name="amount" id="paymentAmountInput" step="0.01" class="input-field" 
+                            <div style="margin-bottom:0.75rem; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 0.75rem 1rem;">
+                                <label style="display:block; font-size:0.75rem; font-weight:800; color: #ffffff; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing: 0.05em;">Amount to Pay (PHP)</label>
+                                <input type="number" name="amount" id="paymentAmountInput" step="0.01"  
                                        value="<?php echo number_format($order['total_amount'], 2, '.', ''); ?>" 
                                        min="<?php echo number_format($order['total_amount'], 2, '.', ''); ?>" 
-                                       style="width:100%; font-size: 1.1rem; font-weight: 700; color: #4F46E5;" required>
-                                <p id="minPaymentText" style="font-size: 0.75rem; color: #6b7280; margin-top: 8px;">Total: <?php echo format_currency($order['total_amount']); ?></p>
+                                       style="width:100%; font-size: 1.5rem; font-weight: 800; color: #ffffff; background: transparent; border: none; outline: none;" required>
+                                <p id="minPaymentText" style="font-size: 0.8rem; color: #d1d5db; margin-top: 6px; font-weight: 600;">Full Total: <?php echo format_currency($order['total_amount']); ?></p>
                             </div>
                             
-                            <div style="margin-bottom:1.5rem;">
-                                <label style="display:block; font-size:0.875rem; font-weight:700; color: #374151; margin-bottom:0.5rem;">Upload Proof of Payment</label>
-                                <div id="dropzone" style="border: 2px dashed #e2e8f0; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#4F46E5'; this.style.background='#f5f3ff'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='transparent'">
-                                    <input type="file" name="payment_proof" id="proofInput" style="display: none;" accept="image/*">
+                            <div style="margin-bottom:1rem;">
+                                <label style="display:block; font-size:0.75rem; font-weight:800; color: #ffffff; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Step 2: Upload Proof of Payment</label>
+                                <div id="dropzone" style="border: 2px dashed rgba(255, 255, 255, 0.3); background: rgba(0,0,0,0.25); border-radius: 0; padding: 0.75rem; text-align: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);" onmouseover="this.style.borderColor='rgba(255, 255, 255, 0.6)'; this.style.background='rgba(255, 255, 255, 0.05)'" onmouseout="this.style.borderColor='rgba(255, 255, 255, 0.3)'; this.style.background='rgba(0,0,0,0.25)'">
+                                    <input type="file" name="payment_proof" id="proofInput" style="display: none;" accept="image/*" required>
                                     <div id="uploadPlaceholder">
-                                        <span style="font-size: 2rem;">📸</span>
-                                        <p style="font-size: 0.875rem; color: #64748b; margin-top: 8px;">Click to upload or drag image</p>
+                                        <p style="font-size: 0.85rem; color: #ffffff; font-weight: 700; margin-bottom: 2px;">Click to upload or drag image</p>
+                                        <p style="font-size: 0.7rem; color: #d1d5db; font-weight: 500;">PNG, JPG, JPEG (Max 10MB)</p>
                                     </div>
-                                    <div id="filePreview" style="display: none; align-items: center; justify-content: center; flex-direction: column;">
-                                        <img id="previewImg" src="" style="max-height: 100px; border-radius: 8px; margin-bottom: 8px;">
-                                        <p id="fileName" style="font-size: 0.8rem; color: #1e293b; font-weight: 600;"></p>
+                                    <div id="filePreview" style="display: none; align-items: center; justify-content: center; flex-direction: column; overflow: hidden;">
+                                        <img id="previewImg" src="" style="max-height: 100px; border-radius: 10px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid rgba(255, 255, 255, 0.3);">
+                                        <p id="fileName" style="font-size: 0.75rem; color: #ffffff; font-weight: 700; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 4px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display:flex; justify-content:flex-end; gap:12px;">
-                        <button type="button" onclick="closePaymentModal()" class="btn-secondary" style="border-radius: 10px; font-weight: 500; font-family: inherit; font-size: 0.9375rem;">Cancel</button>
-                        <button type="submit" id="submitPaymentBtn" class="btn-primary" <?php echo empty($enabled_methods) ? 'disabled' : ''; ?> style="background:#4F46E5; color:white; border-radius: 10px; padding: 10px 24px; font-weight: 800; font-family: inherit; font-size: 0.9375rem; text-transform:uppercase; letter-spacing:0.02em; <?php echo empty($enabled_methods) ? 'opacity:0.6; cursor:not-allowed;' : ''; ?>">Submit & Confirm</button>
+                    <div style="display:flex; justify-content:flex-end; gap:12px; padding-top: 1rem; border-top: 1px solid rgba(83, 197, 224, 0.15);">
+                        <button type="button" onclick="closePaymentModal()" class="btn-secondary" style="border-radius: 0; font-weight: 700; font-family: inherit; font-size: 0.9rem; padding: 12px 24px; background: rgba(255,255,255,0.05); color: #8bbdcc; border: 1px solid rgba(83, 197, 224, 0.15);">Cancel</button>
+                        <button type="submit" id="submitPaymentBtn" class="btn-primary" <?php echo empty($enabled_methods) ? 'disabled' : ''; ?> style="background: linear-gradient(135deg, #53c5e0, #32a1c4); color:#00151b; border-radius: 0; padding: 12px 28px; border: none; font-weight: 800; font-family: inherit; font-size: 0.9rem; text-transform:uppercase; letter-spacing:0.04em; box-shadow: 0 8px 20px rgba(83, 197, 224, 0.3); flex: 1; transition: all 0.2s; <?php echo empty($enabled_methods) ? 'opacity:0.6; cursor:not-allowed;' : ''; ?>">Submit & Confirm</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Cancellation Modal -->
-        <div id="cancelModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; padding:20px;">
-            <div class="card" style="width:100%; position:relative;">
-                <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:#111827;">Cancel Order #<?php echo $order_id; ?></h2>
-                <p style="color:#6b7280; font-size:0.875rem; margin-bottom:1.5rem;">Please tell us why you want to cancel this order. This cannot be undone.</p>
+        <div id="cancelModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,10,15,0.8); z-index:9999; align-items:flex-start; justify-content:center; padding: 80px 10px 10px 10px; backdrop-filter: blur(12px);">
+            <div class="card" style="width:100%; max-width: 800px; position:relative; border-radius: 0; padding: 1.5rem; max-height: calc(100vh - 100px); overflow-y: auto; background: rgba(0, 35, 43, 0.98); border: 1px solid rgba(239, 68, 68, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 120px; background: radial-gradient(circle at top right, rgba(239, 68, 68, 0.15), transparent 70%); pointer-events: none; border-radius: 0;"></div>
                 
-                <form action="cancel_order.php" method="POST">
+                <button type="button" onclick="closeCancelModal()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ffffff; width: 36px; height: 36px; border-radius: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.2s; font-size: 1.25rem;">
+                    ✕
+                </button>
+
+                <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.75rem; color:#ffffff; position:relative;">Cancel Order #<?php echo $order_id; ?></h2>
+                <p style="color:#ffffff; font-size:0.9rem; margin-bottom:1rem; position:relative;">Please tell us why you want to cancel this order. <strong>This cannot be undone.</strong></p>
+                
+                <form action="cancel_order.php" method="POST" style="position:relative;">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
                     
-                    <div style="margin-bottom:1.5rem;">
-                        <label style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.75rem;">Reason for Cancellation</label>
-                        <div style="display:flex; flex-direction:column; gap:8px;">
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer;">
-                                <input type="radio" name="reason" value="Wrong item ordered" required> Wrong item ordered
+                    <div style="margin-bottom:1rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
+                        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:1rem; color: #ffffff; text-transform:uppercase; letter-spacing:0.04em;">Reason for Cancellation</label>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <label style="display:flex; align-items:center; gap:10px; font-size:0.95rem; cursor:pointer; color: #ffffff;">
+                                <input type="radio" name="reason" value="Wrong item ordered" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ffffff;" required> Wrong item ordered
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer;">
-                                <input type="radio" name="reason" value="Found better price elsewhere"> Found better price elsewhere
+                            <label style="display:flex; align-items:center; gap:10px; font-size:0.95rem; cursor:pointer; color: #ffffff;">
+                                <input type="radio" name="reason" value="Found better price elsewhere" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ffffff;"> Found better price elsewhere
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer;">
-                                <input type="radio" name="reason" value="Changed my mind"> Changed my mind
+                            <label style="display:flex; align-items:center; gap:10px; font-size:0.95rem; cursor:pointer; color: #ffffff;">
+                                <input type="radio" name="reason" value="Changed my mind" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ffffff;"> Changed my mind
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer;">
-                                <input type="radio" name="reason" value="Other"> Other (Please specify below)
+                            <label style="display:flex; align-items:center; gap:10px; font-size:0.95rem; cursor:pointer; color: #ffffff;">
+                                <input type="radio" name="reason" value="Other" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ffffff;"> Other (Please specify below)
                             </label>
                         </div>
                     </div>
                     
-                    <div style="margin-bottom:1.5rem;">
-                        <label style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.5rem;">Additional Details (Optional)</label>
-                        <textarea name="details" class="input-field" style="width:100%; min-height:80px; font-size:0.9rem;" placeholder="e.g. personal issue..."></textarea>
+                    <div style="margin-bottom:1rem;">
+                        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; color: #ffffff; text-transform:uppercase; letter-spacing:0.04em;">Additional Details (Optional)</label>
+                        <textarea name="details" style="width:100%; min-height:80px; font-size:0.95rem; background:rgba(0,0,0,0.25); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 12px; color: #ffffff; outline: none; transition: border-color 0.2s; resize: none;" onfocus="this.style.borderColor='rgba(255, 255, 255, 0.6)'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.2)'" placeholder="e.g. personal issue..."></textarea>
                     </div>
                     
                     <div style="display:flex; justify-content:flex-end; gap:12px;">
-                        <button type="button" onclick="closeCancelModal()" class="btn-secondary">Keep Order</button>
-                        <button type="submit" name="confirm_cancel" class="btn-primary" style="background:#dc2626; color:white;">Confirm Cancellation</button>
+                        <button type="button" onclick="closeCancelModal()" class="btn-secondary" style="background: rgba(255,255,255,0.05); color: #8bbdcc; border: 1px solid rgba(255,255,255,0.1); border-radius: 0; padding: 10px 20px; font-weight: 700;">Keep Order</button>
+                        <button type="submit" name="confirm_cancel" class="btn-primary" style="background: linear-gradient(135deg, #ef4444, #b91c1c); color:white; border-radius: 0; padding: 10px 20px; font-weight: 800; border: none; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">Confirm Cancellation</button>
                     </div>
                 </form>
             </div>
@@ -367,32 +386,32 @@ require_once __DIR__ . '/../includes/header.php';
         <script>
             function openCancelModal() {
                 document.getElementById('cancelModal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
             }
             function closeCancelModal() {
                 document.getElementById('cancelModal').style.display = 'none';
+                document.body.style.overflow = '';
             }
 
             function openPaymentModal() {
                 document.getElementById('paymentModal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
             }
             function closePaymentModal() {
                 document.getElementById('paymentModal').style.display = 'none';
+                document.body.style.overflow = '';
             }
 
             function updatePaymentUI(choice) {
                 // Update active state of containers
                 document.querySelectorAll('.payment-policy-option').forEach(el => {
-                    el.style.borderColor = '#e5e7eb';
-                    el.style.background = '#fff';
-                    el.querySelector('div div').style.color = '#111827';
+                    el.classList.remove('active-policy');
                 });
                 
                 const selected = document.querySelector(`input[name="payment_choice"][value="${choice}"]`);
                 if (selected) {
                     const parent = selected.closest('.payment-policy-option');
-                    parent.style.borderColor = '#4F46E5';
-                    parent.style.background = '#f5f3ff';
-                    parent.querySelector('div div').style.color = '#4F46E5';
+                    parent.classList.add('active-policy');
                 }
 
                 const detailsSection = document.getElementById('paymentDetailsSection');
@@ -423,21 +442,17 @@ require_once __DIR__ . '/../includes/header.php';
             function selectPaymentMethod(selectedIndex) {
                 // Reset all tabs
                 document.querySelectorAll('.pm-tab-btn').forEach(btn => {
-                    btn.style.borderColor = '#e5e7eb';
-                    btn.style.backgroundColor = '#f9fafb';
-                    btn.style.color = '#4b5563';
+                    btn.classList.remove('active');
                 });
                 
                 // Set active tab
                 const activeBtn = document.getElementById('btn-pm-' + selectedIndex);
                 if (activeBtn) {
-                    activeBtn.style.borderColor = '#4F46E5';
-                    activeBtn.style.backgroundColor = '#e0e7ff';
-                    activeBtn.style.color = '#4F46E5';
+                    activeBtn.classList.add('active');
                 }
 
                 // Hide all details
-                document.querySelectorAll('[id^="pm-details-"]').forEach(el => {
+                document.querySelectorAll('.pm-details-panel').forEach(el => {
                     el.style.display = 'none';
                 });
                 
@@ -568,19 +583,41 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php endif; ?>
                     
                     <div style="border-top:1px solid #e5e7eb; padding-top:1rem; margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700; color:#111827; font-size:0.95rem;">Grand Total</span>
+                        <span style="font-weight:700; color:#ffffff; font-size:0.95rem;">Grand Total</span>
                         <?php if ($show_price): ?>
-                            <span style="font-size:1.5rem; font-weight:800; color:#4F46E5;"><?php echo format_currency($order['total_amount']); ?></span>
+                            <span style="font-size:1.5rem; font-weight:800; color:#ffffff;"><?php echo format_currency($order['total_amount']); ?></span>
                         <?php else: ?>
-                            <span style="font-size:0.85rem; font-weight:700; color:#6b7280; font-style:italic;">Price will be confirmed by the shop</span>
+                            <span style="font-size:0.85rem; font-weight:700; color:#d1d5db; font-style:italic;">Price will be confirmed by the shop</span>
                         <?php endif; ?>
                     </div>
 
                     <div style="margin-top:1rem; display:flex; flex-direction:column; gap:0.75rem;">
-                        <?php if ($show_price && $order['payment_status'] === 'Unpaid' && !in_array($order['status'], ['Downpayment Submitted', 'Cancelled'], true)): ?>
-                            <button type="button" onclick="openPaymentModal()" class="btn-primary" style="width:100%; padding:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em;">
-                                Pay now
-                            </button>
+                        <?php if (in_array($order['status'], ['To Pay', 'TO PAY'], true)): ?>
+                            <?php if ($has_xendit): ?>
+                                <a href="payment.php?order_id=<?php echo $order_id; ?>" class="btn-primary" style="width:fit-content; margin:0 auto; padding:12px 30px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; background:linear-gradient(135deg, #4F46E5, #3730a3); display:inline-block; text-align:center; text-decoration:none; border-radius:0; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
+                                    Pay Now with Xendit
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($has_dynamic_payment): ?>
+                                <button onclick="openPaymentModal()" class="btn-primary" style="width:260px; margin:0 auto; padding:12px 20px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; background:linear-gradient(135deg, #ea580c, #c2410c); border:none; display:block; text-align:center; color:white; border-radius:0; box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.3); border: none; cursor:pointer;">
+                                    Upload Payment Proof
+                                </button>
+                            <?php endif; ?>
+                            <?php if (!$has_xendit && !$has_dynamic_payment): ?>
+                                <div style="text-align:center; padding:10px; background:#fef2f2; color:#b91c1c; border-radius:10px; font-size:0.85rem;">
+                                    No payment methods are currently available. Please contact support.
+                                </div>
+                            <?php endif; ?>
+                        <?php elseif ($show_price && $order['payment_status'] === 'Unpaid' && !in_array($order['status'], ['Downpayment Submitted', 'Cancelled'], true)): ?>
+                            <?php if ($has_xendit): ?>
+                                <a href="payment.php?order_id=<?php echo $order_id; ?>" class="btn-primary" style="width:fit-content; margin:0 auto; padding:12px 30px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; display:inline-block; text-align:center; text-decoration:none; border-radius:0;">
+                                    Pay now
+                                </a>
+                            <?php elseif ($has_dynamic_payment): ?>
+                                <button onclick="openPaymentModal()" class="btn-primary" style="width:fit-content; margin:0 auto; padding:12px 30px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; display:inline-block; text-align:center; text-decoration:none; border-radius:0; border:none; color:white; cursor:pointer; background:linear-gradient(135deg, #ea580c, #c2410c);">
+                                    Upload Payment Proof
+                                </button>
+                            <?php endif; ?>
                         <?php elseif (!$show_price): ?>
                             <div style="background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0ea5e9; border-radius:10px; padding:12px 14px; display:flex; gap:10px; align-items:center;">
                                 <span style="font-size:1.1rem;">⏳</span>
@@ -595,8 +632,8 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php endif; ?>
 
                         <?php if (can_customer_cancel_order($order)): ?>
-                            <button type="button" onclick="openCancelModal()" style="width:100%; padding:10px; background:transparent; color:#ef4444; font-size:0.8rem; font-weight:700; border:1px solid #fee2e2; border-radius:10px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
-                                ✕ Cancel order
+                            <button type="button" onclick="openCancelModal()" style="width:260px; margin:0 auto; padding:12px 20px; background:transparent; color:#ef4444; font-size:0.8rem; font-weight:700; border:1px solid #fee2e2; border-radius:0; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                Cancel order
                             </button>
                         <?php endif; ?>
                     </div>
@@ -606,35 +643,35 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- 3. Contact Information -->
             <div class="card compact-card">
                 <h2 class="section-header">
-                    <span>👤</span> Contact Information
+                     Contact Information
                 </h2>
                 <?php 
                 $cust_res = db_query("SELECT * FROM customers WHERE customer_id = ?", 'i', [$order['customer_id']]);
                 $customer_info = $cust_res[0] ?? [];
                 ?>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
-                    <div>
-                        <div style="font-size:0.65rem; color:#6b7280; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Full Name</div>
-                        <div style="font-weight:700; color:#111827; font-size:0.9rem;"><?php echo htmlspecialchars(trim(($customer_info['first_name'] ?? '') . ' ' . ($customer_info['middle_name'] ?? '') . ' ' . ($customer_info['last_name'] ?? ''))); ?></div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.65rem; color:#6b7280; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Phone Number</div>
-                        <div style="font-weight:700; color:#111827; font-size:0.9rem;"><?php echo htmlspecialchars($customer_info['contact_number'] ?? '—'); ?></div>
-                    </div>
-                    <div style="grid-column: span 2;">
-                        <div style="font-size:0.65rem; color:#6b7280; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Email Address</div>
-                        <div style="font-weight:700; color:#111827; font-size:0.9rem;"><?php echo htmlspecialchars($customer_info['email'] ?? ''); ?></div>
-                    </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+            <div>
+                <div style="font-size:0.65rem; color:#d1d5db; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Full Name</div>
+                <div style="font-weight:700; color:#ffffff; font-size:0.9rem;"><?php echo htmlspecialchars(trim(($customer_info['first_name'] ?? '') . ' ' . ($customer_info['middle_name'] ?? '') . ' ' . ($customer_info['last_name'] ?? ''))); ?></div>
+            </div>
+            <div>
+                <div style="font-size:0.65rem; color:#d1d5db; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Phone Number</div>
+                <div style="font-weight:700; color:#ffffff; font-size:0.9rem;"><?php echo htmlspecialchars($customer_info['contact_number'] ?? '—'); ?></div>
+            </div>
+            <div style="grid-column: span 2;">
+                <div style="font-size:0.65rem; color:#d1d5db; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Email Address</div>
+                <div style="font-weight:700; color:#ffffff; font-size:0.9rem;"><?php echo htmlspecialchars($customer_info['email'] ?? ''); ?></div>
+            </div>
                 </div>
             </div>
 
             <!-- 4. Order Notes -->
             <?php if (!empty($order['notes'])): ?>
-                <div class="card compact-card" style="background:#fffbeb; border:1px solid #fde68a;">
-                    <h2 class="section-header" style="color:#92400e; margin-bottom:0.75rem;">
+                <div class="card compact-card" style="background:rgba(255, 251, 235, 0.05); border:1px solid rgba(253, 230, 138, 0.2);">
+                    <h2 class="section-header" style="color:#fcd34d; margin-bottom:0.75rem;">
                         <span>📝</span> Order Notes
                     </h2>
-                    <div style="font-size:0.85rem; color:#b45309; line-height:1.5; font-weight:600; max-height: 120px; overflow-y: auto; word-break: break-word;">
+                    <div style="font-size:0.85rem; color:#ffffff; line-height:1.5; font-weight:600; max-height: 120px; overflow-y: auto; word-break: break-word;">
                         <?php echo nl2br(htmlspecialchars($order['notes'] ?? '')); ?>
                     </div>
                 </div>
@@ -649,7 +686,7 @@ require_once __DIR__ . '/../includes/header.php';
 window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('chat') === 'open') {
-        window.location.href = '<?php echo BASE_URL; ?>/customer/chat.php?order_id=<?php echo $order_id; ?>';
+        window.location.href = '/printflow/customer/chat.php?order_id=<?php echo $order_id; ?>';
     }
 });
 </script>

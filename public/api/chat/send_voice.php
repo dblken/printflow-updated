@@ -46,14 +46,11 @@ $relative_path = '/printflow/uploads/chat_media/' . $filename;
 
 if (move_uploaded_file($file['tmp_name'], $target_path)) {
     // Save to DB
-    // Use message_type = 'voice' (just updated enum)
-    $sql = "INSERT INTO order_messages (order_id, sender, sender_id, message, message_type, message_file, file_type, read_receipt)
-            VALUES (?, ?, ?, '', 'voice', ?, 'none', 0)";
+    $reply_id = isset($_POST['reply_id']) && (int)$_POST['reply_id'] > 0 ? (int)$_POST['reply_id'] : null;
+    $sql = "INSERT INTO order_messages (order_id, sender, sender_id, message, message_type, message_file, file_type, read_receipt, reply_id)
+            VALUES (?, ?, ?, '', 'voice', ?, 'none', 0, ?)";
     
-    // Fallback if voice type is rejected (though ALTER should have worked)
-    // Actually we keep it as 'voice' since the ALTER worked.
-    
-    if (db_execute($sql, 'isss', [$order_id, $db_sender, $user_id, $relative_path])) {
+    if (db_execute($sql, 'isssi', [$order_id, $db_sender, $user_id, $relative_path, $reply_id])) {
         echo json_encode(['success' => true, 'file' => $relative_path]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Database insertion failed: ' . ($conn->error ?? 'unknown')]);

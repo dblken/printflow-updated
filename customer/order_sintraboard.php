@@ -405,6 +405,8 @@ if (!empty($_POST['dimensions']) && preg_match('/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+
 </div>
 
 <script>
+var sintraDimensionMode = 'preset';
+
 function sintraOpenInfoModal(title, body) {
     var modal = document.getElementById('sintraTypeInfoModal');
     var titleEl = document.getElementById('sintraInfoTitle');
@@ -441,6 +443,7 @@ function sintraUpdateOptionVisuals(input) {
 }
 
 function sintraSelectDimension(label, w, h) {
+    sintraDimensionMode = 'preset';
     document.getElementById('sintra_dimensions').value = w + ' x ' + h;
     document.getElementById('sintraDimOthersWrap').style.display = 'none';
     var ow = document.getElementById('sintra_dim_other_w');
@@ -453,6 +456,7 @@ function sintraSelectDimension(label, w, h) {
 }
 
 function sintraSelectDimensionOthers() {
+    sintraDimensionMode = 'others';
     document.getElementById('sintraDimOthersWrap').style.display = 'block';
     document.getElementById('sintra_dimensions').value = '';
     document.querySelectorAll('.sintra-dim-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -504,10 +508,10 @@ document.getElementById('sintraForm').addEventListener('submit', function(e) {
 
     if (!branch) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="branch_id"]')?.closest('.shopee-form-row'); }
     if (!type) { hasError = true; if (!firstErr) firstErr = this.querySelector('input[name="sintra_type"]')?.closest('.shopee-form-row'); }
+    
     if (sintraDimensionMode === 'preset') {
         const active = document.querySelector('input[name="dimension_preset"]:checked');
         if (!active || active.value === 'Others') {
-             // If Others is checked but local logic says preset, or none checked
              if (!active || (active.value === 'Others' && !document.getElementById('sintra_dimensions').value)) {
                 e.preventDefault();
                 e.stopImmediatePropagation();

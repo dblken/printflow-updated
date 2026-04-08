@@ -385,6 +385,7 @@ class JobOrderService {
 
             // Sync status back to standard orders table
             if (!empty($order['order_id'])) {
+                $order_id = (int)$order['order_id'];
                 $order_status_map = [
                     'PENDING'       => 'Pending Approval',
                     'APPROVED'      => 'Approved',
@@ -406,10 +407,45 @@ class JobOrderService {
                     $sql_parts[] = "revision_reason = ''";
                 }
                 
-                $params[] = $order['order_id'];
+                $params[] = $order_id;
                 $types .= "i";
                 
                 db_execute("UPDATE orders SET " . implode(', ', $sql_parts) . " WHERE order_id = ?", $types, $params);
+
+                // --- XENDIT INTEGRATION FOR JOB ORDERS ---
+                if (strtoupper($newStatus) === 'TO_PAY' && defined('XENDIT_ENABLED') && XENDIT_ENABLED) {
+                    // Re-fetch order details for payment link
+                    $full_order = db_query("
+                        SELECT o.total_amount, o.payment_link, c.email, c.contact_number, c.customer_type 
+                        FROM orders o 
+                        JOIN customers c ON o.customer_id = c.customer_id 
+                        WHERE o.order_id = ?
+                    ", 'i', [$order_id])[0] ?? null;
+
+                    if ($full_order && empty($full_order['payment_link'])) {
+                        require_once __DIR__ . '/xendit_config.php';
+                        
+                        $amount = (float)$order['required_payment'];
+                        if ($amount <= 0) $amount = (float)$order['estimated_total'];
+                        if ($amount <= 0) $amount = (float)$full_order['total_amount'];
+
+                        $res = xendit_generate_payment_link(
+                            $order_id, 
+                            $amount, 
+                            $full_order['email'] ?? 'customer@example.com', 
+                            $full_order['contact_number'] ?: null
+                        );
+
+                        if ($res && $res['success']) {
+                            $pay_link = $res['data']['invoice_url'];
+                            db_execute("UPDATE orders SET payment_link = ?, payment_status = 'TO PAY' WHERE order_id = ?", 'si', [$pay_link, $order_id]);
+                            db_execute("UPDATE job_orders SET payment_status = 'TO PAY' WHERE id = ?", 'i', [$orderId]);
+                            
+                            $msg = "💳 Payment link generated for Order #{$order_id}. Amount: " . number_format($amount, 2) . ". Pay here: {$pay_link}";
+                            NotificationService::sendJobOrderNotification((int)$order['customer_id'], $orderId, 'TO_PAY', $pay_link, $msg);
+                        }
+                    }
+                }
             }
 
             // Send real-time notification to customer on every status change

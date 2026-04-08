@@ -61,48 +61,67 @@ if (!window.__pfPwaBeforeInstallAdded) {
         window.deferredPrompt = e;
         deferredPrompt = e;
 
-        // If there's no install button on this page, we can't show the prompt automatically (requires user gesture).
-        // We'll just keep the event for when the user might encounter a button later or use the browser's own UI.
+        // Show buttons on this page
+        showInstallButtons();
     });
 
-    // Hide button once app is installed
+    // Hide once app is installed
     window.addEventListener('appinstalled', () => {
         window.deferredPrompt = null;
         deferredPrompt = null;
         window.__pfPwaBeforeInstallCaptured = false;
-        hideInstallButton();
+        hideInstallButtons();
     });
 }
 
-if (typeof hideInstallButton === 'undefined') {
-    window.hideInstallButton = function() {
-        const btn = document.getElementById('pwa-install-btn');
-        if (btn) btn.style.display = 'none';
+if (typeof showInstallButtons === 'undefined') {
+    window.showInstallButtons = function() {
+        const ids = ['pwa-install-btn', 'pwa-install-btn-dropdown'];
+        ids.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                // Determine if it was "inline-flex" or "flex" or other
+                btn.style.display = id.includes('dropdown') ? 'flex' : 'inline-flex';
+            }
+        });
     };
 }
 
-// Wire up click handler once DOM is ready
+if (typeof hideInstallButtons === 'undefined') {
+    window.hideInstallButtons = function() {
+        const ids = ['pwa-install-btn', 'pwa-install-btn-dropdown'];
+        ids.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.style.display = 'none';
+        });
+    };
+}
+
+// Wire up click handlers once DOM is ready
 if (!window.__pfPwaDomBound) {
     window.__pfPwaDomBound = true;
     const bindPwaInstall = () => {
-        const btn = document.getElementById('pwa-install-btn');
-        if (!btn) return;
-
-        // Already running as installed PWA → hide button
+        // If already running as installed PWA → hide buttons
         if (_isStandalone) {
-            hideInstallButton();
+            hideInstallButtons();
             return;
         }
 
-        // Remove old listeners if any (though Turbo re-executions make this tricky, better to just bind once or use a delegation)
-        btn.onclick = async () => {
+        // If prompt already captured on this session, show buttons again (for Turbo navigations)
+        if (window.deferredPrompt) {
+            showInstallButtons();
+        }
+
+        const ids = ['pwa-install-btn', 'pwa-install-btn-dropdown'];
+        const handler = async (e) => {
+            e.preventDefault();
             if (window.deferredPrompt) {
                 window.deferredPrompt.prompt();
                 const { outcome } = await window.deferredPrompt.userChoice;
                 window.deferredPrompt = null;
                 deferredPrompt = null;
                 window.__pfPwaBeforeInstallCaptured = false;
-                if (outcome === 'accepted') hideInstallButton();
+                if (outcome === 'accepted') hideInstallButtons();
             } else if (_isIOS) {
                 // iOS Safari — show manual instruction
                 alert('To install PrintFlow on iOS:\n\n1. Tap the Share button (\uf0e4) in Safari\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
@@ -111,6 +130,13 @@ if (!window.__pfPwaDomBound) {
                 alert('To install PrintFlow:\n\nOpen this page in Chrome or Edge and look for the install icon in the address bar, or revisit this page in a supported browser.');
             }
         };
+
+        ids.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.onclick = handler;
+            }
+        });
     };
     document.addEventListener('DOMContentLoaded', bindPwaInstall);
     document.addEventListener('turbo:load', bindPwaInstall);

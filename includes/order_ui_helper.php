@@ -283,28 +283,28 @@ function render_order_item_clean($item, $is_cart_item = false, $show_price = tru
             </div>
             
             <div style="flex: 1; min-width: 0;">
-                <h3 style="font-size: 1.35rem; font-weight: 800; color: #eaf6fb; margin-bottom: 0.3rem; letter-spacing: -0.01em;"><?php echo htmlspecialchars($name); ?></h3>
-                <div style="display: inline-flex; font-size: 0.72rem; font-weight: 700; color: #53c5e0; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; background: rgba(83, 197, 224, 0.12); border: 1px solid rgba(83, 197, 224, 0.18); margin-bottom: 1.25rem;">
+                <h3 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: 0.3rem; letter-spacing: -0.01em;"><?php echo htmlspecialchars($name); ?></h3>
+                <div style="display: inline-flex; font-size: 0.72rem; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 1.25rem;">
                     <?php echo htmlspecialchars($category); ?>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem;">
                     <?php if ($show_price): ?>
                     <div>
-                        <div style="font-size: 0.68rem; color: #9fc4d4; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Unit Price</div>
-                        <div style="font-size: 1rem; color: #eaf6fb; font-weight: 700;"><?php echo format_currency($unit_price); ?></div>
+                        <div style="font-size: 0.68rem; color: #ffffff; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Unit Price</div>
+                        <div style="font-size: 1rem; color: #ffffff; font-weight: 700;"><?php echo format_currency($unit_price); ?></div>
                     </div>
                     <?php endif; ?>
                     <?php if ($show_quantity): ?>
                     <div>
-                        <div style="font-size: 0.68rem; color: #9fc4d4; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Quantity</div>
-                        <div style="font-size: 1rem; color: #eaf6fb; font-weight: 700;"><?php echo $quantity; ?></div>
+                        <div style="font-size: 0.68rem; color: #ffffff; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Quantity</div>
+                        <div style="font-size: 1rem; color: #ffffff; font-weight: 700;"><?php echo $quantity; ?></div>
                     </div>
                     <?php endif; ?>
                     <?php if ($show_price): ?>
                     <div>
-                        <div style="font-size: 0.68rem; color: #53c5e0; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Total</div>
-                        <div style="font-size: 1rem; color: #53c5e0; font-weight: 800;"><?php echo format_currency($subtotal); ?></div>
+                        <div style="font-size: 0.68rem; color: #ffffff; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Total</div>
+                        <div style="font-size: 1rem; color: #ffffff; font-weight: 800;"><?php echo format_currency($subtotal); ?></div>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -327,9 +327,9 @@ function render_order_item_clean($item, $is_cart_item = false, $show_price = tru
                     $label = $field_map[$ck] ?? ucwords(str_replace(['_', '-'], ' ', $ck));
                     $display_val = ($ck === 'tshirt_provider' && $cv === 'shop') ? 'Shop will provide' : (($ck === 'tshirt_provider' && $cv === 'customer') ? 'Customer will provide' : (($ck === 'installation_fee' && is_numeric($cv)) ? format_currency((float)$cv) : $cv));
                 ?>
-                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(83, 197, 224, 0.18); padding: 0.75rem 0.85rem; border-radius: 10px; transition: border-color 0.2s;">
-                        <div style="font-size: 0.65rem; color: #9fc4d4; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.02em;"><?php echo $label; ?></div>
-                        <div style="font-size: 0.95rem; font-weight: 700; color: #eaf6fb; overflow-wrap: break-word; word-break: break-word;"><?php echo htmlspecialchars($display_val); ?></div>
+                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.15); padding: 0.75rem 0.85rem; border-radius: 10px; transition: border-color 0.2s;">
+                        <div style="font-size: 0.65rem; color: #ffffff; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.02em;"><?php echo $label; ?></div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff; overflow-wrap: break-word; word-break: break-word;"><?php echo htmlspecialchars($display_val); ?></div>
                     </div>
                 <?php endforeach; ?>
                 

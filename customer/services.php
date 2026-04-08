@@ -184,7 +184,7 @@ function render_service_card($srv) {
 </div>
 
 <script>
-let currentModalData = {};
+var currentModalData = {};
 
 function openServiceModal(id, name, category, img, link, is_service, price, stock, modalIntro, avgRating, reviewCount) {
     document.getElementById('modal-name').textContent = name;

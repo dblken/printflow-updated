@@ -295,7 +295,7 @@ function reflUpdateNotesCounter(textarea) {
     document.querySelector('.notes-counter').textContent = `${count} / 500`;
 }
 
-let dimensionMode = 'preset';
+var dimensionMode = 'preset';
 
 function transIncreaseQty() { const i = document.getElementById('quantity-input'); i.value = Math.min(999, (parseInt(i.value) || 1) + 1); }
 function transDecreaseQty() { const i = document.getElementById('quantity-input'); if (parseInt(i.value) > 1) i.value = parseInt(i.value) - 1; }

@@ -10,6 +10,14 @@ require_once __DIR__ . '/db.php';
 class RollService {
 
     /**
+     * Get a specific roll by ID.
+     */
+    public static function getRoll($id) {
+        $result = db_query("SELECT * FROM inv_rolls WHERE id = ?", 'i', [$id]);
+        return (!empty($result)) ? $result[0] : null;
+    }
+
+    /**
      * Create a new roll record.
      */
     public static function createRoll($itemId, $totalLength, $rollCode = null, $supplier = null, $widthFt = 0) {

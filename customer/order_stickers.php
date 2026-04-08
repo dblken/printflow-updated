@@ -302,7 +302,7 @@ if ($stickers_lam_val !== '' && !in_array($stickers_lam_val, ['With lamination',
 </style>
 
 <script>
-let dimensionMode = 'others'; // Default to others since inputs are visible and required usually
+var dimensionMode = 'others'; // Default to others since inputs are visible and required usually
 
 function stickerSelectDimension(w, h, e) {
     e.preventDefault();

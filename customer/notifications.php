@@ -60,7 +60,9 @@ $notifications = db_query("
         (SELECT oi.order_item_id FROM order_items oi 
          WHERE oi.order_id = n.data_id ORDER BY oi.order_item_id ASC LIMIT 1) as first_item_id,
         (SELECT oi.design_image FROM order_items oi 
-         WHERE oi.order_id = n.data_id AND oi.design_image IS NOT NULL ORDER BY oi.order_item_id ASC LIMIT 1) as design_image
+         WHERE oi.order_id = n.data_id AND oi.design_image IS NOT NULL ORDER BY oi.order_item_id ASC LIMIT 1) as design_image,
+        o.payment_link,
+        o.status as order_status
     FROM notifications n
     LEFT JOIN orders o ON n.data_id = o.order_id AND (n.type = 'Order' OR n.type = 'Payment' OR n.type = 'Status')
     LEFT JOIN job_orders jo ON n.data_id = jo.id AND n.type = 'Job Order'
@@ -336,11 +338,16 @@ require_once __DIR__ . '/../includes/header.php';
                                 if ($is_rating_notif) {
                                     $link = "/printflow/customer/rate_order.php?order_id=" . $notif['data_id'] . "&mark_read=" . $notif['notification_id'];
                                 } elseif ($is_payment_notif) {
-                                    $link = "/printflow/customer/payment.php?order_id=" . $notif['data_id'] . "&mark_read=" . $notif['notification_id'];
+                                    $link = "/printflow/customer/order_details.php?id=" . $notif['data_id'] . "&pay=1&mark_read=" . $notif['notification_id'];
                                 } elseif ($notif['type'] === 'Order' || $notif['type'] === 'Status') {
-                                    // Redirect to orders.php with the correct tab + highlight the order
-                                    $tab = $current_order_status ? map_status_to_tab($current_order_status) : 'all';
-                                    $link = "/printflow/customer/orders.php?tab=" . $tab . "&highlight=" . $notif['data_id'] . "&mark_read=" . $notif['notification_id'];
+                                    // If status is To Pay, redirect to payment trigger
+                                    if (map_status_to_tab($current_order_status ?? $notif['order_status'] ?? '') === 'topay') {
+                                        $link = "/printflow/customer/order_details.php?id=" . $notif['data_id'] . "&pay=1&mark_read=" . $notif['notification_id'];
+                                    } else {
+                                        // Redirect to orders.php with the correct tab + highlight the order
+                                        $tab = $current_order_status ? map_status_to_tab($current_order_status) : map_status_to_tab($notif['order_status'] ?? 'all');
+                                        $link = "/printflow/customer/orders.php?tab=" . $tab . "&highlight=" . $notif['data_id'] . "&mark_read=" . $notif['notification_id'];
+                                    }
                                 } elseif ($notif['type'] === 'Job Order') {
                                     $link = "/printflow/customer/order_details.php?id=" . $notif['data_id'] . "&mark_read=" . $notif['notification_id'];
                                 } elseif ($notif['type'] === 'Message') {
